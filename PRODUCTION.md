@@ -3,7 +3,7 @@
 Everything below is **config/ops** — the code changes it pairs with are already merged.
 Do these in order before onboarding paying agencies.
 
----
+--- v
 
 ## 0. Apply database migrations
 
