@@ -3,6 +3,11 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist/client",
   "framework": null,
+  "functions": {
+    "api/server.mjs": {
+      "includeFiles": "dist/server/**"
+    }
+  },
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/api/server" }
   ]
