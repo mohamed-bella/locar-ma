@@ -1,16 +1,25 @@
 // Vercel serverless function running the TanStack Start SSR handler.
 //
-// Use the Node `(req, res)` signature (unambiguous — Vercel's web-signature
-// detection was misfiring and hanging) and bridge Node ↔ Web ourselves, the
-// same way server.mjs does. Crucially we build an ABSOLUTE URL from the host
-// header: Vercel hands the function a relative path (`/`), and the SSR handler
-// does `new URL(req.url)` which throws on a relative input.
+// Node `(req, res)` signature (arity 2 → Vercel treats it as a Node handler,
+// not a Web one) and we bridge Node ↔ Web ourselves like server.mjs does.
+// Two Vercel-specific details:
+//   1. Build an ABSOLUTE URL from the host header — Vercel passes a relative
+//      path (`/`) and the SSR handler's `new URL()` throws on it.
+//   2. BUFFER the response instead of piping the web stream — streaming the
+//      React SSR body through res was hanging the function to a 30s timeout.
 import { Readable } from 'node:stream'
 import handler from '../dist/server/server.js'
 
 export const config = { maxDuration: 30 }
 
 export default async function (req, res) {
+  // No favicon route — answer instantly instead of paying an SSR render.
+  if (req.url === '/favicon.ico' || req.url === '/favicon.png') {
+    res.statusCode = 204
+    res.end()
+    return
+  }
+
   try {
     const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost'
     const proto = req.headers['x-forwarded-proto'] || 'https'
@@ -24,9 +33,13 @@ export default async function (req, res) {
 
     const response = await handler.fetch(new Request(url, init))
     res.statusCode = response.status
-    response.headers.forEach((v, k) => res.setHeader(k, v))
-    if (response.body) Readable.fromWeb(response.body).pipe(res)
-    else res.end()
+    response.headers.forEach((v, k) => {
+      // content-length is recomputed from the buffer below.
+      if (k.toLowerCase() !== 'content-length') res.setHeader(k, v)
+    })
+    const body = Buffer.from(await response.arrayBuffer())
+    res.setHeader('content-length', body.byteLength)
+    res.end(body)
   } catch (err) {
     console.error(err)
     res.statusCode = 500
