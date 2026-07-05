@@ -1,0 +1,260 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+
+/* ─────────────────────────────────────────────────────────────
+   Locar design system — light only. Cool-gray canvas, white cards,
+   orange primary. Inspired by Semrush / clean SaaS ops tooling.
+   ───────────────────────────────────────────────────────────── */
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Canvas & surfaces — warm stone, tuned to the orange brand */
+  --color-canvas: #ece7df;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f6f2ea;
+
+  /* Ink — warm near-black (stone), not cold slate */
+  --color-ink: #1f1b16;
+  --color-ink-soft: #453f37;
+  --color-muted: #7a7266;
+  --color-faint: #a8a094;
+
+  /* Hairlines — warm */
+  --color-line: #e6e0d5;
+  --color-line-strong: #d6cec0;
+
+  /* Brand — orange primary */
+  --color-brand: #fa5a28;
+  --color-brand-hover: #e84e1f;
+  --color-brand-soft: #fff1ec;
+  --color-brand-ring: #fdb99f;
+
+  /* Semantic */
+  --color-ok: #0e9f6e;
+  --color-ok-soft: #def7ec;
+  --color-info: #2563eb;
+  --color-info-soft: #e1effe;
+  --color-warn: #c27803;
+  --color-warn-soft: #fdf6b2;
+  --color-danger: #e02424;
+  --color-danger-soft: #fde8e8;
+
+  --radius-card: 14px;
+
+  --shadow-card: 0 1px 2px rgba(60, 45, 25, 0.05), 0 1px 3px rgba(60, 45, 25, 0.07);
+  --shadow-pop: 0 10px 30px -8px rgba(50, 38, 22, 0.2), 0 4px 10px -4px rgba(50, 38, 22, 0.12);
+}
+
+:root {
+  color-scheme: light; /* lock light theme */
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  background: var(--color-canvas);
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-canvas);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Tabular figures for tables, stats, money */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   "Web 2.0" touches — 2010–2015 era. Glossy gradient buttons with
+   an inset top highlight + letterpress text, recessed input fields,
+   and cards with a subtle vertical sheen. Applied selectively.
+   ───────────────────────────────────────────────────────────── */
+
+/* Primary glossy button */
+.skeu-primary {
+  background-image: linear-gradient(to bottom, #fd7048, var(--color-brand) 55%, #f4501d);
+  border: 1px solid #d1461c;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 1px 2px rgba(16, 24, 40, 0.25);
+  text-shadow: 0 -1px 0 rgba(120, 30, 0, 0.35);
+}
+.skeu-primary:hover {
+  background-image: linear-gradient(to bottom, #fb6238, var(--color-brand-hover) 55%, #dc4517);
+}
+.skeu-primary:active {
+  background-image: linear-gradient(to bottom, #ec4f1c, #f4501d);
+  box-shadow: inset 0 2px 4px rgba(120, 30, 0, 0.4);
+}
+
+/* Secondary / white bevel button — letterpress label */
+.skeu-secondary {
+  background-image: linear-gradient(to bottom, #ffffff, #f2ede4);
+  border: 1px solid var(--color-line-strong);
+  box-shadow:
+    inset 0 1px 0 #ffffff,
+    0 1px 1px rgba(60, 45, 25, 0.06);
+  text-shadow: 0 1px 0 #ffffff;
+}
+.skeu-secondary:hover {
+  background-image: linear-gradient(to bottom, #ffffff, #ece6db);
+}
+.skeu-secondary:active {
+  background-image: linear-gradient(to bottom, #ece6db, #f6f2ea);
+  box-shadow: inset 0 1px 3px rgba(60, 45, 25, 0.12);
+}
+
+/* Danger glossy button */
+.skeu-danger {
+  background-image: linear-gradient(to bottom, #ef4b4b, var(--color-danger) 55%, #c81e1e);
+  border: 1px solid #b91c1c;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 1px 2px rgba(16, 24, 40, 0.25);
+  text-shadow: 0 -1px 0 rgba(90, 0, 0, 0.35);
+}
+.skeu-danger:hover {
+  background-image: linear-gradient(to bottom, #e83b3b, #b91c1c);
+}
+
+/* Cards — warm cream sheen (not stark white) + a slightly deeper shadow */
+.skeu-card {
+  background-image: linear-gradient(to bottom, #fffdfa, #f8f4ec);
+  border-color: #e3ddd0;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(60, 45, 25, 0.05),
+    0 2px 6px rgba(60, 45, 25, 0.05);
+}
+
+/* Recessed / inset form fields */
+.skeu-field {
+  background-image: linear-gradient(to bottom, #f5f1ea, #ffffff 60%);
+  box-shadow: inset 0 1px 2px rgba(60, 45, 25, 0.09);
+}
+.skeu-field:focus {
+  background-image: none;
+  box-shadow: inset 0 1px 2px rgba(60, 45, 25, 0.05);
+}
+
+/* Sidebar rail — brushed warm gradient with a right bevel */
+.skeu-rail {
+  background-image: linear-gradient(to bottom, #fffdfa, #f1ece3);
+  border-right: 1px solid var(--color-line-strong);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.7), 1px 0 3px rgba(60, 45, 25, 0.04);
+}
+
+/* Nav items — hover bevel + glossy active pill */
+.nav-item {
+  border: 1px solid transparent;
+}
+.nav-item:hover {
+  background-image: linear-gradient(to bottom, #ffffff, #f1ece3);
+  border-color: var(--color-line);
+  box-shadow: inset 0 1px 0 #ffffff, 0 1px 1px rgba(60, 45, 25, 0.04);
+}
+.nav-item.active {
+  background-image: linear-gradient(to bottom, #fd7048, var(--color-brand) 55%, #f4501d);
+  border-color: #d1461c;
+  color: #fff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 1px 2px rgba(16, 24, 40, 0.25);
+  text-shadow: 0 -1px 0 rgba(120, 30, 0, 0.35);
+}
+.nav-item.active:hover {
+  background-image: linear-gradient(to bottom, #fb6238, var(--color-brand-hover) 55%, #dc4517);
+  border-color: #d1461c;
+}
+
+/* Embossed section label */
+.skeu-emboss {
+  text-shadow: 0 1px 0 #ffffff;
+}
+
+/* Widget stat tile — inset well */
+.skeu-well {
+  background-image: linear-gradient(to bottom, #f6f2ea, #ffffff);
+  box-shadow: inset 0 1px 2px rgba(60, 45, 25, 0.06);
+  border: 1px solid var(--color-line);
+}
+
+/* Glossy progress/meter fill */
+.skeu-meter-fill {
+  background-image: linear-gradient(to bottom, #fd7048, var(--color-brand) 60%, #ec4f1c);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* Focus ring — visible, brand-tinted */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-brand-ring);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Refined scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cdd1d7 transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #cdd1d7;
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+/* react-day-picker theming */
+.rdp-root {
+  --rdp-accent-color: var(--color-brand);
+  --rdp-accent-background-color: var(--color-brand-soft);
+  --rdp-day-width: 40px;
+  --rdp-day-height: 40px;
+  font-size: 0.875rem;
+}
+
+/* Overlay + slide-over / sheet animations (Radix data-state) */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@keyframes slide-in-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.anim-overlay[data-state='open'] { animation: fade-in 0.18s ease; }
+.anim-sheet[data-state='open'] { animation: slide-in-up 0.28s cubic-bezier(0.32, 0.72, 0, 1); }
+@media (min-width: 640px) {
+  .anim-sheet[data-state='open'] { animation: slide-in-right 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+}
+.anim-pop[data-state='open'] { animation: pop-in 0.14s ease; }
+
+/* Top route-progress bar (YouTube-style) */
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
