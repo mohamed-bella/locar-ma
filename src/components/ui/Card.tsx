@@ -24,9 +24,14 @@ export function CardHeader({
   className?: string
 }) {
   return (
-    <div className={cn('flex items-start justify-between gap-4 border-b border-[var(--color-line)] px-5 py-4', className)}>
+    <div
+      className={cn(
+        'flex items-start justify-between gap-4 rounded-t-[var(--radius-card)] border-b border-[var(--color-brand)]/20 bg-[var(--color-brand-soft)] px-5 py-4',
+        className,
+      )}
+    >
       <div>
-        <h3 className="font-semibold text-[var(--color-ink)]">{title}</h3>
+        <h3 className="font-bold text-[var(--color-ink)]">{title}</h3>
         {subtitle && <p className="mt-0.5 text-sm text-[var(--color-muted)]">{subtitle}</p>}
       </div>
       {action}

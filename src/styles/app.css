@@ -9,7 +9,7 @@
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, sans-serif;
 
   /* Canvas & surfaces — warm stone, tuned to the orange brand */
-  --color-canvas: #ece7df;
+  --color-canvas: #dddddd;
   --color-surface: #ffffff;
   --color-surface-muted: #f6f2ea;
 
@@ -140,11 +140,25 @@ body {
   box-shadow: inset 0 1px 2px rgba(60, 45, 25, 0.05);
 }
 
-/* Sidebar rail — brushed warm gradient with a right bevel */
+/* Sidebar rail — black brushed gradient with a right bevel */
 .skeu-rail {
-  background-image: linear-gradient(to bottom, #fffdfa, #f1ece3);
-  border-right: 1px solid var(--color-line-strong);
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.7), 1px 0 3px rgba(60, 45, 25, 0.04);
+  background-image: linear-gradient(to bottom, #1c1c1e, #0b0b0c);
+  border-right: 1px solid #000000;
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05), 1px 0 8px rgba(0, 0, 0, 0.4);
+}
+/* Light-on-dark treatment for the black rail */
+.skeu-rail .skeu-emboss {
+  color: #e8e8ea !important;
+  text-shadow: none;
+}
+.skeu-rail .nav-item:not(.active) {
+  color: #c7c7cc !important;
+}
+.skeu-rail .nav-item:not(.active):hover {
+  background-image: linear-gradient(to bottom, #2c2c2f, #202022);
+  border-color: #3a3a3d;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  color: #ffffff !important;
 }
 
 /* Nav items — hover bevel + glossy active pill */
