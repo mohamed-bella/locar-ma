@@ -9,7 +9,6 @@
 //      React SSR body through res was hanging the function to a 30s timeout.
 import '../instrument.server.mjs' // Sentry — must load before the app handler
 import * as Sentry from '@sentry/tanstackstart-react'
-import { Readable } from 'node:stream'
 import handler from '../dist/server/server.js'
 
 export const config = { maxDuration: 30 }
@@ -29,8 +28,13 @@ export default async function (req, res) {
 
     const init = { method: req.method, headers: req.headers }
     if (req.method !== 'GET' && req.method !== 'HEAD') {
-      init.body = Readable.toWeb(req)
-      init.duplex = 'half'
+      // BUFFER the request body rather than streaming it. Streaming via
+      // Readable.toWeb(req) + duplex:'half' hangs on Vercel for POST bodies —
+      // the handler never finishes reading, so every mutation 504'd at 30s.
+      // Same reason we buffer the response below.
+      const chunks = []
+      for await (const chunk of req) chunks.push(chunk)
+      init.body = Buffer.concat(chunks)
     }
 
     const response = await handler.fetch(new Request(url, init))
