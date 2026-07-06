@@ -20,8 +20,8 @@ export const Route = createRootRoute({
       { name: 'mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
-      { name: 'apple-mobile-web-app-title', content: 'Locar' },
-      { title: 'Locar.ma — Car rental management' },
+      { name: 'apple-mobile-web-app-title', content: 'Rentiq' },
+      { title: 'Rentiq — Car rental management' },
     ],
     links: [
       { rel: 'stylesheet', href: appCss },

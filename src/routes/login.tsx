@@ -65,7 +65,7 @@ function Login() {
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-brand)] font-black">
             L
           </span>
-          <span className="text-lg font-bold">Locar</span>
+          <span className="text-lg font-bold">Rentiq</span>
         </div>
         <div className="relative">
           <h2 className="max-w-md text-3xl font-bold leading-tight">
@@ -75,7 +75,7 @@ function Login() {
             {t('auth.panelSub')}
           </p>
         </div>
-        <p className="relative text-sm text-white/50">© {new Date().getFullYear()} Locar.ma</p>
+        <p className="relative text-sm text-white/50">© {new Date().getFullYear()} Rentiq</p>
       </div>
 
       {/* Form */}

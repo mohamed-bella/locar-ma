@@ -37,7 +37,7 @@ const schema = z.object({
   // Resend transactional email (owner notifications). Optional — if unset, the
   // notify* helpers no-op.
   RESEND_API_KEY: z.string().optional(),
-  RESEND_FROM: z.string().optional(), // e.g. "Locar <notifications@yourdomain.ma>"
+  RESEND_FROM: z.string().optional(), // e.g. "Rentiq <notifications@yourdomain.ma>"
 })
   // In production, the private docs bucket MUST be configured and MUST differ
   // from the public bucket — otherwise contract PDFs (client CIN/passport/

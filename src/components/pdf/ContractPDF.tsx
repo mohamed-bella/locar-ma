@@ -207,7 +207,7 @@ export function ContractPDF({ data }: { data: ContractPdfData }) {
         </View>
 
         <Text style={s.footer} fixed>
-          {agency.name} — Contrat généré via Locar.ma
+          {agency.name} — Contrat généré via Rentiq
         </Text>
       </Page>
     </Document>

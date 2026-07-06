@@ -71,7 +71,7 @@ function BrandMark({ logoUrl, name }: { logoUrl?: string | null; name?: string |
         </span>
       )}
       <span className="skeu-emboss truncate text-[18px] font-black tracking-tight text-[var(--color-ink)]">
-        {name?.trim() || 'Locar'}
+        {name?.trim() || 'Rentiq'}
       </span>
     </div>
   )

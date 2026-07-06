@@ -48,7 +48,7 @@ export default async function handler(req, res) {
     // Verify-or-create: reuse the stored sheet only if this token can reach it,
     // otherwise make a fresh one (heals a stale service-account-era id → 404).
     const { spreadsheetId, spreadsheetUrl, tabs } =
-      await ensureSpreadsheet(accessToken, existing?.spreadsheet_id, 'Locar — Sync')
+      await ensureSpreadsheet(accessToken, existing?.spreadsheet_id, 'Rentiq — Sync')
 
     await supa.from('agency_sheets').upsert({
       agency_id: agencyId,

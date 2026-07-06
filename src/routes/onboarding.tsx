@@ -56,7 +56,7 @@ function Onboarding() {
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-brand)] font-black text-white">
             L
           </span>
-          <span className="text-lg font-bold text-[var(--color-ink)]">Locar</span>
+          <span className="text-lg font-bold text-[var(--color-ink)]">Rentiq</span>
         </div>
 
         <h1 className="text-2xl font-bold tracking-tight text-[var(--color-ink)]">{t('onb.title')}</h1>

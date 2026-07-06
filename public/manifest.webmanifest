@@ -1,6 +1,6 @@
 {
-  "name": "Locar — Car Rental Management",
-  "short_name": "Locar",
+  "name": "Rentiq — Car Rental Management",
+  "short_name": "Rentiq",
   "description": "Manage your car rental agency: fleet, reservations, contracts, clients and finance.",
   "start_url": "/",
   "scope": "/",

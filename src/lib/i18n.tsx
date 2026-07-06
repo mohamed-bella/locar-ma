@@ -534,7 +534,7 @@ const M: Record<string, { en: string; fr: string }> = {
   'set.language': { en: 'Language', fr: 'Langue' },
   'set.languageDesc': { en: 'Choose the interface language for your agency.', fr: 'Choisissez la langue de l’interface pour votre agence.' },
   'set.brands': { en: 'Brands', fr: 'Marques' },
-  'set.brandsDesc': { en: 'Shared across all Locar agencies. Adding one helps everyone; hiding only affects you.', fr: 'Partagées entre toutes les agences Locar. En ajouter aide tout le monde ; masquer n’affecte que vous.' },
+  'set.brandsDesc': { en: 'Shared across all Rentiq agencies. Adding one helps everyone; hiding only affects you.', fr: 'Partagées entre toutes les agences Rentiq. En ajouter aide tout le monde ; masquer n’affecte que vous.' },
   'set.addBrand': { en: 'Add brand', fr: 'Ajouter une marque' },
   'set.noBrands': { en: 'No brands yet', fr: 'Aucune marque' },
   'set.noBrandsDesc': { en: 'Add your first brand — it becomes available to every agency.', fr: 'Ajoutez votre première marque — elle devient disponible pour toutes les agences.' },
@@ -574,7 +574,7 @@ const M: Record<string, { en: string; fr: string }> = {
 
   // ── Brands / images ─────────────────────────────────
   'brand.add': { en: 'Add brand', fr: 'Ajouter une marque' },
-  'brand.sharedDesc': { en: 'Shared with every agency on Locar.', fr: 'Partagée avec toutes les agences Locar.' },
+  'brand.sharedDesc': { en: 'Shared with every agency on Rentiq.', fr: 'Partagée avec toutes les agences Rentiq.' },
   'brand.logoOptional': { en: 'Logo (optional)', fr: 'Logo (facultatif)' },
   'brand.logoHint': { en: 'PNG or SVG, square works best.', fr: 'PNG ou SVG, format carré de préférence.' },
   'brand.nameLabel': { en: 'Brand name', fr: 'Nom de la marque' },
