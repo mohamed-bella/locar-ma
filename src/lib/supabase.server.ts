@@ -21,6 +21,9 @@ export function getSupabaseServerClient() {
     env.VITE_SUPABASE_ANON_KEY,
     {
       global: { fetch: timeoutFetch },
+      // Persist auth cookies for a year so a refreshed session written by the
+      // server stays across browser/PWA restarts (matches the browser client).
+      cookieOptions: { path: '/', sameSite: 'lax', maxAge: 60 * 60 * 24 * 365 },
       cookies: {
         getAll() {
           const all = getCookies() ?? {}

@@ -1,9 +1,15 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { Car, CalendarCheck, FileText, ArrowRight } from 'lucide-react'
 import { Button } from '~/components/ui'
 import { useI18n } from '~/lib/i18n'
+import { getAuthState } from '~/server/auth'
 
 export const Route = createFileRoute('/')({
+  // Logged-in users skip the landing page and go straight to the app.
+  beforeLoad: async () => {
+    const auth = await getAuthState()
+    if (auth.user) throw redirect({ to: '/dashboard' })
+  },
   component: Home,
 })
 

@@ -93,7 +93,19 @@ function Contracts() {
                   className="cursor-pointer border-b border-[var(--color-line)] last:border-0 hover:bg-[var(--color-surface-muted)]"
                 >
                   <td className="px-4 py-3 font-mono font-semibold text-[var(--color-ink)]">#{c.short_id}</td>
-                  <td className="px-2 py-3">{c.client_name ?? '—'}</td>
+                  <td className="px-2 py-3">
+                    <div className="flex min-w-0 flex-col">
+                      <span className="truncate">{c.client_name ?? '—'}</span>
+                      <span className="truncate text-xs text-[var(--color-muted)] sm:hidden">
+                        {[
+                          c.vehicle_plate,
+                          c.date_start ? format(new Date(`${c.date_start}T00:00:00`), 'd MMM') : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </span>
+                    </div>
+                  </td>
                   <td className="hidden px-2 py-3 sm:table-cell">{c.vehicle_plate ?? '—'}</td>
                   <td className="hidden px-2 py-3 text-xs text-[var(--color-muted)] sm:table-cell">
                     {c.date_start ? format(new Date(`${c.date_start}T00:00:00`), 'd MMM') : '—'}

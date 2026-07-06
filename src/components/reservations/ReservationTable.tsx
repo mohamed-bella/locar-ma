@@ -27,7 +27,48 @@ export function ReservationTable({
       {rows.length === 0 ? (
         <EmptyState icon={CalendarClock} title={t('res.noBookingsView')} description={t('res.dragToAdd')} />
       ) : (
-        <div className="overflow-x-auto">
+        <>
+        {/* Mobile: stacked cards, easy to scan */}
+        <div className="divide-y divide-[var(--color-line)] md:hidden">
+          {rows.map((r) => {
+            const v = vehicleMap.get(r.vehicle_id)
+            return (
+              <button
+                key={r.id}
+                onClick={() => onOpen(r)}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-[var(--color-surface-muted)]"
+              >
+                <div className="flex h-14 w-16 shrink-0 items-center justify-center overflow-hidden border border-[var(--color-line)] bg-[var(--color-surface-muted)]">
+                  {v?.image_url ? (
+                    <img src={v.image_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                  ) : (
+                    <Car className="h-6 w-6 text-[var(--color-faint)]" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-semibold text-[var(--color-ink)]">{v?.plate ?? '—'}</span>
+                    <Badge tone={r.is_block ? 'neutral' : resBadgeTone(r.status)} dot>
+                      {r.is_block ? t('res.blocked') : t(`rstatus.${r.status}`)}
+                    </Badge>
+                  </div>
+                  <div className="truncate text-xs text-[var(--color-muted)]">{reservationLabel(r)}</div>
+                  <div className="mt-0.5 flex items-center justify-between gap-2 text-xs">
+                    <span className="text-[var(--color-muted)]">
+                      {fmt(r.date_start)} → {fmt(r.date_end)}
+                    </span>
+                    <span className="font-semibold tnum text-[var(--color-ink)]">
+                      {r.is_block ? '—' : `${(r.total_amount ?? 0).toLocaleString()} MAD`}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Desktop: full table */}
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-y border-[var(--color-line)] text-left text-xs uppercase tracking-wide text-[var(--color-faint)]">
@@ -90,6 +131,7 @@ export function ReservationTable({
             </tbody>
           </table>
         </div>
+        </>
       )}
     </Card>
   )

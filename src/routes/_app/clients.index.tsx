@@ -120,10 +120,15 @@ function Clients() {
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-sm font-semibold text-[var(--color-muted)]">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-sm font-semibold text-[var(--color-muted)]">
                         {c.full_name.slice(0, 1).toUpperCase()}
                       </span>
-                      <span className="font-semibold text-[var(--color-ink)]">{c.full_name}</span>
+                      <span className="flex min-w-0 flex-col">
+                        <span className="truncate font-semibold text-[var(--color-ink)]">{c.full_name}</span>
+                        {c.phone && (
+                          <span className="truncate text-xs text-[var(--color-muted)] sm:hidden">{c.phone}</span>
+                        )}
+                      </span>
                     </div>
                   </td>
                   <td className="hidden px-2 py-3 text-[var(--color-ink-soft)] sm:table-cell">
