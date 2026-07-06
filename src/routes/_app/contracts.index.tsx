@@ -153,9 +153,10 @@ function ReservationPicker({
   async function generate(r: ContractableReservation) {
     setBusyId(r.id)
     try {
-      const { id } = await createContractFromReservation({ data: { reservation_id: r.id } })
+      const result = await createContractFromReservation({ data: { reservation_id: r.id } })
+      if (!result?.id) throw new Error(result?.error ?? 'Contract creation failed')
       toast.success(t('con.generatingContract'))
-      onPicked(id)
+      onPicked(result.id)
     } catch (err: any) {
       toast.error(err?.message ?? t('con.couldNotGenerate'))
       setBusyId(null)

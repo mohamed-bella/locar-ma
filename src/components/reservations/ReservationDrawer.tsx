@@ -65,10 +65,11 @@ export function ReservationDrawer({
     if (!initial.id) return
     setBusy(true)
     try {
-      const { id } = await createContractFromReservation({ data: { reservation_id: initial.id } })
+      const result = await createContractFromReservation({ data: { reservation_id: initial.id } })
+      if (!result?.id) throw new Error(result?.error ?? 'Contract creation failed')
       onOpenChange(false)
       onSaved()
-      await navigate({ to: '/contracts/$contractId', params: { contractId: id } })
+      await navigate({ to: '/contracts/$contractId', params: { contractId: result.id } })
     } catch (err: any) {
       toast.error(err?.message ?? t('res.couldNotStart'))
     } finally {

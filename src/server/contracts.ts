@@ -190,7 +190,8 @@ export const getContract = createServerFn({ method: 'GET' })
 // "Start rental" — create a contract from a reservation, mark it active.
 export const createContractFromReservation = createServerFn({ method: 'POST' })
   .validator((d: unknown) => z.object({ reservation_id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<{ id: string | null; error?: string }> => {
+   try {
     const { supabase, agencyId } = await requireAgencyContext()
 
     const { data: res, error: resErr } = await supabase
@@ -230,6 +231,12 @@ export const createContractFromReservation = createServerFn({ method: 'POST' })
     }
     scheduleNotify(() => notifyNewContract(agencyId, (row as any).id)) // fire-and-forget email
     return { id: (row as any).id as string }
+   } catch (e: any) {
+    // Surface the real reason to the client instead of letting the custom
+    // api/server.mjs handler mangle the throw into an unparseable 500.
+    console.error('createContractFromReservation failed', e)
+    return { id: null, error: String(e?.message || e) }
+   }
   })
 
 export const updateContract = createServerFn({ method: 'POST' })
