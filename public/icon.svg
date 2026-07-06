@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="96" fill="#1d5b8d"/>
+  <g fill="#ffffff">
+    <!-- car body -->
+    <path d="M120 300c0-10 6-18 15-22l38-70c7-13 20-20 35-20h96c15 0 28 7 35 20l38 70c9 4 15 12 15 22v56c0 8-6 14-14 14h-16c-8 0-14-6-14-14v-14H164v14c0 8-6 14-14 14h-16c-8 0-14-6-14-14z"/>
+    <path d="M180 196l-26 48h204l-26-48c-3-6-9-9-16-9h-120c-7 0-13 3-16 9z" fill="#1d5b8d"/>
+    <circle cx="184" cy="322" r="20"/>
+    <circle cx="328" cy="322" r="20"/>
+  </g>
+</svg>

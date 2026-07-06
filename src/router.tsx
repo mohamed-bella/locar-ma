@@ -1,4 +1,5 @@
 import './sentry.browser' // Sentry browser init (window-guarded)
+import './pwa.browser' // registers the service worker (window-guarded)
 import { createRouter } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { routeTree } from './routeTree.gen'
