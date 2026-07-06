@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireAgencyContext } from './context'
 import { contractUpdateSchema } from '~/lib/schemas'
-import { publicUrl, putObject, presignDownload, docsBucket } from '~/lib/r2.server'
+import { publicUrl, putObject, presignDownload } from '~/lib/r2.server'
 import { syncVehicleStatus } from './vehicleStatus'
 import { notifyNewContract, scheduleNotify } from '~/lib/email.server'
 
@@ -337,10 +337,12 @@ export const generateContractPdf = createServerFn({ method: 'POST' })
     })
 
     const key = `agencies/${agencyId}/contracts/${c.id}.pdf`
-    await putObject(key, buffer, 'application/pdf', docsBucket())
+    // NOTE: contracts currently stored in the public R2_BUCKET (locar), not the
+    // private docs bucket. Revert to docsBucket() to move them back.
+    await putObject(key, buffer, 'application/pdf')
     await supabase.from('contracts').update({ pdf_key: key }).eq('id', c.id)
     // Short-lived signed link so the just-generated PDF opens immediately.
-    return { key, url: await presignDownload(key, 3600, docsBucket()) }
+    return { key, url: await presignDownload(key, 3600) }
   })
 
 // On-demand signed URL for an existing contract PDF. RLS scopes the lookup to
@@ -358,5 +360,5 @@ export const getContractPdfUrl = createServerFn({ method: 'POST' })
     if (error) throw new Error(error.message)
     const key = (row as any)?.pdf_key as string | null
     if (!key) throw new Error('No PDF generated yet')
-    return { url: await presignDownload(key, 60 * 60 * 24 * 7, docsBucket()) }
+    return { url: await presignDownload(key, 60 * 60 * 24 * 7) }
   })

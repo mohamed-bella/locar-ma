@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireAgencyContext } from './context'
 import { vehicleSchema, damageReportSchema, MAX_IMAGE_BYTES } from '~/lib/schemas'
-import { presignUpload, publicUrl, deleteObject, docsBucket } from '~/lib/r2.server'
+import { presignUpload, publicUrl, deleteObject } from '~/lib/r2.server'
 import { agencyToday } from '~/lib/tz'
 import { deriveVehicleStatus } from './vehicleStatus'
 import { notifyVehicle, scheduleNotify } from '~/lib/email.server'
@@ -294,7 +294,7 @@ export const deleteVehicleCascade = createServerFn({ method: 'POST' })
     // Purge storage after the DB rows are gone (best effort, never blocks).
     const damagePhotos = (dmg ?? []).flatMap((d: any) => (d.photo_keys ?? []) as string[])
     await bestEffortDelete([...((veh as any)?.image_keys ?? []), ...damagePhotos]) // public bucket
-    await bestEffortDelete(pdfKeys, docsBucket()) // private docs bucket
+    await bestEffortDelete(pdfKeys) // contracts now in the public locar bucket
 
     return { ok: true, reservations: resIds.length, contracts }
   })
