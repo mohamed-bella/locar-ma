@@ -187,6 +187,24 @@ export async function createSpreadsheet(token, title) {
   return { spreadsheetId: json.spreadsheetId, spreadsheetUrl: json.spreadsheetUrl, tabs }
 }
 
+// Reuse the existing spreadsheet only if THIS token can actually reach it.
+// With drive.file the token sees only files the app created for this user, so
+// an id left over from the old service-account flow (or another account) 404s —
+// in that case we create a fresh sheet. Self-heals a stale stored id.
+export async function ensureSpreadsheet(token, existingId, title) {
+  if (existingId) {
+    const res = await fetch(`${SHEETS}/${existingId}`, { headers: { authorization: `Bearer ${token}` } })
+    if (res.ok) {
+      const j = await res.json()
+      const tabs = {}
+      for (const s of j.sheets) tabs[s.properties.title] = s.properties.sheetId
+      return { spreadsheetId: j.spreadsheetId, spreadsheetUrl: j.spreadsheetUrl, tabs }
+    }
+    // 404 / 403 → not ours; fall through and make a new one.
+  }
+  return createSpreadsheet(token, title)
+}
+
 const cell = (v) => (v == null ? '' : v)
 
 // Read every agency row per table, mapped to sheet values (header + rows).

@@ -5,7 +5,7 @@
 // back to Settings.
 import {
   admin, verifyState, exchangeCode, emailFromIdToken, encryptToken,
-  accessFromRefresh, createSpreadsheet, syncAgency,
+  accessFromRefresh, ensureSpreadsheet, syncAgency,
 } from './_google.mjs'
 
 export const config = { maxDuration: 30 }
@@ -45,15 +45,10 @@ export default async function handler(req, res) {
 
     const accessToken = tokens.access_token || (await accessFromRefresh(tokens.refresh_token))
 
-    let spreadsheetId = existing?.spreadsheet_id
-    let spreadsheetUrl = existing?.spreadsheet_url
-    let tabs = existing?.tabs
-    if (!spreadsheetId) {
-      const created = await createSpreadsheet(accessToken, 'Locar — Sync')
-      spreadsheetId = created.spreadsheetId
-      spreadsheetUrl = created.spreadsheetUrl
-      tabs = created.tabs
-    }
+    // Verify-or-create: reuse the stored sheet only if this token can reach it,
+    // otherwise make a fresh one (heals a stale service-account-era id → 404).
+    const { spreadsheetId, spreadsheetUrl, tabs } =
+      await ensureSpreadsheet(accessToken, existing?.spreadsheet_id, 'Locar — Sync')
 
     await supa.from('agency_sheets').upsert({
       agency_id: agencyId,
