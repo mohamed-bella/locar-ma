@@ -50,11 +50,11 @@ export function ReservationTable({
                     <td className="px-5 py-3 text-[var(--color-ink)]">
                       {v ? (
                         <div className="flex items-center gap-2.5">
-                          <div className="h-8 w-11 shrink-0 overflow-hidden rounded border border-[var(--color-line)] bg-[var(--color-surface-muted)] flex items-center justify-center">
+                          <div className="h-12 w-16 shrink-0 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-surface-muted)] flex items-center justify-center">
                             {v.image_url ? (
                               <img src={v.image_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                             ) : (
-                              <Car className="h-4 w-4 text-[var(--color-faint)]" />
+                              <Car className="h-6 w-6 text-[var(--color-faint)]" />
                             )}
                           </div>
                           <div className="min-w-0 font-normal">
