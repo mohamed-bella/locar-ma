@@ -136,7 +136,7 @@ function VehicleAvailabilityCard({
       >
         <div className="flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--color-line)] bg-white">
           {vehicle.image_url ? (
-            <img src={vehicle.image_url} alt="" className="h-full w-full object-cover" />
+            <img src={vehicle.image_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
           ) : (
             <Car className="h-6 w-6 text-[var(--color-faint)]" />
           )}

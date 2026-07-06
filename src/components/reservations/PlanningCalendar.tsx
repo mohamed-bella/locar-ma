@@ -194,7 +194,7 @@ export function PlanningCalendar({
                 >
                   <div className="relative h-11 w-16 shrink-0 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-surface-muted)]">
                     {v.image_url ? (
-                      <img src={v.image_url} alt="" className="h-full w-full object-cover" />
+                      <img src={v.image_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
                         <Car className="h-4 w-4 text-[var(--color-faint)]" />

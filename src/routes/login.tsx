@@ -13,7 +13,7 @@ export const Route = createFileRoute('/login')({
 function Login() {
   const router = useRouter()
   const { t } = useI18n()
-  const [mode, setMode] = useState<'password' | 'magic'>('password')
+  const [mode, setMode] = useState<'password' | 'magic' | 'reset'>('password')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [sent, setSent] = useState(false)
@@ -31,10 +31,17 @@ function Login() {
         if (error) throw error
         toast.success(t('auth.signedIn'))
         await router.navigate({ to: '/dashboard' })
-      } else {
+      } else if (mode === 'magic') {
         const { error } = await supabase.auth.signInWithOtp({
           email,
           options: { emailRedirectTo: `${window.location.origin}/auth/confirm` },
+        })
+        if (error) throw error
+        setSent(true)
+      } else {
+        // reset: email a recovery link that lands on /reset-password.
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
         })
         if (error) throw error
         setSent(true)
@@ -81,15 +88,19 @@ function Login() {
             <ArrowLeft className="h-4 w-4" /> {t('auth.home')}
           </Link>
 
-          <h1 className="mt-6 text-2xl font-bold tracking-tight text-[var(--color-ink)]">{t('auth.signIn')}</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted)]">{t('auth.welcomeBack')}</p>
+          <h1 className="mt-6 text-2xl font-bold tracking-tight text-[var(--color-ink)]">
+            {mode === 'reset' ? t('auth.resetTitle') : t('auth.signIn')}
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-muted)]">
+            {mode === 'reset' ? t('auth.resetIntro') : t('auth.welcomeBack')}
+          </p>
 
           {sent ? (
-            <div className="mt-8 rounded-2xl border border-[var(--color-line)] bg-white p-6 text-center shadow-[var(--shadow-card)]">
+            <div className="skeu-card mt-8 rounded-2xl border p-6 text-center">
               <Mail className="mx-auto h-8 w-8 text-[var(--color-brand)]" />
               <p className="mt-3 font-semibold text-[var(--color-ink)]">{t('auth.checkEmail')}</p>
               <p className="mt-1 text-sm text-[var(--color-muted)]">
-                {t('auth.linkSentTo', { email })}
+                {t(mode === 'reset' ? 'auth.resetSentTo' : 'auth.linkSentTo', { email })}
               </p>
             </div>
           ) : (
@@ -121,25 +132,48 @@ function Login() {
                       className="pl-10"
                     />
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('reset')
+                      setError(null)
+                    }}
+                    className="mt-1.5 block text-xs font-medium text-[var(--color-muted)] hover:text-[var(--color-brand)]"
+                  >
+                    {t('auth.forgotPassword')}
+                  </button>
                 </Field>
               )}
 
               {error && <p className="text-sm font-medium text-[var(--color-danger)]">{error}</p>}
 
               <Button type="submit" size="lg" loading={busy} className="w-full">
-                {mode === 'password' ? t('auth.signIn') : t('auth.sendMagic')}
+                {mode === 'password' ? t('auth.signIn') : mode === 'magic' ? t('auth.sendMagic') : t('auth.sendReset')}
               </Button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setMode((m) => (m === 'password' ? 'magic' : 'password'))
-                  setError(null)
-                }}
-                className="w-full text-center text-sm font-medium text-[var(--color-muted)] hover:text-[var(--color-brand)]"
-              >
-                {mode === 'password' ? t('auth.useMagic') : t('auth.usePassword')}
-              </button>
+              {mode === 'reset' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('password')
+                    setError(null)
+                  }}
+                  className="w-full text-center text-sm font-medium text-[var(--color-muted)] hover:text-[var(--color-brand)]"
+                >
+                  {t('auth.backToSignIn')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode((m) => (m === 'password' ? 'magic' : 'password'))
+                    setError(null)
+                  }}
+                  className="w-full text-center text-sm font-medium text-[var(--color-muted)] hover:text-[var(--color-brand)]"
+                >
+                  {mode === 'password' ? t('auth.useMagic') : t('auth.usePassword')}
+                </button>
+              )}
             </form>
           )}
         </div>

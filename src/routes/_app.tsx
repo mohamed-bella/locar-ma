@@ -23,7 +23,7 @@ import {
   Lock,
   Building2,
 } from 'lucide-react'
-import { getAuthState, signOut } from '~/server/auth'
+import { getAuthState, signOut, setActiveAgency } from '~/server/auth'
 import { useI18n, LOCALES, LOCALE_LABELS, type Locale } from '~/lib/i18n'
 
 export const Route = createFileRoute('/_app')({
@@ -39,7 +39,11 @@ export const Route = createFileRoute('/_app')({
         throw redirect({ to: '/onboarding' })
       }
     }
-    return { auth, agency: auth.memberships[0] ?? null }
+    const agency =
+      auth.memberships.find((m) => m.agency_id === auth.activeAgencyId) ??
+      auth.memberships[0] ??
+      null
+    return { auth, agency }
   },
   component: AppLayout,
 })
@@ -233,6 +237,47 @@ function LanguageSwitcher() {
   )
 }
 
+function AgencySwitcher() {
+  const { auth, agency } = Route.useRouteContext()
+  const router = useRouter()
+  const { t } = useI18n()
+  const [busy, setBusy] = useState(false)
+
+  // Only multi-agency users need a switcher.
+  if (!auth || auth.memberships.length < 2) return null
+
+  async function switchTo(id: string) {
+    if (id === agency?.agency_id) return
+    setBusy(true)
+    try {
+      await setActiveAgency({ data: { agency_id: id } })
+      await router.invalidate()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="mb-2">
+      <div className="mb-1.5 px-1 text-[11px] font-medium uppercase tracking-wide text-[var(--color-faint)]">
+        {t('nav.yourAgency')}
+      </div>
+      <select
+        disabled={busy}
+        value={agency?.agency_id ?? ''}
+        onChange={(e) => switchTo(e.target.value)}
+        className="w-full rounded-lg border border-[var(--color-line)] bg-white px-2.5 py-2 text-sm font-semibold text-[var(--color-ink)] disabled:opacity-60"
+      >
+        {auth.memberships.map((m) => (
+          <option key={m.agency_id} value={m.agency_id}>
+            {m.agency?.name ?? m.agency_id}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
 function AppLayout() {
   const { agency } = Route.useRouteContext()
   const router = useRouter()
@@ -254,6 +299,7 @@ function AppLayout() {
 
   const agencyBlock = (
     <div>
+      <AgencySwitcher />
       <LanguageSwitcher />
       <div className="mt-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-muted)] p-3">
         <div className="truncate text-sm font-semibold text-[var(--color-ink)]">

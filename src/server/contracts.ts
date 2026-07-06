@@ -108,6 +108,7 @@ export const listContracts = createServerFn({ method: 'GET' }).handler(
         'id, pdf_key, created_at, reservations(date_start, date_end, total_amount, status, vehicles(plate), clients(full_name))',
       )
       .order('created_at', { ascending: false })
+      .limit(1000) // safety ceiling; true paging is a follow-up
     if (error) throw new Error(error.message)
     return (data ?? []).map((r: any) => ({
       id: r.id,
@@ -221,8 +222,10 @@ export const createContractFromReservation = createServerFn({ method: 'POST' })
     if (error) throw new Error(error.message)
 
     await supabase.from('reservations').update({ status: 'active' }).eq('id', data.reservation_id)
+    // Derive the car's status from its bookings (may be reserved if the rental
+    // is future-dated) rather than blindly stamping 'rented'.
     if ((res as any).vehicle_id) {
-      await supabase.from('vehicles').update({ status: 'rented' }).eq('id', (res as any).vehicle_id)
+      await syncVehicleStatus(supabase, (res as any).vehicle_id)
     }
     return { id: (row as any).id as string }
   })

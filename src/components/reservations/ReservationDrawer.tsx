@@ -251,7 +251,7 @@ export function ReservationDrawer({
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="h-7 w-10 shrink-0 overflow-hidden rounded border border-[var(--color-line)] bg-[var(--color-surface-muted)] flex items-center justify-center">
                     {selectedVehicle.image_url ? (
-                      <img src={selectedVehicle.image_url} alt="" className="h-full w-full object-cover" />
+                      <img src={selectedVehicle.image_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                     ) : (
                       <Car className="h-4 w-4 text-[var(--color-faint)]" />
                     )}
@@ -303,7 +303,7 @@ export function ReservationDrawer({
                       >
                         <div className="h-7 w-10 shrink-0 overflow-hidden rounded border border-[var(--color-line)] bg-[var(--color-surface-muted)] flex items-center justify-center">
                           {v.image_url ? (
-                            <img src={v.image_url} alt="" className="h-full w-full object-cover" />
+                            <img src={v.image_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                           ) : (
                             <Car className="h-4 w-4 text-[var(--color-faint)]" />
                           )}

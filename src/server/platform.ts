@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
-import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { getSupabaseServerClient, getSupabaseAdminClient } from '~/lib/supabase.server'
+import { agencyToday } from '~/lib/tz'
 
 // ── Access control ─────────────────────────────────────
 // The service-role client bypasses RLS, so EVERY platform fn must first prove
@@ -17,6 +17,23 @@ async function requirePlatformAdmin(): Promise<{ admin: any; userId: string }> {
   const { data } = await admin.from('platform_admins').select('user_id').eq('user_id', user.id).maybeSingle()
   if (!data) throw new Error('Not authorized')
   return { admin, userId: user.id }
+}
+
+// Resolve an existing auth user by email. listUsers() has no email filter and
+// is paginated (default 50/page) — a single-page scan silently fails to find
+// anyone past the first page. Page through until found or exhausted.
+async function findUserByEmail(admin: any, email: string): Promise<{ id: string } | null> {
+  const target = email.trim().toLowerCase()
+  const perPage = 200
+  for (let page = 1; page <= 100; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage })
+    if (error) throw new Error(error.message)
+    const users = data?.users ?? []
+    const found = users.find((u: any) => u.email?.toLowerCase() === target)
+    if (found) return found
+    if (users.length < perPage) return null // last page reached
+  }
+  return null
 }
 
 // Boolean check for gating UI (never throws).
@@ -50,35 +67,14 @@ export type AgencyOverview = {
 // ── Overview of all agencies ───────────────────────────
 export const listAgencies = createServerFn({ method: 'GET' }).handler(async (): Promise<AgencyOverview[]> => {
   const { admin } = await requirePlatformAdmin()
-  const today = format(new Date(), 'yyyy-MM-dd')
-  const moS = format(startOfMonth(new Date()), 'yyyy-MM-dd')
-  const moE = format(endOfMonth(new Date()), 'yyyy-MM-dd')
+  const today = agencyToday()
 
-  const [{ data: agencies }, { data: members }, { data: vehicles }, { data: res }] = await Promise.all([
-    admin
-      .from('agencies')
-      .select('id, name, city, created_at, is_active, plan, subscription_status, next_payment_date, monthly_fee')
-      .order('created_at', { ascending: false }),
-    admin.from('agency_members').select('agency_id'),
-    admin.from('vehicles').select('agency_id'),
-    admin.from('reservations').select('agency_id, total_amount, status, date_start'),
-  ])
+  // Counting is done in Postgres (see migration 0011) — no more pulling every
+  // member/vehicle/reservation row across all agencies into the server.
+  const { data, error } = await admin.rpc('platform_agency_overview')
+  if (error) throw new Error(error.message)
 
-  const tally = (rows: any[], key = 'agency_id') => {
-    const m = new Map<string, number>()
-    for (const r of rows ?? []) m.set(r[key], (m.get(r[key]) ?? 0) + 1)
-    return m
-  }
-  const mCount = tally(members ?? [])
-  const vCount = tally(vehicles ?? [])
-  const rCount = tally(res ?? [])
-  const rev = new Map<string, number>()
-  for (const r of res ?? []) {
-    if (r.status === 'pending' || r.status === 'cancelled' || r.status === 'blocked') continue
-    if (r.date_start >= moS && r.date_start <= moE) rev.set(r.agency_id, (rev.get(r.agency_id) ?? 0) + (r.total_amount ?? 0))
-  }
-
-  return (agencies ?? []).map((a: any) => ({
+  return (data ?? []).map((a: any) => ({
     id: a.id,
     name: a.name,
     city: a.city ?? null,
@@ -88,10 +84,10 @@ export const listAgencies = createServerFn({ method: 'GET' }).handler(async (): 
     subscription_status: a.subscription_status ?? 'trial',
     next_payment_date: a.next_payment_date ?? null,
     monthly_fee: Number(a.monthly_fee ?? 0),
-    members: mCount.get(a.id) ?? 0,
-    vehicles: vCount.get(a.id) ?? 0,
-    reservations: rCount.get(a.id) ?? 0,
-    revMonth: rev.get(a.id) ?? 0,
+    members: Number(a.members ?? 0),
+    vehicles: Number(a.vehicles ?? 0),
+    reservations: Number(a.reservations ?? 0),
+    revMonth: Number(a.rev_month ?? 0),
     overdue: !!a.next_payment_date && a.next_payment_date < today && a.subscription_status !== 'active',
   }))
 })
@@ -210,7 +206,7 @@ export const recordPayment = createServerFn({ method: 'POST' })
       period: data.period ?? null,
       method: data.method ?? null,
       notes: data.notes ?? null,
-      paid_at: data.paid_at || format(new Date(), 'yyyy-MM-dd'),
+      paid_at: data.paid_at || agencyToday(),
     })
     if (error) throw new Error(error.message)
     // Recording a payment marks the sub active and can advance the next due date.
@@ -242,9 +238,8 @@ export const inviteAgencyUser = createServerFn({ method: 'POST' })
     const { data: invited, error: invErr } = await admin.auth.admin.inviteUserByEmail(data.email)
     if (invited?.user) userId = invited.user.id
     else if (invErr) {
-      // Likely already exists — find them.
-      const { data: list } = await admin.auth.admin.listUsers()
-      const found = list?.users?.find((u: any) => u.email?.toLowerCase() === data.email.toLowerCase())
+      // Likely already exists — page through all users to find them.
+      const found = await findUserByEmail(admin, data.email)
       if (!found) throw new Error(invErr.message)
       userId = found.id
     }

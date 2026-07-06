@@ -150,7 +150,7 @@ function Row({ row: r, isKm, onOpen }: { row: TrackRow; isKm: boolean; onOpen: (
       >
         <div className="flex h-11 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-surface-muted)]">
           {v.image_urls[0] ? (
-            <img src={v.image_urls[0]} alt="" className="h-full w-full object-cover" />
+            <img src={v.image_urls[0]} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
           ) : (
             <Car className="h-4 w-4 text-[var(--color-faint)]" />
           )}

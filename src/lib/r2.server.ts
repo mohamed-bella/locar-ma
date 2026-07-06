@@ -25,11 +25,24 @@ function r2() {
 }
 
 // Presigned PUT — browser uploads directly to R2, no bytes through our server.
-export function presignUpload(key: string, contentType: string, expiresIn = 300) {
+// When contentLength is supplied it becomes part of the signature, so the
+// upload must send exactly that many bytes — this caps abuse via a leaked or
+// tampered presigned URL (browsers set Content-Length from the Blob body).
+export function presignUpload(
+  key: string,
+  contentType: string,
+  expiresIn = 300,
+  contentLength?: number,
+) {
   const env = serverEnv()
   return getSignedUrl(
     r2(),
-    new PutObjectCommand({ Bucket: env.R2_BUCKET, Key: key, ContentType: contentType }),
+    new PutObjectCommand({
+      Bucket: env.R2_BUCKET,
+      Key: key,
+      ContentType: contentType,
+      ...(contentLength != null ? { ContentLength: contentLength } : {}),
+    }),
     { expiresIn },
   )
 }

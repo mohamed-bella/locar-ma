@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireAgencyContext } from './context'
 import { clientQuickSchema, clientSchema, clientStatusSchema } from '~/lib/schemas'
+import { agencyToday } from '~/lib/tz'
 
 export type Client = {
   id: string
@@ -22,7 +23,14 @@ const CLIENT_COLS =
 export const listClients = createServerFn({ method: 'GET' }).handler(
   async (): Promise<Client[]> => {
     const { supabase } = await requireAgencyContext()
-    const { data, error } = await supabase.from('clients').select(CLIENT_COLS).order('full_name')
+    // Safety ceiling so a very large book can't balloon the payload. Small
+    // agencies never approach it; true paging + server-side search is a
+    // follow-up once an agency actually needs it.
+    const { data, error } = await supabase
+      .from('clients')
+      .select(CLIENT_COLS)
+      .order('full_name')
+      .limit(1000)
     if (error) throw new Error(error.message)
     return (data ?? []) as Client[]
   },
@@ -129,7 +137,7 @@ export const setClientStatus = createServerFn({ method: 'POST' })
       .update({
         status: data.status,
         blacklist_reason: flagged ? data.reason ?? null : null,
-        blacklist_date: flagged ? new Date().toISOString().slice(0, 10) : null,
+        blacklist_date: flagged ? agencyToday() : null,
         blacklisted_by: flagged ? memberId : null,
       })
       .eq('id', data.id)

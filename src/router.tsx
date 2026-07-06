@@ -15,7 +15,10 @@ export function getRouter() {
     routeTree,
     scrollRestoration: true,
     defaultPreload: 'intent',
-    defaultPreloadStaleTime: 0,
+    // Cache intent-preloaded loader data briefly so hovering a link twice (or
+    // navigating back within a few seconds) reuses it instead of refetching.
+    // Realtime + explicit router.invalidate() still refresh on real changes.
+    defaultPreloadStaleTime: 10_000,
     defaultPendingComponent: DefaultPending,
     defaultPendingMs: 150,
     defaultPendingMinMs: 300,

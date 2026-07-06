@@ -351,7 +351,7 @@ function VehicleCard({
       >
         <div className="relative aspect-[16/10] w-full select-none overflow-hidden bg-[var(--color-surface-muted)]">
           {v.image_urls[0] ? (
-            <img src={v.image_urls[0]} alt={title} className="h-full w-full object-cover" />
+            <img src={v.image_urls[0]} alt={title} loading="lazy" decoding="async" className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
               <Car className="h-8 w-8 text-[var(--color-faint)]" />

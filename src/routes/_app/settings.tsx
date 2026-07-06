@@ -437,7 +437,7 @@ function AgencyLogoCard({ agency, onDone }: { agency: AgencyProfile; onDone: () 
     }
     setBusy(true)
     try {
-      const signed = await presignAgencyLogo({ data: { name: file.name, type: file.type } })
+      const signed = await presignAgencyLogo({ data: { name: file.name, type: file.type, size: file.size } })
       const put = await fetch(signed.url, {
         method: 'PUT',
         body: file,

@@ -381,7 +381,7 @@ function DamageLog({
       let keys: string[] = []
       if (files.length > 0) {
         const signed = await presignDamageUploads({
-          data: { vehicle_id: vehicleId, files: files.map((f) => ({ name: f.name, type: f.type })) },
+          data: { vehicle_id: vehicleId, files: files.map((f) => ({ name: f.name, type: f.type, size: f.size })) },
         })
         await Promise.all(
           signed.map((s, i) =>

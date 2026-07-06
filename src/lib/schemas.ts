@@ -1,5 +1,10 @@
 import { z } from 'zod'
 
+// Upload size caps (enforced server-side at presign time via a signed
+// Content-Length so an oversized or leaked presigned PUT is rejected by R2).
+export const MAX_IMAGE_BYTES = 8 * 1024 * 1024 // 8 MB — vehicle/damage photos
+export const MAX_LOGO_BYTES = 2 * 1024 * 1024 // 2 MB — agency / brand logos
+
 export const onboardingSchema = z.object({
   agencyName: z.string().min(2, 'Agency name required'),
   city: z.string().optional(),
