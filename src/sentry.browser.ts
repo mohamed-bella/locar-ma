@@ -1,6 +1,8 @@
 // Sentry browser init. Imported at the top of src/router.tsx (which loads on
-// both server and client) — the window guard ensures init runs only in the
-// browser, never on the server, and never twice.
+// both server and client). The window guard ensures init runs only in the
+// browser — never on the server, never twice. NB: the filename deliberately
+// avoids the `.client.` pattern so TanStack Start's import-protection allows it
+// to be reached from router.tsx (which is server-reachable).
 import * as Sentry from '@sentry/tanstackstart-react'
 
 if (typeof window !== 'undefined') {
