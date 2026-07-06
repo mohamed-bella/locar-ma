@@ -3,6 +3,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist/client",
   "framework": null,
+  "regions": ["dub1"],
   "functions": {
     "api/server.mjs": {
       "includeFiles": "dist/server/**"
