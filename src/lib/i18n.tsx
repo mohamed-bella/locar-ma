@@ -510,6 +510,16 @@ const M: Record<string, { en: string; fr: string }> = {
 
   // ── Settings ─────────────────────────────────────────
   'set.title': { en: 'Settings', fr: 'Paramètres' },
+  'set.sheetTitle': { en: 'Google Sheets sync', fr: 'Synchronisation Google Sheets' },
+  'set.sheetDesc': { en: 'Live one-way mirror of your data (cars, reservations, contracts, clients, payments, service) into a private Google Sheet. Sensitive ID numbers are excluded.', fr: 'Miroir en direct (sens unique) de vos données (voitures, réservations, contrats, clients, paiements, entretien) vers une feuille Google privée. Les numéros de pièce d’identité sont exclus.' },
+  'set.sheetNotConfigured': { en: 'Spreadsheet sync is not enabled on this server yet. Contact support to turn it on.', fr: 'La synchronisation n’est pas encore activée sur ce serveur. Contactez le support pour l’activer.' },
+  'set.sheetOn': { en: 'Sync is on', fr: 'Synchronisation active' },
+  'set.sheetOff': { en: 'Sync is off', fr: 'Synchronisation inactive' },
+  'set.sheetOpen': { en: 'Open the spreadsheet', fr: 'Ouvrir la feuille' },
+  'set.sheetEnable': { en: 'Enable sync', fr: 'Activer' },
+  'set.sheetDisable': { en: 'Disable', fr: 'Désactiver' },
+  'set.sheetEnabled': { en: 'Spreadsheet created — syncing', fr: 'Feuille créée — synchronisation' },
+  'set.sheetDisabled': { en: 'Sync disabled', fr: 'Synchronisation désactivée' },
   'set.subtitle': { en: 'Manage your agency preferences.', fr: 'Gérez les préférences de votre agence.' },
   'set.logo': { en: 'Agency logo', fr: 'Logo de l’agence' },
   'set.logoDesc': { en: 'Shown on contracts, invoices and across your workspace.', fr: 'Affiché sur les contrats, factures et dans votre espace.' },

@@ -20,6 +20,12 @@ const schema = z.object({
 
   WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
   WHATSAPP_TOKEN: z.string().optional(),
+
+  // Google Sheets mirror (optional). Service-account credentials + the shared
+  // secret that authenticates the Supabase Database Webhook → /api/sheet-sync.
+  GOOGLE_SERVICE_ACCOUNT_EMAIL: z.string().optional(),
+  GOOGLE_PRIVATE_KEY: z.string().optional(), // PEM; literal \n are unescaped at use
+  SHEET_SYNC_SECRET: z.string().optional(),
 })
   // In production, the private docs bucket MUST be configured and MUST differ
   // from the public bucket — otherwise contract PDFs (client CIN/passport/

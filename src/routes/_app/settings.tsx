@@ -4,6 +4,8 @@ import { Plus, Tag, Eye, EyeOff, Sparkles, Trash2, ImagePlus, Loader2, Building2
 import { toast } from 'sonner'
 import { listAllBrands, hideBrand, unhideBrand } from '~/server/brands'
 import { getAgencyProfile, presignAgencyLogo, updateAgencyLogo, type AgencyProfile } from '~/server/agency'
+import { getSheetStatus, enableSheetSync, disableSheetSync, type SheetStatus } from '~/server/sheets'
+import { Table } from 'lucide-react'
 import { AddBrandDialog } from '~/components/AddBrandDialog'
 import { Button, Card, CardHeader, CardBody, Badge, PageHeader, EmptyState, Modal, Field, Input, Select } from '~/components/ui'
 import { listAlertRules, createAlertRule, updateAlertRule, deleteAlertRule, type AlertRule } from '~/server/alertRules'
@@ -15,19 +17,20 @@ import { Languages } from 'lucide-react'
 
 export const Route = createFileRoute('/_app/settings')({
   loader: async () => {
-    const [brands, alertRules, documentTypes, agency] = await Promise.all([
+    const [brands, alertRules, documentTypes, agency, sheet] = await Promise.all([
       listAllBrands(),
       listAlertRules(),
       listDocumentTypes(),
       getAgencyProfile(),
+      getSheetStatus(),
     ])
-    return { brands, alertRules, documentTypes, agency }
+    return { brands, alertRules, documentTypes, agency, sheet }
   },
   component: Settings,
 })
 
 function Settings() {
-  const { brands, alertRules: rules, documentTypes, agency } = Route.useLoaderData()
+  const { brands, alertRules: rules, documentTypes, agency, sheet } = Route.useLoaderData()
   const router = useRouter()
   const { t, locale, setLocale } = useI18n()
   const [addOpen, setAddOpen] = useState(false)
@@ -165,6 +168,9 @@ function Settings() {
 
       {/* Agency logo */}
       <AgencyLogoCard agency={agency} onDone={() => router.invalidate()} />
+
+      {/* Google Sheets sync */}
+      <SheetSyncCard status={sheet} canEdit={agency.canEdit} onDone={() => router.invalidate()} />
 
       {/* Language */}
       <Card className="mt-6">
@@ -417,6 +423,84 @@ function Settings() {
 }
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024
+
+function SheetSyncCard({ status, canEdit, onDone }: { status: SheetStatus; canEdit: boolean; onDone: () => void }) {
+  const { t } = useI18n()
+  const [busy, setBusy] = useState(false)
+
+  async function enable() {
+    setBusy(true)
+    try {
+      const { url } = await enableSheetSync()
+      toast.success(t('set.sheetEnabled'))
+      if (url) window.open(url, '_blank')
+      onDone()
+    } catch (e: any) {
+      toast.error(e?.message ?? t('common.actionFailed'))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function disable() {
+    setBusy(true)
+    try {
+      await disableSheetSync()
+      toast.success(t('set.sheetDisabled'))
+      onDone()
+    } catch (e: any) {
+      toast.error(e?.message ?? t('common.actionFailed'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card className="mt-6">
+      <CardHeader
+        title={
+          <span className="flex items-center gap-2">
+            <Table className="h-[18px] w-[18px]" /> {t('set.sheetTitle')}
+          </span>
+        }
+      />
+      <CardBody>
+        {!status.configured ? (
+          <p className="text-sm text-[var(--color-muted)]">{t('set.sheetNotConfigured')}</p>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink)]">
+                <span className={`h-2 w-2 rounded-full ${status.enabled ? 'bg-[var(--color-ok)]' : 'bg-[var(--color-faint)]'}`} />
+                {status.enabled ? t('set.sheetOn') : t('set.sheetOff')}
+              </div>
+              <p className="mt-1 max-w-md text-sm text-[var(--color-muted)]">{t('set.sheetDesc')}</p>
+              {status.url && (
+                <a
+                  href={status.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-1 inline-block text-sm font-semibold text-[var(--color-brand)] hover:underline"
+                >
+                  {t('set.sheetOpen')}
+                </a>
+              )}
+            </div>
+            {canEdit &&
+              (status.enabled ? (
+                <Button variant="secondary" loading={busy} onClick={disable}>
+                  {t('set.sheetDisable')}
+                </Button>
+              ) : (
+                <Button loading={busy} onClick={enable}>
+                  {t('set.sheetEnable')}
+                </Button>
+              ))}
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  )
+}
 
 function AgencyLogoCard({ agency, onDone }: { agency: AgencyProfile; onDone: () => void }) {
   const { t } = useI18n()
