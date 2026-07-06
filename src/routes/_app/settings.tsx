@@ -1,10 +1,10 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { Plus, Tag, Eye, EyeOff, Sparkles, Trash2, ImagePlus, Loader2, Building2, Table } from 'lucide-react'
 import { toast } from 'sonner'
 import { listAllBrands, hideBrand, unhideBrand } from '~/server/brands'
 import { getAgencyProfile, presignAgencyLogo, updateAgencyLogo, type AgencyProfile } from '~/server/agency'
-import { getSheetStatus, enableSheetSync, disableSheetSync, type SheetStatus } from '~/server/sheets'
+import { getSheetStatus, getGoogleAuthUrl, syncNow, disconnectSheet, type SheetStatus } from '~/server/sheets'
 import { AddBrandDialog } from '~/components/AddBrandDialog'
 import { Button, Card, CardHeader, CardBody, Badge, PageHeader, EmptyState, Modal, Field, Input, Select } from '~/components/ui'
 import { listAlertRules, createAlertRule, updateAlertRule, deleteAlertRule, type AlertRule } from '~/server/alertRules'
@@ -425,49 +425,54 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024
 
 function SheetSyncCard({ status, canEdit, onDone }: { status: SheetStatus; canEdit: boolean; onDone: () => void }) {
   const { t } = useI18n()
-  const [busy, setBusy] = useState(false)
-  const [spreadsheetUrl, setSpreadsheetUrl] = useState('')
-  const [copied, setCopied] = useState(false)
+  const [busy, setBusy] = useState<null | 'connect' | 'sync' | 'disconnect'>(null)
 
-  async function enableSync(useExistingUrl = false) {
-    setBusy(true)
+  // Surface the OAuth callback result (Google redirects back with ?sheet=...).
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search)
+    const s = p.get('sheet')
+    if (!s) return
+    if (s === 'connected') toast.success(t('set.sheetEnabled'))
+    else if (s === 'error') toast.error(`Google connection failed: ${p.get('reason') ?? 'unknown'}`)
+    window.history.replaceState({}, '', window.location.pathname)
+    onDone()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function connect() {
+    setBusy('connect')
     try {
-      const { url } = await enableSheetSync({ 
-        data: { spreadsheetUrl: useExistingUrl ? spreadsheetUrl : undefined }
-      })
-      toast.success(t('set.sheetEnabled'))
-      if (url) window.open(url, '_blank')
-      setSpreadsheetUrl('')
+      const { url } = await getGoogleAuthUrl()
+      window.location.href = url // leaves the app; no need to clear busy
+    } catch (e: any) {
+      toast.error(e?.message ?? t('common.actionFailed'))
+      setBusy(null)
+    }
+  }
+
+  async function sync() {
+    setBusy('sync')
+    try {
+      const { rows } = await syncNow()
+      toast.success(`Synced ${rows} rows to Google Sheets`)
       onDone()
     } catch (e: any) {
       toast.error(e?.message ?? t('common.actionFailed'))
     } finally {
-      setBusy(false)
+      setBusy(null)
     }
   }
 
-  async function disable() {
-    setBusy(true)
+  async function disconnect() {
+    setBusy('disconnect')
     try {
-      await disableSheetSync()
+      await disconnectSheet()
       toast.success(t('set.sheetDisabled'))
       onDone()
     } catch (e: any) {
       toast.error(e?.message ?? t('common.actionFailed'))
     } finally {
-      setBusy(false)
-    }
-  }
-
-  async function copyEmail() {
-    if (!status.serviceAccountEmail) return
-    try {
-      await navigator.clipboard.writeText(status.serviceAccountEmail)
-      setCopied(true)
-      toast.success('Service account email copied to clipboard!')
-      setTimeout(() => setCopied(false), 2000)
-    } catch (e) {
-      toast.error('Failed to copy email')
+      setBusy(null)
     }
   }
 
@@ -485,152 +490,72 @@ function SheetSyncCard({ status, canEdit, onDone }: { status: SheetStatus; canEd
           <p className="text-sm text-[var(--color-muted)]">{t('set.sheetNotConfigured')}</p>
         ) : (
           <div>
-            {status.enabled ? (
-              <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--color-line)] p-4 bg-emerald-50/10">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-emerald-800">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 -ml-4" />
-                    {t('set.sheetOn')}
+            {status.connected ? (
+              <div className="rounded-xl border border-[var(--color-line)] p-4 bg-emerald-50/10">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-emerald-800">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 -ml-4" />
+                      {t('set.sheetOn')}
+                    </div>
+                    {status.googleEmail && (
+                      <p className="mt-1 text-xs text-[var(--color-muted)]">
+                        Connected as <strong className="text-[var(--color-ink)]">{status.googleEmail}</strong>
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-[var(--color-muted)]">
+                      {status.lastSyncedAt
+                        ? `Last synced ${new Date(status.lastSyncedAt).toLocaleString()}`
+                        : 'Not synced yet'}
+                    </p>
+                    {status.url && (
+                      <a
+                        href={status.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-brand)] hover:underline"
+                      >
+                        {t('set.sheetOpen')}
+                        <svg className="h-3.5 w-3.5 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6m4-3h6v6m-11 5L21 3" />
+                        </svg>
+                      </a>
+                    )}
                   </div>
-                  <p className="mt-1 text-xs text-[var(--color-muted)]">
-                    {t('set.sheetDesc')}
-                  </p>
-                  {status.url && (
-                    <a
-                      href={status.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-brand)] hover:underline"
-                    >
-                      {t('set.sheetOpen')}
-                      <svg className="h-3.5 w-3.5 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6m4-3h6v6m-11 5L21 3" />
-                      </svg>
-                    </a>
+                  {canEdit && (
+                    <div className="flex flex-wrap gap-2">
+                      <Button loading={busy === 'sync'} disabled={!!busy} onClick={sync}>
+                        Sync now
+                      </Button>
+                      <Button variant="secondary" loading={busy === 'disconnect'} disabled={!!busy} onClick={disconnect}>
+                        {t('set.sheetDisable')}
+                      </Button>
+                    </div>
                   )}
                 </div>
-                {canEdit && (
-                  <Button variant="secondary" loading={busy} onClick={disable}>
-                    {t('set.sheetDisable')}
-                  </Button>
+                {status.lastSyncError && (
+                  <p className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700 break-words">
+                    Last sync error: {status.lastSyncError}
+                  </p>
                 )}
               </div>
             ) : (
-              <div className="space-y-6">
-                {/* Service Account Email Info */}
-                {status.serviceAccountEmail && (
-                  <div className="rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-muted)] p-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-muted)] mb-2">
-                      1. Authorize Service Account
-                    </h4>
-                    <p className="text-sm text-[var(--color-muted)] mb-3">
-                      To synchronize data, the system needs access rights. Share your Google Sheet with this email as an <strong>Editor</strong>:
-                    </p>
-                    
-                    <div className="flex flex-wrap items-center gap-2 max-w-2xl">
-                      <div className="flex-1 font-mono text-xs select-all bg-white border border-[var(--color-line)] px-3 py-2.5 rounded-lg text-[var(--color-ink)] truncate min-w-[250px]">
-                        {status.serviceAccountEmail}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={copyEmail}
-                        className={`flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-xs font-semibold border transition ${
-                          copied
-                            ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                            : 'bg-white border-[var(--color-line)] text-[var(--color-ink-soft)] hover:bg-neutral-50'
-                        }`}
-                      >
-                        {copied ? (
-                          <>
-                            <svg className="h-3.5 w-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Copied
-                          </>
-                        ) : (
-                          <>
-                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <rect x={14} y={14} width={8} height={8} rx={2} ry={2} />
-                              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-                            </svg>
-                            Copy Email
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
+              <div className="rounded-xl border border-[var(--color-line)] p-5 bg-white">
+                <p className="text-sm text-[var(--color-muted)] leading-relaxed max-w-xl">
+                  Connect your Google account and the app creates a private spreadsheet in
+                  your Drive, then mirrors your cars, reservations, contracts, clients,
+                  payments and services into it — refreshed hourly and on demand. Client ID
+                  numbers, emails and addresses are never exported.
+                </p>
+                {canEdit && (
+                  <Button className="mt-4 font-semibold" loading={busy === 'connect'} disabled={!!busy} onClick={connect}>
+                    <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 11v2h5.5c-.2 1.3-1.6 3.8-5.5 3.8-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.1.8 3.9 1.5l2.6-2.5C17.4 2.8 15 1.8 12 1.8 6.9 1.8 2.8 6 2.8 11S6.9 20.2 12 20.2c5.9 0 9.8-4.1 9.8-9.9 0-.7-.1-1.2-.2-1.7H12z" />
+                    </svg>
+                    Connect Google account
+                  </Button>
                 )}
-
-                {/* Provision Configuration Options */}
-                <div className="grid gap-6 md:grid-cols-2">
-                  {/* Option A: Auto Provision */}
-                  <div className="flex flex-col justify-between rounded-xl border border-[var(--color-line)] p-4 bg-white hover:border-[var(--color-line-strong)] transition-all">
-                    <div>
-                      <h4 className="text-sm font-bold text-[var(--color-ink)] flex items-center gap-1.5">
-                        Option A: Auto-Create
-                      </h4>
-                      <p className="mt-2 text-xs text-[var(--color-muted)] leading-relaxed">
-                        Let the service account automatically create a brand new Google Spreadsheet. It will attempt to share the created sheet with your email address.
-                      </p>
-                      <div className="mt-3 inline-flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md font-medium border border-amber-200">
-                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <circle cx={12} cy={12} r={10} />
-                          <line x1={12} y1={8} x2={12} y2={12} />
-                          <line x1={12} y1={16} x2={12.01} y2={16} />
-                        </svg>
-                        Note: May fail if the GCP project account has no Drive storage.
-                      </div>
-                    </div>
-                    
-                    {canEdit && (
-                      <div className="mt-6 border-t border-[var(--color-line)] pt-3">
-                        <Button 
-                          className="w-full font-semibold" 
-                          loading={busy} 
-                          onClick={() => enableSync(false)}
-                        >
-                          Auto-Create Spreadsheet
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Option B: Link Existing */}
-                  <div className="flex flex-col justify-between rounded-xl border border-[var(--color-line)] p-4 bg-white hover:border-[var(--color-line-strong)] transition-all">
-                    <div>
-                      <h4 className="text-sm font-bold text-[var(--color-ink)]">
-                        Option B: Link Existing (Recommended)
-                      </h4>
-                      <p className="mt-2 text-xs text-[var(--color-muted)] leading-relaxed">
-                        Create a blank spreadsheet in your Google Drive, share it with the service account email above, and paste its link or ID below. Required tabs will be created.
-                      </p>
-                      
-                      <div className="mt-4">
-                        <Input
-                          placeholder="https://docs.google.com/spreadsheets/d/..."
-                          value={spreadsheetUrl}
-                          onChange={(e) => setSpreadsheetUrl(e.target.value)}
-                          className="text-xs py-2 bg-neutral-50 focus:bg-white"
-                        />
-                      </div>
-                    </div>
-
-                    {canEdit && (
-                      <div className="mt-6 border-t border-[var(--color-line)] pt-3">
-                        <Button 
-                          variant="secondary"
-                          className="w-full font-semibold"
-                          loading={busy} 
-                          disabled={!spreadsheetUrl.trim()}
-                          onClick={() => enableSync(true)}
-                        >
-                          Link & Setup Spreadsheet
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
             )}
           </div>
