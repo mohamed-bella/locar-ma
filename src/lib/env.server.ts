@@ -33,6 +33,11 @@ const schema = z.object({
   GOOGLE_OAUTH_REDIRECT_URI: z.string().optional(), // https://<domain>/api/google-callback
   SHEETS_TOKEN_KEY: z.string().optional(),           // any string; key = sha256(this)
   CRON_SECRET: z.string().optional(),                // guards /api/sheets-sync + signs OAuth state
+
+  // Resend transactional email (owner notifications). Optional — if unset, the
+  // notify* helpers no-op.
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM: z.string().optional(), // e.g. "Locar <notifications@yourdomain.ma>"
 })
   // In production, the private docs bucket MUST be configured and MUST differ
   // from the public bucket — otherwise contract PDFs (client CIN/passport/

@@ -5,6 +5,7 @@ import { reservationSchema, blockSchema, RESERVATION_STATUSES } from '~/lib/sche
 import { publicUrl } from '~/lib/r2.server'
 import { agencyToday } from '~/lib/tz'
 import { syncVehicleStatus } from './vehicleStatus'
+import { notifyNewReservation, scheduleNotify } from '~/lib/email.server'
 
 export type Reservation = {
   id: string
@@ -327,6 +328,7 @@ export const createReservation = createServerFn({ method: 'POST' })
     if (error) rethrow(error as any)
     // Booking created → reflect it on the car (reserved / rented).
     await syncVehicleStatus(supabase, data.vehicle_id)
+    scheduleNotify(notifyNewReservation(agencyId, (row as any).id)) // fire-and-forget email
     return { id: (row as any).id as string }
   })
 

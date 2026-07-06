@@ -4,6 +4,7 @@ import { requireAgencyContext } from './context'
 import { contractUpdateSchema } from '~/lib/schemas'
 import { publicUrl, putObject, presignDownload, docsBucket } from '~/lib/r2.server'
 import { syncVehicleStatus } from './vehicleStatus'
+import { notifyNewContract, scheduleNotify } from '~/lib/email.server'
 
 export type Extra = { name: string; price: number }
 
@@ -227,6 +228,7 @@ export const createContractFromReservation = createServerFn({ method: 'POST' })
     if ((res as any).vehicle_id) {
       await syncVehicleStatus(supabase, (res as any).vehicle_id)
     }
+    scheduleNotify(notifyNewContract(agencyId, (row as any).id)) // fire-and-forget email
     return { id: (row as any).id as string }
   })
 

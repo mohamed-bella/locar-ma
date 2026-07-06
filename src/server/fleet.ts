@@ -5,6 +5,7 @@ import { vehicleSchema, damageReportSchema, MAX_IMAGE_BYTES } from '~/lib/schema
 import { presignUpload, publicUrl, deleteObject, docsBucket } from '~/lib/r2.server'
 import { agencyToday } from '~/lib/tz'
 import { deriveVehicleStatus } from './vehicleStatus'
+import { notifyVehicle, scheduleNotify } from '~/lib/email.server'
 
 // Best-effort R2 cleanup — an orphaned object is harmless, a thrown error that
 // blocks a delete is not. Never let storage cleanup fail the DB operation.
@@ -170,6 +171,7 @@ export const createVehicle = createServerFn({ method: 'POST' })
       .select('id')
       .single()
     if (error) throw new Error(error.message)
+    scheduleNotify(notifyVehicle(agencyId, (row as any).id, true)) // fire-and-forget email
     return { id: (row as any).id as string }
   })
 
@@ -178,13 +180,14 @@ export const updateVehicle = createServerFn({ method: 'POST' })
     vehicleSchema.extend({ id: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data }) => {
-    const { supabase } = await requireAgencyContext()
+    const { supabase, agencyId } = await requireAgencyContext()
     // `status` is derived from bookings / managed via setVehicleStatus — never
     // let the edit form overwrite it (that would re-fake availability).
     const { id, status: _ignoredStatus, ...rest } = data
     const payload = { ...nulls(rest), document_expiries: rest.document_expiries ?? {} }
     const { error } = await supabase.from('vehicles').update(payload).eq('id', id)
     if (error) throw new Error(error.message)
+    scheduleNotify(notifyVehicle(agencyId, id, false)) // fire-and-forget email
     return { ok: true }
   })
 
