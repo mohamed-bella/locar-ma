@@ -247,5 +247,123 @@ export async function syncAgency(supa, token, spreadsheetId, agencyId) {
     }),
   })
 
+  // Make it look designed (best-effort — never fail the sync over styling).
+  try {
+    await applyFormatting(token, spreadsheetId, tabsData)
+  } catch (e) {
+    console.error('sheet formatting', e?.message || e)
+  }
+
   return tabsData.reduce((n, t) => n + t.values.length - 1, 0) // total data rows written
+}
+
+// ── clean visual styling: brand headers, frozen row, alternating bands,
+// auto-sized columns, and taller image rows on the Cars tab. Idempotent
+// (deletes existing bands before re-adding), so it's safe every sync.
+const RGB_BRAND = { red: 0.114, green: 0.357, blue: 0.553 } // #1d5b8d
+const RGB_WHITE = { red: 1, green: 1, blue: 1 }
+const RGB_BAND = { red: 0.957, green: 0.965, blue: 0.973 } // #f4f6f8
+
+async function applyFormatting(token, spreadsheetId, tabsData) {
+  const meta = await gfetch(
+    token,
+    `${SHEETS}/${spreadsheetId}?fields=sheets(properties(sheetId,title),bandedRanges(bandedRangeId))`,
+  )
+  const byTitle = {}
+  for (const s of meta.sheets || []) {
+    byTitle[s.properties.title] = {
+      sheetId: s.properties.sheetId,
+      bandings: (s.bandedRanges || []).map((b) => b.bandedRangeId),
+    }
+  }
+
+  const reqs = []
+  for (const t of tabsData) {
+    const info = byTitle[t.tab]
+    if (!info) continue
+    const sheetId = info.sheetId
+    const cols = t.values[0]?.length || 1
+    const rows = t.values.length
+
+    // freeze the header row
+    reqs.push({
+      updateSheetProperties: {
+        properties: { sheetId, gridProperties: { frozenRowCount: 1 } },
+        fields: 'gridProperties.frozenRowCount',
+      },
+    })
+    // header: brand background, white bold text, roomy
+    reqs.push({
+      repeatCell: {
+        range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: cols },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: RGB_BRAND,
+            horizontalAlignment: 'LEFT',
+            verticalAlignment: 'MIDDLE',
+            padding: { top: 4, bottom: 4, left: 10, right: 10 },
+            textFormat: { bold: true, fontSize: 10, foregroundColor: RGB_WHITE },
+          },
+        },
+        fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,verticalAlignment,padding,textFormat)',
+      },
+    })
+    // data rows: vertically centered, comfortable font
+    if (rows > 1) {
+      reqs.push({
+        repeatCell: {
+          range: { sheetId, startRowIndex: 1, endRowIndex: rows, startColumnIndex: 0, endColumnIndex: cols },
+          cell: { userEnteredFormat: { verticalAlignment: 'MIDDLE', textFormat: { fontSize: 10 } } },
+          fields: 'userEnteredFormat(verticalAlignment,textFormat)',
+        },
+      })
+    }
+    // header row height
+    reqs.push({
+      updateDimensionProperties: {
+        range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 },
+        properties: { pixelSize: 38 },
+        fields: 'pixelSize',
+      },
+    })
+    // alternating row bands (delete old first → idempotent)
+    for (const bid of info.bandings) reqs.push({ deleteBanding: { bandedRangeId: bid } })
+    if (rows > 1) {
+      reqs.push({
+        addBanding: {
+          bandedRange: {
+            range: { sheetId, startRowIndex: 0, endRowIndex: rows, startColumnIndex: 0, endColumnIndex: cols },
+            rowProperties: { headerColor: RGB_BRAND, firstBandColor: RGB_WHITE, secondBandColor: RGB_BAND },
+          },
+        },
+      })
+    }
+    // size columns to content
+    reqs.push({ autoResizeDimensions: { dimensions: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: cols } } })
+
+    // Cars tab: wide photo column + tall rows so the =IMAGE() thumbnails show.
+    if (t.tab === 'Cars' && rows > 1) {
+      reqs.push({
+        updateDimensionProperties: {
+          range: { sheetId, dimension: 'COLUMNS', startIndex: cols - 1, endIndex: cols },
+          properties: { pixelSize: 130 },
+          fields: 'pixelSize',
+        },
+      })
+      reqs.push({
+        updateDimensionProperties: {
+          range: { sheetId, dimension: 'ROWS', startIndex: 1, endIndex: rows },
+          properties: { pixelSize: 84 },
+          fields: 'pixelSize',
+        },
+      })
+    }
+  }
+
+  if (reqs.length) {
+    await gfetch(token, `${SHEETS}/${spreadsheetId}:batchUpdate`, {
+      method: 'POST',
+      body: JSON.stringify({ requests: reqs }),
+    })
+  }
 }
