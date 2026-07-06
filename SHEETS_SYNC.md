@@ -15,8 +15,9 @@ Owner clicks "Connect Google account"  (Settings)
    → /api/google-callback : exchange code → refresh token (encrypted, stored)
         → create spreadsheet in the owner's Drive → first snapshot sync
 Triggers that refresh the sheet:
+   • on connect               → first snapshot sync (automatic)
    • "Sync now" button        → syncNow()   (in-process snapshot rebuild)
-   • hourly Vercel Cron       → GET /api/sheets-sync  (all connected agencies)
+   • (optional) external cron  → GET /api/sheets-sync  (all connected agencies)
 ```
 No Supabase webhooks, no shared secret header, no per-row logic. A sync clears
 every tab then writes header + rows — always consistent with the DB.
@@ -48,12 +49,18 @@ Already needed by the app: `VITE_SUPABASE_URL` (or `SUPABASE_URL`) and
 ## 3. Database
 Apply the migration: `supabase db push` (adds the OAuth columns to `agency_sheets`).
 
-## 4. Cron
-`vercel.json` already declares the hourly job:
+## 4. Scheduled refresh (optional)
+No Vercel Cron is used (Hobby plan caps it at once/day). Sync runs on connect and
+on the **Sync now** button. To keep sheets fresh hands-off on the free plan, point
+a **free external scheduler** (cron-job.org, GitHub Actions, …) at the endpoint:
+```
+GET https://<domain>/api/sheets-sync
+Header: Authorization: Bearer <CRON_SECRET>
+```
+On Vercel Pro you can instead add to `vercel.json`:
 ```json
 "crons": [{ "path": "/api/sheets-sync", "schedule": "0 * * * *" }]
 ```
-(Vercel Cron requires a paid plan for sub-daily schedules.)
 
 ## 5. Turn it on per agency
 Owner → **Settings → Google Sheets sync → Connect Google account** → consent.

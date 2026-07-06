@@ -10,8 +10,5 @@
   },
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/api/server" }
-  ],
-  "crons": [
-    { "path": "/api/sheets-sync", "schedule": "0 * * * *" }
   ]
 }
