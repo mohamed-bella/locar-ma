@@ -1,3 +1,4 @@
+import './instrument.client' // Sentry browser init (window-guarded)
 import { createRouter } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { routeTree } from './routeTree.gen'

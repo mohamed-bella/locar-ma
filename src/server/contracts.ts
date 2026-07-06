@@ -5,6 +5,7 @@ import { contractUpdateSchema } from '~/lib/schemas'
 import { publicUrl, putObject, presignDownload } from '~/lib/r2.server'
 import { syncVehicleStatus } from './vehicleStatus'
 import { notifyNewContract, scheduleNotify } from '~/lib/email.server'
+import * as Sentry from '@sentry/tanstackstart-react'
 
 export type Extra = { name: string; price: number }
 
@@ -235,6 +236,7 @@ export const createContractFromReservation = createServerFn({ method: 'POST' })
     // Surface the real reason to the client instead of letting the custom
     // api/server.mjs handler mangle the throw into an unparseable 500.
     console.error('createContractFromReservation failed', e)
+    Sentry.captureException(e)
     return { id: null, error: String(e?.message || e) }
    }
   })

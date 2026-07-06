@@ -1,6 +1,8 @@
 // Portable production server: serves the built client assets (dist/client)
 // and hands everything else to the TanStack Start SSR fetch handler.
 // Works on any Node host (Render, Railway, Fly, a VPS…). Node 18+.
+import './instrument.server.mjs' // Sentry — must load before the app handler
+import * as Sentry from '@sentry/tanstackstart-react'
 import { createServer } from 'node:http'
 import { Readable } from 'node:stream'
 import { stat } from 'node:fs/promises'
@@ -69,6 +71,7 @@ createServer(async (req, res) => {
     else res.end()
   } catch (err) {
     console.error(err)
+    Sentry.captureException(err)
     res.statusCode = 500
     res.end('Internal Server Error')
   }

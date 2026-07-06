@@ -7,6 +7,8 @@
 //      path (`/`) and the SSR handler's `new URL()` throws on it.
 //   2. BUFFER the response instead of piping the web stream — streaming the
 //      React SSR body through res was hanging the function to a 30s timeout.
+import '../instrument.server.mjs' // Sentry — must load before the app handler
+import * as Sentry from '@sentry/tanstackstart-react'
 import { Readable } from 'node:stream'
 import handler from '../dist/server/server.js'
 
@@ -42,8 +44,11 @@ export default async function (req, res) {
     res.end(body)
   } catch (err) {
     console.error(err)
+    Sentry.captureException(err)
     res.statusCode = 500
     res.setHeader('content-type', 'text/plain; charset=utf-8')
     res.end('SSR error:\n' + (err?.stack || String(err)))
+    // Serverless freezes after the handler returns — flush before we resolve.
+    await Sentry.flush(2000)
   }
 }
