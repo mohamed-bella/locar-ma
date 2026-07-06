@@ -3,7 +3,7 @@
 Version 1.0 · July 2026 · Morocco Market
 
 ---
-
+new
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
