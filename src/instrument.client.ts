@@ -7,7 +7,7 @@ if (typeof window !== 'undefined') {
   Sentry.init({
     dsn:
       import.meta.env.VITE_SENTRY_DSN ||
-      'https://891cfee11a6ca7edc1859fc5a967a066@o4511689711222784.ingest.de.sentry.io/4511689715220560',
+      'https://c2c959f3361b55d9f6a1cc37084ff801@o4511689711222784.ingest.de.sentry.io/4511689729769552',
     environment: import.meta.env.MODE,
     tracesSampleRate: 0.1,
   })
