@@ -228,7 +228,7 @@ export const createContractFromReservation = createServerFn({ method: 'POST' })
     if ((res as any).vehicle_id) {
       await syncVehicleStatus(supabase, (res as any).vehicle_id)
     }
-    scheduleNotify(notifyNewContract(agencyId, (row as any).id)) // fire-and-forget email
+    scheduleNotify(() => notifyNewContract(agencyId, (row as any).id)) // fire-and-forget email
     return { id: (row as any).id as string }
   })
 

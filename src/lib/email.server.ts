@@ -2,7 +2,6 @@
 // French, minimal, owner-only notifications. Every notify* function is
 // best-effort and NEVER throws: a mail failure must not break the mutation that
 // triggered it.
-import { waitUntil } from '@vercel/functions'
 import { getSupabaseAdminClient } from './supabase.server'
 
 const RESEND_ENDPOINT = 'https://api.resend.com/emails'
@@ -12,18 +11,34 @@ export function emailConfigured(): boolean {
   return !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM)
 }
 
-// Run a notification WITHOUT blocking the request. On Vercel, waitUntil keeps
-// the function alive until the promise settles but lets the response return
-// immediately — so a slow/hung email never counts against the mutation's 30s
-// budget. Off Vercel (local/dev) waitUntil throws → we let it run detached.
-// The promise already swallows its own errors (notify* never throw).
-export function scheduleNotify(p: Promise<unknown>): void {
-  const guarded = Promise.resolve(p).catch((e) => console.error('notify failed', e))
+// Vercel exposes waitUntil on the per-request context global — read it directly
+// so we don't depend on (or bundle) @vercel/functions. Backgrounds the email on
+// Vercel; returns undefined elsewhere (local/dev), where we just detach.
+function vercelWaitUntil(): ((p: Promise<unknown>) => void) | undefined {
   try {
-    waitUntil(guarded)
+    const ctx = (globalThis as any)[Symbol.for('@vercel/request-context')]?.get?.()
+    const wu = ctx?.waitUntil
+    return typeof wu === 'function' ? wu.bind(ctx) : undefined
   } catch {
-    void guarded
+    return undefined
   }
+}
+
+// Run a notification WITHOUT blocking or affecting the request. Takes a thunk so
+// even a synchronous throw while building the promise is contained here — the
+// triggering mutation can never fail or slow down because of email.
+export function scheduleNotify(make: () => Promise<unknown>): void {
+  let p: Promise<unknown>
+  try {
+    p = Promise.resolve(make())
+  } catch (e) {
+    console.error('notify failed', e)
+    return
+  }
+  const guarded = p.catch((e) => console.error('notify failed', e))
+  const wu = vercelWaitUntil()
+  if (wu) wu(guarded)
+  else void guarded
 }
 
 async function sendEmail(to: string, subject: string, html: string): Promise<void> {

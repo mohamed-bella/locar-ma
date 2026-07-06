@@ -171,7 +171,7 @@ export const createVehicle = createServerFn({ method: 'POST' })
       .select('id')
       .single()
     if (error) throw new Error(error.message)
-    scheduleNotify(notifyVehicle(agencyId, (row as any).id, true)) // fire-and-forget email
+    scheduleNotify(() => notifyVehicle(agencyId, (row as any).id, true)) // fire-and-forget email
     return { id: (row as any).id as string }
   })
 
@@ -187,7 +187,7 @@ export const updateVehicle = createServerFn({ method: 'POST' })
     const payload = { ...nulls(rest), document_expiries: rest.document_expiries ?? {} }
     const { error } = await supabase.from('vehicles').update(payload).eq('id', id)
     if (error) throw new Error(error.message)
-    scheduleNotify(notifyVehicle(agencyId, id, false)) // fire-and-forget email
+    scheduleNotify(() => notifyVehicle(agencyId, id, false)) // fire-and-forget email
     return { ok: true }
   })
 

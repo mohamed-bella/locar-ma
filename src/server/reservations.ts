@@ -328,7 +328,7 @@ export const createReservation = createServerFn({ method: 'POST' })
     if (error) rethrow(error as any)
     // Booking created → reflect it on the car (reserved / rented).
     await syncVehicleStatus(supabase, data.vehicle_id)
-    scheduleNotify(notifyNewReservation(agencyId, (row as any).id)) // fire-and-forget email
+    scheduleNotify(() => notifyNewReservation(agencyId, (row as any).id)) // fire-and-forget email
     return { id: (row as any).id as string }
   })
 
