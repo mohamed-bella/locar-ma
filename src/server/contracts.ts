@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireAgencyContext } from './context'
 import { contractUpdateSchema } from '~/lib/schemas'
-import { publicUrl, putObject, presignDownload } from '~/lib/r2.server'
+import { publicUrl, putObject } from '~/lib/r2.server'
 import { syncVehicleStatus } from './vehicleStatus'
 import { notifyNewContract, scheduleNotify } from '~/lib/email.server'
 import * as Sentry from '@sentry/tanstackstart-react'
@@ -36,6 +36,7 @@ export type ContractDetail = {
   check_status: string
   extras: Extra[]
   pdf_key: string | null
+  pdf_url: string | null // permanent public URL (contracts live in the public bucket)
   has_pdf: boolean
   closed_at: string | null
   created_at: string
@@ -81,6 +82,7 @@ function mapDetail(r: any): ContractDetail {
     check_status: r.check_status ?? 'held',
     extras: (r.extras ?? []) as Extra[],
     pdf_key: r.pdf_key ?? null,
+    pdf_url: r.pdf_key ? publicUrl(r.pdf_key) : null,
     has_pdf: !!r.pdf_key,
     closed_at: r.closed_at ?? null,
     created_at: r.created_at,
@@ -346,17 +348,27 @@ export const generateContractPdf = createServerFn({ method: 'POST' })
     })
 
     const key = `agencies/${agencyId}/contracts/${c.id}.pdf`
+    // Download filename = car + reservation date (ASCII-safe).
+    const carName = [c.vehicle?.brand, c.vehicle?.model].filter(Boolean).join(' ') || c.vehicle?.plate || 'contrat'
+    const dateStr = c.reservation?.date_start || c.created_at?.slice(0, 10) || ''
+    const safe =
+      `${carName} ${dateStr}`
+        .normalize('NFD') // accents → base letter + combining mark…
+        .replace(/[^a-zA-Z0-9]+/g, '-') // …then strip marks + spaces to hyphens
+        .replace(/^-+|-+$/g, '') || 'contrat'
+    const filename = `${safe}.pdf`
     // NOTE: contracts currently stored in the public R2_BUCKET (locar), not the
-    // private docs bucket. Revert to docsBucket() to move them back.
-    await putObject(key, buffer, 'application/pdf')
+    // private docs bucket. Revert to docsBucket() to move them back. The
+    // Content-Disposition makes the public link download directly with `filename`.
+    await putObject(key, buffer, 'application/pdf', undefined, `attachment; filename="${filename}"`)
     await supabase.from('contracts').update({ pdf_key: key }).eq('id', c.id)
-    // Short-lived signed link so the just-generated PDF opens immediately.
-    return { key, url: await presignDownload(key, 3600) }
+    // Permanent public link — works on any device, no session/presign needed.
+    return { key, url: publicUrl(key), filename }
   })
 
-// On-demand signed URL for an existing contract PDF. RLS scopes the lookup to
-// the caller's agency; the private bucket is never publicly reachable. A 7-day
-// expiry is used so a link shared over WhatsApp stays valid for the rental.
+// Permanent public URL for an existing contract PDF (contracts live in the
+// public bucket). Works on any device with no session — RLS still scopes the
+// lookup to the caller's agency.
 export const getContractPdfUrl = createServerFn({ method: 'POST' })
   .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }): Promise<{ url: string }> => {
@@ -369,5 +381,5 @@ export const getContractPdfUrl = createServerFn({ method: 'POST' })
     if (error) throw new Error(error.message)
     const key = (row as any)?.pdf_key as string | null
     if (!key) throw new Error('No PDF generated yet')
-    return { url: await presignDownload(key, 60 * 60 * 24 * 7) }
+    return { url: publicUrl(key) }
   })

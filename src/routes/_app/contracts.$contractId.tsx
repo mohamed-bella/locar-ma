@@ -16,13 +16,13 @@ import {
   getContract,
   updateContract,
   generateContractPdf,
-  getContractPdfUrl,
   closeContract,
   type Extra,
 } from '~/server/contracts'
 import { FUEL_LEVELS, CHECK_STATUSES } from '~/lib/schemas'
 import { resBadgeTone } from '~/lib/reservations'
 import { waLink } from '~/lib/whatsapp'
+import { useRealtimeInvalidate } from '~/lib/useRealtime'
 import { useI18n } from '~/lib/i18n'
 import {
   Button,
@@ -83,6 +83,8 @@ function ContractDetail() {
   const { contract: c } = Route.useLoaderData()
   const router = useRouter()
   const { t } = useI18n()
+  // Live-refresh so a PDF generated on another device shows up here.
+  useRealtimeInvalidate('contracts')
 
   const [mileageOut, setMileageOut] = useState(c.mileage_out?.toString() ?? '')
   const [mileageIn, setMileageIn] = useState(c.mileage_in?.toString() ?? '')
@@ -93,28 +95,27 @@ function ContractDetail() {
   const [checkAmount, setCheckAmount] = useState(c.check_amount?.toString() ?? '')
   const [checkStatus, setCheckStatus] = useState(c.check_status)
   const [extras, setExtras] = useState<Extra[]>(c.extras)
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
-  const hasPdf = c.has_pdf || !!pdfUrl
+  const hasPdf = c.has_pdf
 
-  // Contract PDFs live in the private bucket; fetch a short-lived signed URL on
-  // demand rather than holding a public link.
-  async function ensurePdfUrl(): Promise<string | null> {
-    if (pdfUrl) return pdfUrl
-    if (!c.has_pdf) return null
-    const res = await getContractPdfUrl({ data: { id: c.id } })
-    setPdfUrl(res.url)
-    return res.url
+  // Contracts live in the public bucket → a permanent link, resolved on the
+  // server into c.pdf_url. Works on any device with no session/regeneration.
+  function ensurePdfUrl(): string | null {
+    return c.pdf_url
   }
 
-  async function openPdf() {
-    try {
-      const url = await ensurePdfUrl()
-      if (url) window.open(url, '_blank', 'noopener')
-    } catch (err: any) {
-      toast.error(err?.message ?? t('con.pdfGenFailed'))
-    }
+  // Direct download (the object's Content-Disposition forces a download with
+  // the "car + date" filename rather than opening a preview).
+  function downloadPdf() {
+    if (!c.pdf_url) return
+    const a = document.createElement('a')
+    a.href = c.pdf_url
+    a.download = ''
+    a.rel = 'noopener'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
   }
 
   const closed = Boolean(c.closed_at)
@@ -151,8 +152,7 @@ function ContractDetail() {
     setGenerating(true)
     try {
       await updateContract({ data: payload() })
-      const res = await generateContractPdf({ data: { id: c.id } })
-      setPdfUrl(res.url)
+      await generateContractPdf({ data: { id: c.id } })
       toast.success(t('con.pdfGenerated'))
       await router.invalidate()
     } catch (err: any) {
@@ -180,12 +180,7 @@ function ContractDetail() {
   }
 
   async function sendWhatsApp() {
-    let link: string | null = null
-    try {
-      link = await ensurePdfUrl()
-    } catch {
-      /* no PDF yet — send without the link */
-    }
+    const link = ensurePdfUrl() // permanent public URL, or null if not generated
     const start = c.reservation ? format(new Date(`${c.reservation.date_start}T00:00:00`), 'dd/MM/yyyy') : ''
     const end = c.reservation ? format(new Date(`${c.reservation.date_end}T00:00:00`), 'dd/MM/yyyy') : ''
     const total = c.reservation?.total_amount != null ? `${c.reservation.total_amount.toLocaleString()} MAD` : ''
@@ -216,8 +211,8 @@ function ContractDetail() {
             <FileText className="h-4 w-4" /> {hasPdf ? t('con.regeneratePdf') : t('con.generatePdf')}
           </Button>
           {hasPdf && (
-            <Button variant="secondary" onClick={openPdf}>
-              <Download className="h-4 w-4" /> PDF
+            <Button variant="secondary" onClick={downloadPdf}>
+              <Download className="h-4 w-4" /> {t('con.downloadPdf')}
             </Button>
           )}
           <Button onClick={sendWhatsApp} className="bg-[#25D366] hover:bg-[#1eb85a]">
@@ -376,18 +371,16 @@ function ContractDetail() {
         </Card>
       </div>
 
-      {/* PDF preview */}
+      {/* Contract PDF */}
       <Card className="mt-5">
         <CardHeader
           title={t('con.contractPdf')}
-          subtitle={pdfUrl ? t('con.savedStorage') : t('con.generatePreview')}
+          subtitle={hasPdf ? t('con.savedStorage') : t('con.generatePreview')}
           action={
-            pdfUrl ? (
-              <a href={pdfUrl} target="_blank" rel="noreferrer">
-                <Button variant="secondary" size="sm">
-                  <Download className="h-4 w-4" /> {t('con.open')}
-                </Button>
-              </a>
+            hasPdf ? (
+              <Button variant="secondary" size="sm" onClick={downloadPdf}>
+                <Download className="h-4 w-4" /> {t('con.downloadPdf')}
+              </Button>
             ) : (
               <Button size="sm" loading={generating} onClick={generate}>
                 <FileText className="h-4 w-4" /> {t('con.generatePdf')}
@@ -395,16 +388,24 @@ function ContractDetail() {
             )
           }
         />
-        <CardBody className="p-0">
-          {pdfUrl ? (
-            <iframe
-              key={pdfUrl}
-              src={`${pdfUrl}#toolbar=1&view=FitH`}
-              title={t('con.contractPdf')}
-              className="h-[75vh] w-full rounded-b-[var(--radius-card)] border-0 bg-[var(--color-surface-muted)]"
-            />
+        <CardBody>
+          {hasPdf ? (
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[var(--color-brand-soft)] text-[var(--color-brand)]">
+                  <FileText className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[var(--color-ink)]">{t('con.contractPdf')}</p>
+                  <p className="text-xs text-[var(--color-muted)]">{t('con.savedStorage')}</p>
+                </div>
+              </div>
+              <Button variant="secondary" onClick={downloadPdf} className="w-full sm:w-auto">
+                <Download className="h-4 w-4" /> {t('con.downloadPdf')}
+              </Button>
+            </div>
           ) : (
-            <div className="px-6 py-16">
+            <div className="px-2 py-10">
               <EmptyState
                 icon={FileText}
                 title={t('con.noPdf')}

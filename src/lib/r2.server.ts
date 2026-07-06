@@ -71,10 +71,17 @@ export async function putObject(
   body: Uint8Array | Buffer,
   contentType: string,
   bucket?: string,
+  contentDisposition?: string,
 ) {
   const env = serverEnv()
   await r2().send(
-    new PutObjectCommand({ Bucket: bucket ?? env.R2_BUCKET, Key: key, Body: body, ContentType: contentType }),
+    new PutObjectCommand({
+      Bucket: bucket ?? env.R2_BUCKET,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+      ...(contentDisposition ? { ContentDisposition: contentDisposition } : {}),
+    }),
   )
   return key
 }

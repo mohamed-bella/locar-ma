@@ -390,6 +390,7 @@ const M: Record<string, { en: string; fr: string }> = {
   'con.generatePdf': { en: 'Generate PDF', fr: 'Générer le PDF' },
   'con.regeneratePdf': { en: 'Regenerate PDF', fr: 'Régénérer le PDF' },
   'con.pdfGenerated': { en: 'PDF generated', fr: 'PDF généré' },
+  'con.downloadPdf': { en: 'Download PDF', fr: 'Télécharger le PDF' },
   'con.pdfFailed': { en: 'Could not generate PDF', fr: 'Impossible de générer le PDF' },
   'con.confirmClose': { en: 'Close this contract and free the vehicle?', fr: 'Clôturer ce contrat et libérer le véhicule ?' },
   'con.fuelEmpty': { en: 'Empty', fr: 'Vide' },

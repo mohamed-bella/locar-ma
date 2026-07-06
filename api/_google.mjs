@@ -14,9 +14,9 @@ export const SHEET_TABS = ['Cars', 'Reservations', 'Contracts', 'Clients', 'Paym
 const MAP = {
   vehicles: {
     tab: 'Cars',
-    header: ['id', 'plate', 'brand', 'model', 'year', 'category', 'daily_rate', 'status', 'mileage_current', 'insurance_expiry', 'vignette_expiry', 'visite_tech_expiry', 'created_at'],
+    header: ['id', 'plate', 'brand', 'model', 'year', 'category', 'daily_rate', 'status', 'mileage_current', 'insurance_expiry', 'vignette_expiry', 'visite_tech_expiry', 'created_at', 'photo'],
     select: '*',
-    row: (r) => [r.id, r.plate, r.brand, r.model, r.year, r.category, r.daily_rate, r.status, r.mileage_current, r.insurance_expiry, r.vignette_expiry, r.visite_tech_expiry, r.created_at],
+    row: (r) => [r.id, r.plate, r.brand, r.model, r.year, r.category, r.daily_rate, r.status, r.mileage_current, r.insurance_expiry, r.vignette_expiry, r.visite_tech_expiry, r.created_at, imageCell(r.image_keys?.[0])],
   },
   reservations: {
     tab: 'Reservations',
@@ -26,9 +26,9 @@ const MAP = {
   },
   contracts: {
     tab: 'Contracts',
-    header: ['id', 'reservation_id', 'vehicle_plate', 'client_name', 'status', 'mileage_out', 'mileage_in', 'fuel_out', 'fuel_in', 'check_amount', 'check_status', 'closed_at', 'created_at'],
+    header: ['id', 'reservation_id', 'vehicle_plate', 'client_name', 'status', 'mileage_out', 'mileage_in', 'fuel_out', 'fuel_in', 'check_amount', 'check_status', 'closed_at', 'created_at', 'contract_pdf'],
     select: '*, reservations(status, vehicles(plate), clients(full_name))',
-    row: (r) => [r.id, r.reservation_id, r.reservations?.vehicles?.plate, r.reservations?.clients?.full_name, r.reservations?.status, r.mileage_out, r.mileage_in, r.fuel_out, r.fuel_in, r.check_amount, r.check_status, r.closed_at, r.created_at],
+    row: (r) => [r.id, r.reservation_id, r.reservations?.vehicles?.plate, r.reservations?.clients?.full_name, r.reservations?.status, r.mileage_out, r.mileage_in, r.fuel_out, r.fuel_in, r.check_amount, r.check_status, r.closed_at, r.created_at, pdfCell(r.pdf_key)],
   },
   clients: {
     // PII excluded: no CIN/passport, email, or address.
@@ -207,6 +207,13 @@ export async function ensureSpreadsheet(token, existingId, title) {
 
 const cell = (v) => (v == null ? '' : v)
 
+// Public R2 URL helpers. Rendered as Sheets formulas (needs USER_ENTERED):
+// car photo shown inline, contract PDF as a clickable link.
+const R2_PUBLIC = process.env.R2_PUBLIC_URL || ''
+const pub = (key) => (key ? `${R2_PUBLIC}/${key}` : '')
+const imageCell = (key) => (key && R2_PUBLIC ? `=IMAGE("${pub(key)}")` : '')
+const pdfCell = (key) => (key && R2_PUBLIC ? `=HYPERLINK("${pub(key)}","PDF")` : '')
+
 // Read every agency row per table, mapped to sheet values (header + rows).
 async function fetchTab(supa, table, agencyId) {
   const m = MAP[table]
@@ -233,7 +240,9 @@ export async function syncAgency(supa, token, spreadsheetId, agencyId) {
   await gfetch(token, `${SHEETS}/${spreadsheetId}/values:batchUpdate`, {
     method: 'POST',
     body: JSON.stringify({
-      valueInputOption: 'RAW',
+      // USER_ENTERED so =IMAGE()/=HYPERLINK() render (and dates/numbers type
+      // naturally). Plain text values are unaffected.
+      valueInputOption: 'USER_ENTERED',
       data: tabsData.map((t) => ({ range: `${t.tab}!A1`, values: t.values })),
     }),
   })
