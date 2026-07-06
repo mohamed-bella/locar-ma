@@ -14,11 +14,11 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 
 export function CardHeader({
   title,
-  subtitle,
   action,
   className,
 }: {
   title: React.ReactNode
+  /** Deprecated: headers show a single title only. */
   subtitle?: React.ReactNode
   action?: React.ReactNode
   className?: string
@@ -26,14 +26,11 @@ export function CardHeader({
   return (
     <div
       className={cn(
-        'flex items-start justify-between gap-4 rounded-t-[var(--radius-card)] border-b border-[var(--color-brand)]/20 bg-[var(--color-brand-soft)] px-5 py-4',
+        'flex items-center justify-between gap-4 rounded-t-[var(--radius-card)] bg-[#1d5b8d] px-5 py-3.5 text-white',
         className,
       )}
     >
-      <div>
-        <h3 className="font-bold text-[var(--color-ink)]">{title}</h3>
-        {subtitle && <p className="mt-0.5 text-sm text-[var(--color-muted)]">{subtitle}</p>}
-      </div>
+      <h3 className="font-bold tracking-tight text-white [&_*]:text-white">{title}</h3>
       {action}
     </div>
   )

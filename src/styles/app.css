@@ -140,24 +140,24 @@ body {
   box-shadow: inset 0 1px 2px rgba(60, 45, 25, 0.05);
 }
 
-/* Sidebar rail — black brushed gradient with a right bevel */
+/* Sidebar rail — deep slate-blue (not black), coordinated with the card titles */
 .skeu-rail {
-  background-image: linear-gradient(to bottom, #1c1c1e, #0b0b0c);
-  border-right: 1px solid #000000;
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05), 1px 0 8px rgba(0, 0, 0, 0.4);
+  background-image: linear-gradient(to bottom, #2b4257, #1b2b39);
+  border-right: 1px solid #12222f;
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06), 1px 0 8px rgba(15, 30, 45, 0.28);
 }
-/* Light-on-dark treatment for the black rail */
+/* Light-on-dark treatment for the slate rail */
 .skeu-rail .skeu-emboss {
-  color: #e8e8ea !important;
+  color: #e9eef3 !important;
   text-shadow: none;
 }
 .skeu-rail .nav-item:not(.active) {
-  color: #c7c7cc !important;
+  color: #c3cdd6 !important;
 }
 .skeu-rail .nav-item:not(.active):hover {
-  background-image: linear-gradient(to bottom, #2c2c2f, #202022);
-  border-color: #3a3a3d;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background-image: linear-gradient(to bottom, #35506a, #263c50);
+  border-color: #3f5c76;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   color: #ffffff !important;
 }
 
