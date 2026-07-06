@@ -120,11 +120,11 @@ function Fleet() {
           </span>
         }
         actions={
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" size="lg" onClick={() => setImporting(true)}>
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <Button variant="secondary" size="lg" className="flex-1 sm:flex-none" onClick={() => setImporting(true)}>
               <Upload className="h-[18px] w-[18px]" /> {t('fleet.importJson')}
             </Button>
-            <Button size="lg" onClick={() => setAdding(true)}>
+            <Button size="lg" className="flex-1 sm:flex-none" onClick={() => setAdding(true)}>
               <Plus className="h-[18px] w-[18px]" /> {t('fleet.addVehicle')}
             </Button>
           </div>
