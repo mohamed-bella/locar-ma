@@ -279,6 +279,16 @@ export const closeContract = createServerFn({ method: 'POST' })
     const reservationId = (c as any)?.reservation_id
     const vehicleId = (c as any)?.reservations?.vehicle_id
     if (reservationId) await supabase.from('reservations').update({ status: 'closed' }).eq('id', reservationId)
+
+    // Feed the return odometer back into the vehicle so maintenance ("suivi")
+    // runs on a live mileage — the whole point of the maintenance redesign.
+    if (vehicleId && data.mileage_in != null) {
+      const { data: v } = await supabase.from('vehicles').select('mileage_current').eq('id', vehicleId).maybeSingle()
+      if ((v as any)?.mileage_current == null || data.mileage_in > (v as any).mileage_current) {
+        await supabase.from('vehicles').update({ mileage_current: data.mileage_in }).eq('id', vehicleId)
+      }
+    }
+
     // Recompute status from remaining bookings (may become reserved, not just available).
     if (vehicleId) await syncVehicleStatus(supabase, vehicleId)
     return { ok: true }

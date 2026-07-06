@@ -22,9 +22,11 @@ import {
   createDamageReport,
 } from '~/server/fleet'
 import { listVehicleReservations, type VehicleReservation } from '~/server/reservations'
+import { listServicePlans, listServiceRecords } from '~/server/maintenance'
 import { VehicleForm } from '~/components/VehicleForm'
 import { Gallery } from '~/components/Gallery'
 import { MaintenancePanel } from '~/components/MaintenancePanel'
+import { ServicePanel } from '~/components/ServicePanel'
 import { DeleteVehicleDialog } from '~/components/DeleteVehicleDialog'
 import { resBadgeTone } from '~/lib/reservations'
 import { brandColor } from '~/lib/brandColor'
@@ -47,15 +49,17 @@ import {
 
 export const Route = createFileRoute('/_app/fleet/$vehicleId')({
   loader: async ({ params }) => {
-    const [vehicle, damage, alertRules, documentTypes, reservations] = await Promise.all([
+    const [vehicle, damage, alertRules, documentTypes, reservations, servicePlans, serviceRecords] = await Promise.all([
       getVehicle({ data: { id: params.vehicleId } }),
       listDamageReports({ data: { vehicle_id: params.vehicleId } }),
       listAlertRules(),
       listDocumentTypes(),
       listVehicleReservations({ data: { vehicle_id: params.vehicleId } }),
+      listServicePlans(),
+      listServiceRecords({ data: { vehicle_id: params.vehicleId } }),
     ])
     if (!vehicle) throw notFound()
-    return { vehicle, damage, alertRules, documentTypes, reservations }
+    return { vehicle, damage, alertRules, documentTypes, reservations, servicePlans, serviceRecords }
   },
   component: VehicleDetail,
   pendingComponent: () => (
@@ -83,7 +87,7 @@ function VehicleNotFound() {
 }
 
 function VehicleDetail() {
-  const { vehicle, damage, alertRules, documentTypes, reservations } = Route.useLoaderData()
+  const { vehicle, damage, alertRules, documentTypes, reservations, servicePlans, serviceRecords } = Route.useLoaderData()
   const router = useRouter()
   const navigate = useNavigate()
   const { t } = useI18n()
@@ -93,6 +97,7 @@ function VehicleDetail() {
   useRealtimeInvalidate('vehicles', `id=eq.${vehicle.id}`)
   useRealtimeInvalidate('document_alert_rules')
   useRealtimeInvalidate('reservations')
+  useRealtimeInvalidate('service_records')
 
   async function changeStatus(status: 'available' | 'maintenance') {
     try {
@@ -194,9 +199,20 @@ function VehicleDetail() {
         </Card>
       </div>
 
-      {/* Maintenance & Compliance */}
+      {/* Legal compliance (papers) */}
       <div className="mt-5">
         <MaintenancePanel vehicle={vehicle} alertRules={alertRules} documentTypes={documentTypes} />
+      </div>
+
+      {/* Mechanical service & maintenance (vidange, courroie, …) */}
+      <div className="mt-5">
+        <ServicePanel
+          vehicleId={vehicle.id}
+          mileage={vehicle.mileage_current}
+          plans={servicePlans}
+          records={serviceRecords}
+          onChanged={() => router.invalidate()}
+        />
       </div>
 
       {/* Reservations for this car */}

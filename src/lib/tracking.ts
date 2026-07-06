@@ -15,11 +15,13 @@ export type Tracker = {
 
 const LEGAL_FIELDS = new Set(['insurance_expiry', 'vignette_expiry', 'visite_tech_expiry'])
 
+// Legal / statutory papers. Mechanical service (vidange, courroie…) is no
+// longer a "km tracker" here — it lives in the dedicated maintenance module
+// (lib/maintenance.ts + server/maintenance.ts) with a dual-axis schedule.
 export const LEGAL_TRACKERS: Tracker[] = [
   { code: 'insurance', kind: 'date', field: 'insurance_expiry', nameKey: 'vd.insurance' },
   { code: 'vignette', kind: 'date', field: 'vignette_expiry', nameKey: 'vd.vignette' },
   { code: 'visite', kind: 'date', field: 'visite_tech_expiry', nameKey: 'vd.visiteTech' },
-  { code: 'vidange', kind: 'km', nameKey: 'vd.oilChange' },
 ]
 
 export function allTrackers(documentTypes: DocumentType[]): Tracker[] {
