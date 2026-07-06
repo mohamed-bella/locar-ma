@@ -100,3 +100,80 @@ export async function shareFile(fileId: string, email: string, role: 'writer' | 
   )
   if (!res.ok) throw new Error(`Drive share error: ${res.status} ${await res.text()}`)
 }
+
+export function extractSpreadsheetId(input: string): string {
+  const match = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)
+  return match ? match[1] : input.trim()
+}
+
+// Connects to an existing spreadsheet and ensures that the required tabs exist.
+// This allows bypassing service account storage quota limits by using a spreadsheet owned by a human.
+export async function linkExistingSpreadsheet(
+  spreadsheetIdOrUrl: string,
+  tabTitles: string[]
+): Promise<ProvisionResult> {
+  const spreadsheetId = extractSpreadsheetId(spreadsheetIdOrUrl)
+  const token = await getAccessToken()
+
+  const getRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`, {
+    method: 'GET',
+    headers: { authorization: `Bearer ${token}` },
+  })
+  
+  if (!getRes.ok) {
+    if (getRes.status === 403 || getRes.status === 404) {
+      throw new Error(
+        `Permissions Denied: The service account cannot access this spreadsheet. Please ensure you shared it with the service account email as "Editor" (with no domain restrictions) and try again.`
+      )
+    }
+    throw new Error(`Google Sheets access error: ${getRes.status} ${await getRes.text()}`)
+  }
+
+  const details = (await getRes.json()) as {
+    spreadsheetId: string
+    spreadsheetUrl: string
+    sheets: { properties: { title: string; sheetId: number } }[]
+  }
+
+  const existingMap: Record<string, number> = {}
+  for (const s of details.sheets) {
+    existingMap[s.properties.title] = s.properties.sheetId
+  }
+
+  // Identify missing tabs and create them
+  const missingTabs = tabTitles.filter((t) => existingMap[t] === undefined)
+  if (missingTabs.length > 0) {
+    const batchRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        requests: missingTabs.map((t) => ({
+          addSheet: { properties: { title: t } },
+        })),
+      }),
+    })
+
+    if (!batchRes.ok) {
+      throw new Error(`Failed to create missing tabs: ${batchRes.status} ${await batchRes.text()}`)
+    }
+
+    const batchJson = (await batchRes.json()) as {
+      replies: { addSheet: { properties: { title: string; sheetId: number } } }[]
+    }
+
+    for (const reply of batchJson.replies || []) {
+      const s = reply.addSheet.properties
+      existingMap[s.title] = s.sheetId
+    }
+  }
+
+  return {
+    spreadsheetId: details.spreadsheetId,
+    spreadsheetUrl: details.spreadsheetUrl || `https://docs.google.com/spreadsheets/d/${details.spreadsheetId}`,
+    tabs: existingMap,
+  }
+}
+

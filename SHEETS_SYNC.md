@@ -44,15 +44,20 @@ Dashboard → **Database → Webhooks → Create** — one webhook per table:
 endpoint expects.)
 
 ## 5. Turn it on per agency
-Agency owner → **Settings → Google Sheets sync → Enable**. The app creates the
-spreadsheet, shares it with the owner's Google account, and starts mirroring.
+### Option A: Auto-Create (Default)
+Agency owner → **Settings → Google Sheets sync → Auto-Create Spreadsheet**. The app creates the spreadsheet, shares it with the owner's Google account, and starts mirroring.
+
+### Option B: Link Existing (Recommended)
+Since Google Cloud Service Accounts are allocated 0 bytes of storage quota by default in personal GCP projects, automated spreadsheet creation often fails with a `403 PERMISSION_DENIED` error. To bypass this easily:
+1. Create a blank Google Spreadsheet in your own Google Drive.
+2. Copy the **Service Account Email** displayed in the app's settings.
+3. Share your Google Spreadsheet with that email address and grant it **Editor** permissions.
+4. Paste the spreadsheet URL/link in the **Option B: Link Existing** field and click **Link & Setup Spreadsheet**.
+5. The application will connect, automatically create the required tabs (**Cars, Reservations, Contracts, Clients, Payments, Services**), and activate sync.
 
 ## Notes / limits
 - **One-way** (DB → Sheet). Sheet edits are ignored and will be overwritten.
-- **PII excluded**: no CIN/passport, email, or address. Contracts/clients carry
-  only names/phones. (Loi 09-08.)
-- Scopes: `spreadsheets` + `drive.file` (the service account only touches files
-  it creates).
-- Latency ~1–5 s (webhooks are async). Google write quota ≈ 60/min per sheet —
-  fine for normal agencies.
+- **PII excluded**: no CIN/passport, email, or address. Contracts/clients carry only names/phones. (Loi 09-08.)
+- Scopes: `spreadsheets` + `drive.file` / `drive` (the service account only touches spreadsheets shared with / created by it).
+- Latency ~1–5 s (webhooks are async). Google write quota ≈ 60/min per sheet — fine for normal agencies.
 - If Google/Sheets is down, the DB is unaffected; Supabase retries the webhook.
