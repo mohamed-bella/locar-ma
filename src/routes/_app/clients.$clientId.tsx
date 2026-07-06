@@ -153,7 +153,7 @@ function ClientDetail() {
               <Field label={t('cli.fullName')} required>
                 <Input name="full_name" defaultValue={c.full_name} required />
               </Field>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label={t('cli.cin')}>
                   <Input name="cin_passport" defaultValue={c.cin_passport ?? ''} />
                 </Field>
@@ -161,7 +161,7 @@ function ClientDetail() {
                   <Input name="phone" defaultValue={c.phone ?? ''} />
                 </Field>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label={t('cli.email')}>
                   <Input name="email" type="email" defaultValue={c.email ?? ''} />
                 </Field>

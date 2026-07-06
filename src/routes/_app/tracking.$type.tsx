@@ -103,7 +103,7 @@ function ServiceView() {
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-3 gap-3 sm:gap-4">
+      <div className="mt-6 grid grid-cols-3 gap-1.5 sm:gap-4">
         <SummaryTile label={t('svc.overdue')} value={n('expired')} status="expired" />
         <SummaryTile label={t('svc.dueNow')} value={n('soon')} status="soon" />
         <SummaryTile label={t('vd.condOk')} value={n('ok')} status="ok" />
@@ -160,7 +160,7 @@ function ServiceRow({ row: r, vehicle: v, onOpen, onLog }: { row: FleetServiceRo
           ].filter(Boolean).join(' · ')
 
   return (
-    <li className="flex items-center gap-3 px-4 py-3">
+    <li className="flex flex-col gap-2.5 p-3 sm:flex-row sm:items-center sm:gap-3 sm:px-4 sm:py-3">
       <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-3 text-left">
         <div className="flex h-11 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-surface-muted)]">
           {v.image_url ? (
@@ -185,12 +185,21 @@ function ServiceRow({ row: r, vehicle: v, onOpen, onLog }: { row: FleetServiceRo
           </div>
         )}
       </button>
-      <Badge tone={serviceTone(r.status)}>
-        {r.status === 'expired' ? t('svc.overdue') : r.status === 'soon' ? t('svc.dueNow') : r.status === 'ok' ? t('vd.condOk') : '—'}
-      </Badge>
-      <Button size="sm" variant="secondary" onClick={onLog}>
-        {r.status === 'unknown' ? t('svc.setBaseline') : t('svc.markDone')}
-      </Button>
+      <div className="flex items-center justify-between gap-2.5 sm:justify-end shrink-0 w-full sm:w-auto">
+        {r.status !== 'unknown' && (
+          <span className="text-[11px] text-[var(--color-muted)] tnum sm:hidden">
+            {detail} · {r.pct}%
+          </span>
+        )}
+        <div className="flex items-center gap-2">
+          <Badge tone={serviceTone(r.status)}>
+            {r.status === 'expired' ? t('svc.overdue') : r.status === 'soon' ? t('svc.dueNow') : r.status === 'ok' ? t('vd.condOk') : '—'}
+          </Badge>
+          <Button size="sm" variant="secondary" onClick={onLog}>
+            {r.status === 'unknown' ? t('svc.setBaseline') : t('svc.markDone')}
+          </Button>
+        </div>
+      </div>
     </li>
   )
 }
@@ -228,7 +237,7 @@ function LegalView() {
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-3 gap-3 sm:gap-4">
+      <div className="mt-6 grid grid-cols-3 gap-1.5 sm:gap-4">
         <SummaryTile label={t('vd.condExpired')} value={n('expired')} status="expired" />
         <SummaryTile label={t('vd.condSoon')} value={n('soon')} status="soon" />
         <SummaryTile label={t('vd.condOk')} value={n('ok')} status="ok" />
@@ -256,23 +265,34 @@ function LegalRow({ row: r, onOpen }: { row: TrackRow; onOpen: () => void }) {
   const daysText = r.daysLeft === null ? '—' : r.daysLeft < 0 ? t('vd.overdue', { n: -r.daysLeft }) : t('vd.daysLeft', { n: r.daysLeft })
   return (
     <li>
-      <button type="button" onClick={onOpen} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[var(--color-surface-muted)]">
-        <div className="flex h-11 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-surface-muted)]">
-          {v.image_urls[0] ? (
-            <img src={v.image_urls[0]} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
-          ) : (
-            <Car className="h-4 w-4 text-[var(--color-faint)]" />
-          )}
+      <button
+        type="button"
+        onClick={onOpen}
+        className="flex w-full flex-col gap-2.5 p-3 text-left hover:bg-[var(--color-surface-muted)] sm:flex-row sm:items-center sm:gap-3 sm:px-4 sm:py-3"
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex h-11 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-surface-muted)]">
+            {v.image_urls[0] ? (
+              <img src={v.image_urls[0]} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+            ) : (
+              <Car className="h-4 w-4 text-[var(--color-faint)]" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold text-[var(--color-ink)]">{v.plate}</div>
+            <div className="truncate text-xs text-[var(--color-muted)]">{title}</div>
+          </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold text-[var(--color-ink)]">{v.plate}</div>
-          <div className="truncate text-xs text-[var(--color-muted)]">{title}</div>
+        <div className="flex items-center justify-between gap-2.5 sm:justify-end shrink-0 w-full sm:w-auto">
+          <div className="text-left text-xs text-[var(--color-muted)] sm:hidden">
+            {r.date ?? t('vd.noDate')} · {daysText}
+          </div>
+          <div className="hidden w-40 shrink-0 text-right sm:block">
+            <div className="text-sm font-semibold tnum text-[var(--color-ink)]">{r.date ?? t('vd.noDate')}</div>
+            <div className="text-xs text-[var(--color-muted)]">{daysText}</div>
+          </div>
+          <Badge tone={condTone(r.status)}>{condLabel(r.status, t)}</Badge>
         </div>
-        <div className="hidden w-40 shrink-0 text-right sm:block">
-          <div className="text-sm font-semibold tnum text-[var(--color-ink)]">{r.date ?? t('vd.noDate')}</div>
-          <div className="text-xs text-[var(--color-muted)]">{daysText}</div>
-        </div>
-        <Badge tone={condTone(r.status)}>{condLabel(r.status, t)}</Badge>
       </button>
     </li>
   )
@@ -289,14 +309,14 @@ function BackLink() {
 
 function SummaryTile({ label, value, status }: { label: string; value: number; status: string }) {
   return (
-    <div className="rounded-2xl border border-[var(--color-line)] bg-white p-4 shadow-[var(--shadow-card)]">
-      <div className="flex items-center justify-between">
-        <span className={cn('flex h-9 w-9 items-center justify-center rounded-xl', TILE[status])}>
-          <span className={cn('h-2.5 w-2.5 rounded-full', BAR[status])} />
+    <div className="rounded-xl sm:rounded-2xl border border-[var(--color-line)] bg-white p-2 sm:p-4 shadow-[var(--shadow-card)] min-w-0">
+      <div className="flex items-center justify-between gap-1">
+        <span className={cn('flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl', TILE[status])}>
+          <span className={cn('h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full', BAR[status])} />
         </span>
-        <span className="text-2xl font-black tnum text-[var(--color-ink)]">{value}</span>
+        <span className="text-lg sm:text-2xl font-black tnum text-[var(--color-ink)]">{value}</span>
       </div>
-      <div className="mt-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-faint)]">{label}</div>
+      <div className="mt-2 text-[9px] sm:text-xs font-bold uppercase tracking-wider text-[var(--color-faint)] truncate" title={label}>{label}</div>
     </div>
   )
 }

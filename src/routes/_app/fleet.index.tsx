@@ -378,7 +378,7 @@ function VehicleCard({
 
         {/* Bold colored title band — gives every car a distinct identity */}
         <div
-          className="flex items-center gap-2 px-3 py-2"
+          className="flex items-center gap-2 px-3 py-2 min-w-0"
           style={{ backgroundColor: band }}
         >
           <span
@@ -386,7 +386,7 @@ function VehicleCard({
             style={{ boxShadow: '0 0 0 3px rgba(255,255,255,0.18)' }}
           />
           <h3
-            className="truncate text-sm font-bold uppercase tracking-wide text-white [text-shadow:0_1px_1px_rgba(0,0,0,0.25)]"
+            className="truncate text-xs sm:text-sm font-bold uppercase tracking-wide text-white [text-shadow:0_1px_1px_rgba(0,0,0,0.25)] min-w-0"
             title={title}
           >
             {title}
@@ -394,13 +394,13 @@ function VehicleCard({
         </div>
 
         {/* Info strip */}
-        <div className="flex items-center justify-between gap-2 px-3 py-2.5">
-          <span className="rounded border border-[var(--color-line)] bg-[var(--color-surface-muted)] px-1.5 py-0.5 font-mono text-[11px] font-semibold text-[var(--color-ink-soft)]">
+        <div className="flex items-center justify-between gap-1.5 px-2.5 py-2.5 sm:px-3 sm:py-2.5 min-w-0">
+          <span className="rounded border border-[var(--color-line)] bg-[var(--color-surface-muted)] px-1.5 py-0.5 font-mono text-[9px] sm:text-[11px] font-semibold text-[var(--color-ink-soft)] min-w-0 truncate">
             {v.plate}
           </span>
-          <div className="shrink-0 text-right leading-tight">
-            <span className="text-sm font-bold tnum text-[var(--color-ink)]">{v.daily_rate.toLocaleString()}</span>
-            <span className="ml-1 text-[10px] font-medium text-[var(--color-faint)]">MAD/{t('common.perDay')}</span>
+          <div className="shrink-0 text-right leading-tight min-w-0">
+            <span className="text-xs sm:text-sm font-bold tnum text-[var(--color-ink)]">{v.daily_rate.toLocaleString()}</span>
+            <span className="ml-0.5 sm:ml-1 text-[8px] sm:text-[10px] font-medium text-[var(--color-faint)]">MAD/{t('common.perDay')}</span>
           </div>
         </div>
       </button>

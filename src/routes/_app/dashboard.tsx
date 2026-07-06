@@ -191,12 +191,12 @@ function Tile({ to, params, icon: Icon, label, c }: TileDef) {
     <Link
       to={to as any}
       params={params as any}
-      className={`group flex items-center gap-3 rounded-2xl border border-[var(--color-line)] ${tone.bg} p-4 shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-pop)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-ring)]`}
+      className={`group flex items-center gap-2.5 sm:gap-3 rounded-2xl border border-[var(--color-line)] ${tone.bg} p-3 sm:p-4 shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-pop)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-ring)] min-w-0`}
     >
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${tone.chip} text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_1px_2px_rgba(16,24,40,0.2)]`}>
-        <Icon className="h-5 w-5" />
+      <span className={`flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl ${tone.chip} text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_1px_2px_rgba(16,24,40,0.2)]`}>
+        <Icon className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
       </span>
-      <span className="text-sm font-bold text-[var(--color-ink)]">{label}</span>
+      <span className="text-xs sm:text-sm font-bold text-[var(--color-ink)] truncate min-w-0" title={label}>{label}</span>
     </Link>
   )
 }

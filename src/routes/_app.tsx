@@ -60,17 +60,17 @@ const NAV = [
 
 function BrandMark({ logoUrl, name }: { logoUrl?: string | null; name?: string | null }) {
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center gap-2.5 min-w-0">
       {logoUrl ? (
-        <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg border border-[var(--color-line)] bg-white">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--color-line)] bg-white">
           <img src={logoUrl} alt={name ?? 'Logo'} className="h-full w-full object-contain p-0.5" />
         </span>
       ) : (
-        <span className="skeu-primary flex h-9 w-9 items-center justify-center rounded-lg text-sm font-black text-white">
+        <span className="skeu-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-black text-white">
           {(name?.trim()?.[0] ?? 'L').toUpperCase()}
         </span>
       )}
-      <span className="skeu-emboss truncate text-[18px] font-black tracking-tight text-[var(--color-ink)]">
+      <span className="skeu-emboss truncate text-[18px] font-black tracking-tight text-[var(--color-ink)] min-w-0">
         {name?.trim() || 'Rentiq'}
       </span>
     </div>
@@ -333,17 +333,38 @@ function AppLayout() {
         {agencyBlock}
       </aside>
 
-      {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[var(--color-line)] bg-white/85 px-4 py-3 backdrop-blur lg:hidden">
-        <BrandMark logoUrl={agency?.agency?.logo_url} name={agency?.agency?.name} />
-        <button
-          onClick={() => setMenuOpen(true)}
-          className="rounded-lg p-2 text-[var(--color-ink-soft)] hover:bg-black/5"
-          aria-label={t('nav.openMenu')}
-        >
-          <Menu className="h-5 w-5" />
-        </button>
-      </header>
+      {/* Mobile Header and Sliding Navigation */}
+      <div className="sticky top-0 z-30 lg:hidden">
+        {/* Mobile top bar */}
+        <header className="flex items-center justify-between border-b border-[var(--color-line)] bg-white/85 px-4 py-3 backdrop-blur">
+          <BrandMark logoUrl={agency?.agency?.logo_url} name={agency?.agency?.name} />
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="rounded-lg p-2 text-[var(--color-ink-soft)] hover:bg-black/5"
+            aria-label={t('nav.openMenu')}
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </header>
+
+        {/* Mobile sliding quick nav */}
+        {agency && (
+          <div className="overflow-x-auto bg-white/85 border-b border-[var(--color-line)] backdrop-blur scrollbar-none">
+            <div className="flex items-center gap-2 px-4 py-2.5">
+              {NAV.map(({ to, labelKey, icon: Icon }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="mobile-nav-chip flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold text-[var(--color-ink-soft)] transition active:scale-95"
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span>{t(labelKey)}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Mobile sheet nav */}
       <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>

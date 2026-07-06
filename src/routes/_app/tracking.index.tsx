@@ -162,29 +162,36 @@ function TrackingHub() {
             {queue.map((it, i) => {
               const Icon = ICONS[it.serviceType ?? ''] ?? (it.kind === 'legal' ? FileText : Wrench)
               return (
-                <li key={`${it.vehicleId}-${it.kind}-${it.serviceType ?? it.label}-${i}`} className="flex items-center gap-3 px-4 py-3">
-                  <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', it.status === 'expired' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600')}>
-                    <Icon className="h-[18px] w-[18px]" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate text-sm font-semibold text-[var(--color-ink)]">{it.plate}</span>
-                      <span className="truncate text-xs text-[var(--color-muted)]">· {it.label}</span>
+                <li
+                  key={`${it.vehicleId}-${it.kind}-${it.serviceType ?? it.label}-${i}`}
+                  className="flex flex-col gap-2.5 p-3 sm:flex-row sm:items-center sm:gap-3 sm:px-4 sm:py-3"
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', it.status === 'expired' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600')}>
+                      <Icon className="h-[18px] w-[18px]" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-semibold text-[var(--color-ink)]">{it.plate}</span>
+                        <span className="truncate text-xs text-[var(--color-muted)]">· {it.label}</span>
+                      </div>
+                      <div className="truncate text-xs text-[var(--color-muted)] tnum">{it.detail}</div>
                     </div>
-                    <div className="truncate text-xs text-[var(--color-muted)] tnum">{it.detail}</div>
                   </div>
-                  <Badge tone={it.status === 'expired' ? 'danger' : 'warn'}>
-                    {it.status === 'expired' ? t('svc.overdue') : t('svc.dueNow')}
-                  </Badge>
-                  {it.kind === 'service' ? (
-                    <Button size="sm" variant="secondary" onClick={() => setLog({ vehicleId: it.vehicleId, type: it.serviceType!, mileage: it.mileage ?? 0 })}>
-                      {t('svc.markDone')}
-                    </Button>
-                  ) : (
-                    <Button size="sm" variant="secondary" onClick={() => router.navigate({ to: '/fleet/$vehicleId', params: { vehicleId: it.vehicleId } })}>
-                      {t('common.open')}
-                    </Button>
-                  )}
+                  <div className="flex items-center justify-between gap-2.5 sm:justify-end shrink-0 w-full sm:w-auto">
+                    <Badge tone={it.status === 'expired' ? 'danger' : 'warn'}>
+                      {it.status === 'expired' ? t('svc.overdue') : t('svc.dueNow')}
+                    </Badge>
+                    {it.kind === 'service' ? (
+                      <Button size="sm" variant="secondary" onClick={() => setLog({ vehicleId: it.vehicleId, type: it.serviceType!, mileage: it.mileage ?? 0 })}>
+                        {t('svc.markDone')}
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="secondary" onClick={() => router.navigate({ to: '/fleet/$vehicleId', params: { vehicleId: it.vehicleId } })}>
+                        {t('common.open')}
+                      </Button>
+                    )}
+                  </div>
                 </li>
               )
             })}
@@ -227,21 +234,21 @@ function TrackerCard({ code, name, due }: { code: string; name: string; due: num
     <Link
       to="/tracking/$type"
       params={{ type: code }}
-      className={`group flex flex-col gap-3 rounded-2xl border border-[var(--color-line)] ${tone.bg} p-5 shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-pop)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-ring)]`}
+      className={`group flex flex-col gap-2.5 sm:gap-3 rounded-2xl border border-[var(--color-line)] ${tone.bg} p-3.5 sm:p-5 shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-pop)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-ring)] min-w-0`}
     >
       <div className="flex items-center justify-between">
-        <span className={`flex h-12 w-12 items-center justify-center rounded-2xl ${tone.chip} text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_1px_2px_rgba(16,24,40,0.2)]`}>
-          <Icon className="h-6 w-6" />
+        <span className={`flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl ${tone.chip} text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_1px_2px_rgba(16,24,40,0.2)]`}>
+          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
         </span>
         {due > 0 && (
-          <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--color-danger)] px-1.5 text-xs font-bold text-white">
+          <span className="flex h-5 min-w-5 sm:h-6 sm:min-w-6 items-center justify-center rounded-full bg-[var(--color-danger)] px-1 sm:px-1.5 text-[10px] sm:text-xs font-bold text-white">
             {due}
           </span>
         )}
       </div>
-      <div>
-        <div className="text-sm font-bold text-[var(--color-ink)] sm:text-base">{name}</div>
-        <div className="mt-0.5 text-xs font-medium text-[var(--color-muted)]">
+      <div className="min-w-0">
+        <div className="truncate text-xs sm:text-sm font-bold text-[var(--color-ink)] sm:text-base" title={name}>{name}</div>
+        <div className="mt-0.5 text-[10px] sm:text-xs font-medium text-[var(--color-muted)] truncate">
           {due > 0 ? t('dash.nDue', { n: due }) : t('dash.upToDate')}
         </div>
       </div>
