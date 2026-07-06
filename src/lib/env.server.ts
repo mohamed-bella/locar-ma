@@ -26,6 +26,13 @@ const schema = z.object({
   GOOGLE_SERVICE_ACCOUNT_EMAIL: z.string().optional(),
   GOOGLE_PRIVATE_KEY: z.string().optional(), // PEM; literal \n are unescaped at use
   SHEET_SYNC_SECRET: z.string().optional(),
+
+  // Google Sheets sync v2 — per-agency OAuth (drive.file) + snapshot rebuild.
+  GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
+  GOOGLE_OAUTH_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_OAUTH_REDIRECT_URI: z.string().optional(), // https://<domain>/api/google-callback
+  SHEETS_TOKEN_KEY: z.string().optional(),           // any string; key = sha256(this)
+  CRON_SECRET: z.string().optional(),                // guards /api/sheets-sync + signs OAuth state
 })
   // In production, the private docs bucket MUST be configured and MUST differ
   // from the public bucket — otherwise contract PDFs (client CIN/passport/
