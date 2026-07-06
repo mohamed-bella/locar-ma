@@ -14,11 +14,13 @@ import {
   CalendarClock,
   CalendarCheck,
   CheckCircle2,
+  Wrench,
 } from 'lucide-react'
 import { listVehicles } from '~/server/fleet'
 import { listAlertRules } from '~/server/alertRules'
 import { listDocumentTypes } from '~/server/documentTypes'
 import { getDashboardStats } from '~/server/dashboard'
+import { getFleetMaintenance } from '~/server/maintenance'
 import { findTracker, trackRows } from '~/lib/tracking'
 import { useRealtimeInvalidate } from '~/lib/useRealtime'
 import { useI18n } from '~/lib/i18n'
@@ -26,13 +28,14 @@ import { PageHeader, StatCard, Card, CardHeader, CardBody } from '~/components/u
 
 export const Route = createFileRoute('/_app/dashboard')({
   loader: async () => {
-    const [vehicles, alertRules, documentTypes, stats] = await Promise.all([
+    const [vehicles, alertRules, documentTypes, stats, maintenance] = await Promise.all([
       listVehicles(),
       listAlertRules(),
       listDocumentTypes(),
       getDashboardStats(),
+      getFleetMaintenance(),
     ])
-    return { vehicles, alertRules, documentTypes, stats }
+    return { vehicles, alertRules, documentTypes, stats, maintenance }
   },
   component: Dashboard,
 })
@@ -41,19 +44,23 @@ const mad = (n: number) => `${n.toLocaleString()} MAD`
 
 function Dashboard() {
   const { auth, agency } = Route.useRouteContext()
-  const { vehicles, alertRules, documentTypes, stats } = Route.useLoaderData()
+  const { vehicles, alertRules, documentTypes, stats, maintenance } = Route.useLoaderData()
   const { t } = useI18n()
   useRealtimeInvalidate('vehicles')
   useRealtimeInvalidate('reservations')
+  useRealtimeInvalidate('service_records')
 
   const count = (s: string) => vehicles.filter((v) => v.status === s).length
   const available = count('available')
 
-  // Compliance / service counts via the shared tracking engine.
+  // Legal-paper counts via the shared tracking engine.
   const rows = (code: string) => trackRows(vehicles, findTracker(code, documentTypes)!, alertRules)
   const insWeek = rows('insurance').filter((r) => r.daysLeft !== null && r.daysLeft <= 7).length
   const visDue = rows('visite').filter((r) => r.status === 'expired' || r.status === 'soon').length
-  const vidDue = rows('vidange').filter((r) => r.status === 'expired' || r.status === 'soon').length
+  // Mechanical service counts from the dual-axis maintenance engine.
+  const dueRows = maintenance.rows.filter((r) => r.status === 'expired' || r.status === 'soon')
+  const vidDue = dueRows.filter((r) => r.type === 'vidange').length
+  const serviceDue = dueRows.length
 
   const firstName = agency.full_name?.split(' ')[0] ?? auth.user?.email?.split('@')[0]
 
@@ -61,6 +68,7 @@ function Dashboard() {
     { icon: ShieldCheck, tone: 'red', count: insWeek, label: t('dash.dlInsurance'), to: '/tracking/$type', params: { type: 'insurance' } },
     { icon: ClipboardCheck, tone: 'amber', count: visDue, label: t('dash.dlVisite'), to: '/tracking/$type', params: { type: 'visite' } },
     { icon: Droplet, tone: 'amber', count: vidDue, label: t('dash.dlVidange'), to: '/tracking/$type', params: { type: 'vidange' } },
+    { icon: Wrench, tone: 'amber', count: serviceDue, label: t('svc.dueThisWeek'), to: '/tracking' },
     { icon: CalendarCheck, tone: 'blue', count: stats.returnsToday, label: t('dash.dlReturns'), to: '/reservations' },
     { icon: CalendarClock, tone: 'blue', count: stats.pickupsToday, label: t('dash.dlPickups'), to: '/reservations' },
     { icon: CheckCircle2, tone: 'green', count: available, label: t('dash.dlAvailable'), to: '/fleet' },

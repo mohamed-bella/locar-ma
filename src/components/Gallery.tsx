@@ -33,7 +33,7 @@ export function Gallery({ urls }: { urls: string[] }) {
         onClick={() => openAt(0)}
         className="relative block aspect-[16/10] w-full overflow-hidden rounded-2xl sm:hidden"
       >
-        <img src={urls[0]} alt="" className="h-full w-full object-cover" />
+        <img src={urls[0]} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
         {urls.length > 1 && (
           <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white">
             1 / {urls.length}

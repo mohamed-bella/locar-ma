@@ -52,7 +52,7 @@ function Home() {
           {FEATURES.map(({ icon: Icon, title, desc }) => (
             <div
               key={title}
-              className="rounded-[var(--radius-card)] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-card)]"
+              className="skeu-card rounded-[var(--radius-card)] border p-6"
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-brand-soft)] text-[var(--color-brand)]">
                 <Icon className="h-5 w-5" />

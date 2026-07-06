@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { requireAgencyContext } from './context'
 import { reservationSchema, blockSchema, RESERVATION_STATUSES } from '~/lib/schemas'
 import { publicUrl } from '~/lib/r2.server'
+import { agencyToday } from '~/lib/tz'
 import { syncVehicleStatus } from './vehicleStatus'
 
 export type Reservation = {
@@ -99,7 +100,8 @@ export const checkAvailability = createServerFn({ method: 'GET' })
         .select('*, clients(full_name)')
         .lte('date_start', data.to)
         .gte('date_end', data.from)
-        .neq('status', 'cancelled'),
+        // A closed rental (car already returned) is not a live conflict.
+        .not('status', 'in', '(cancelled,closed)'),
     ])
     if (vErr) throw new Error(vErr.message)
     if (rErr) throw new Error(rErr.message)
@@ -146,7 +148,7 @@ export type FleetStatusRow = {
 export const getFleetStatusBoard = createServerFn({ method: 'GET' }).handler(
   async (): Promise<FleetStatusRow[]> => {
     const { supabase } = await requireAgencyContext()
-    const today = new Date().toISOString().slice(0, 10)
+    const today = agencyToday()
 
     const [{ data: vehicles, error: vErr }, { data: res, error: rErr }] = await Promise.all([
       supabase
@@ -207,7 +209,7 @@ export const checkVehicleCompliance = createServerFn({ method: 'GET' })
   )
   .handler(async ({ data }): Promise<ComplianceIssue[]> => {
     const { supabase } = await requireAgencyContext()
-    const today = new Date().toISOString().slice(0, 10)
+    const today = agencyToday()
 
     const [{ data: v }, { data: docTypes }] = await Promise.all([
       supabase

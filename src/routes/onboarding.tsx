@@ -64,7 +64,7 @@ function Onboarding() {
 
         <form
           onSubmit={onSubmit}
-          className="mt-8 space-y-5 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-white p-6 shadow-[var(--shadow-card)]"
+          className="skeu-card mt-8 space-y-5 rounded-[var(--radius-card)] border p-6"
         >
           <Field label={t('onb.agencyName')} required>
             <Input name="agencyName" required placeholder="Atlas Car" />
@@ -82,9 +82,9 @@ function Onboarding() {
           </div>
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label={t('onb.language')}>
+              {/* Arabic (RTL) not yet translated — only offer shipped locales. */}
               <Select name="language" defaultValue="fr">
                 <option value="fr">Français</option>
-                <option value="ar">العربية</option>
                 <option value="en">English</option>
               </Select>
             </Field>

@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns'
 import { requireAgencyContext } from './context'
+import { agencyToday, agencyTodayDate } from '~/lib/tz'
 
 export type VehicleRevenue = { vehicle_id: string; plate: string; total: number; count: number }
 export type BookingRow = {
@@ -47,8 +48,8 @@ async function fetchBookings() {
 export const getFinanceSummary = createServerFn({ method: 'GET' }).handler(
   async (): Promise<FinanceSummary> => {
     const rows = await fetchBookings()
-    const now = new Date()
-    const todayStr = format(now, 'yyyy-MM-dd')
+    const now = agencyTodayDate()
+    const todayStr = agencyToday()
     const wkS = format(startOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd')
     const wkE = format(endOfWeek(now, { weekStartsOn: 1 }), 'yyyy-MM-dd')
     const moS = format(startOfMonth(now), 'yyyy-MM-dd')

@@ -74,6 +74,7 @@ import {
   Buildings as I_Buildings,
   Power as I_Power,
   CreditCard as I_CreditCard,
+  Table as I_Table,
 } from '@phosphor-icons/react'
 
 export type LucideIcon = Icon
@@ -160,3 +161,4 @@ export const MoreVertical = duo(I_DotsThreeVertical)
 export const Building2 = duo(I_Buildings)
 export const Power = duo(I_Power)
 export const CreditCard = duo(I_CreditCard)
+export const Table = duo(I_Table)

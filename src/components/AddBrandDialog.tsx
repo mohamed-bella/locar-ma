@@ -36,7 +36,7 @@ export function AddBrandDialog({
     try {
       let logoKey: string | undefined
       if (file) {
-        const signed = await presignBrandLogo({ data: { name: file.name, type: file.type } })
+        const signed = await presignBrandLogo({ data: { name: file.name, type: file.type, size: file.size } })
         const res = await fetch(signed.url, {
           method: 'PUT',
           body: file,

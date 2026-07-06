@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireAgencyContext } from './context'
 import { presignUpload, publicUrl, deleteObject } from '~/lib/r2.server'
+import { MAX_LOGO_BYTES } from '~/lib/schemas'
 
 export type AgencyProfile = {
   id: string
@@ -38,15 +39,20 @@ export const getAgencyProfile = createServerFn({ method: 'GET' }).handler(
 // Presigned PUT so the browser uploads the logo straight to R2.
 export const presignAgencyLogo = createServerFn({ method: 'POST' })
   .validator((d: unknown) =>
-    z.object({ name: z.string(), type: z.string() }).parse(d),
+    z
+      .object({
+        name: z.string(),
+        type: z.string().startsWith('image/', 'Logo must be an image'),
+        size: z.number().int().positive().max(MAX_LOGO_BYTES, 'Logo is too large (max 2 MB)'),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const { agencyId, role } = await requireAgencyContext()
     if (role !== 'owner') throw new Error('Only the owner can change the logo')
-    if (!data.type.startsWith('image/')) throw new Error('Logo must be an image')
     const safe = data.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-40)
     const key = `agencies/${agencyId}/logo-${crypto.randomUUID()}-${safe}`
-    return { key, url: await presignUpload(key, data.type), publicUrl: publicUrl(key) }
+    return { key, url: await presignUpload(key, data.type, 300, data.size), publicUrl: publicUrl(key) }
   })
 
 // Persist the new logo URL (or clear it). RLS also restricts this to owners.
@@ -57,6 +63,12 @@ export const updateAgencyLogo = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const { supabase, agencyId, role } = await requireAgencyContext()
     if (role !== 'owner') throw new Error('Only the owner can change the logo')
+
+    // Only accept URLs that live in our own R2 public bucket — never let an
+    // arbitrary external host be stored and rendered as the brand mark.
+    if (data.logo_url && !data.logo_url.startsWith(publicUrl(''))) {
+      throw new Error('Invalid logo URL')
+    }
 
     // Best-effort cleanup of the previous R2 object.
     const { data: prev } = await supabase

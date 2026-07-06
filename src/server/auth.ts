@@ -1,11 +1,13 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import type { EmailOtpType } from '@supabase/supabase-js'
+import { getCookies, setCookie } from '@tanstack/react-start/server'
 import {
   getSupabaseServerClient,
   getSupabaseAdminClient,
 } from '~/lib/supabase.server'
 import { onboardingSchema, slugify } from '~/lib/schemas'
+import { ACTIVE_AGENCY_COOKIE } from './context'
 
 // Complete a magic-link / OTP sign-in ON THE SERVER. The PKCE code verifier is
 // stored in a cookie by @supabase/ssr; only the server client (wired to the
@@ -55,6 +57,7 @@ export type Membership = {
 export type AuthState = {
   user: { id: string; email: string | null } | null
   memberships: Membership[]
+  activeAgencyId: string | null
   isPlatformAdmin: boolean
 }
 
@@ -66,7 +69,7 @@ export const getAuthState = createServerFn({ method: 'GET' }).handler(
     const {
       data: { user },
     } = await supabase.auth.getUser()
-    if (!user) return { user: null, memberships: [], isPlatformAdmin: false }
+    if (!user) return { user: null, memberships: [], activeAgencyId: null, isPlatformAdmin: false }
 
     const { data } = await supabase
       .from('agency_members')
@@ -99,9 +102,43 @@ export const getAuthState = createServerFn({ method: 'GET' }).handler(
       /* table may not exist yet before migration — treat as not admin */
     }
 
-    return { user: { id: user.id, email: user.email ?? null }, memberships, isPlatformAdmin }
+    // Which agency the user is currently working in (validated against their
+    // memberships; falls back to the first). Drives the multi-agency switcher.
+    const wanted = getCookies()?.[ACTIVE_AGENCY_COOKIE]
+    const activeAgencyId =
+      memberships.find((m) => m.agency_id === wanted)?.agency_id ?? memberships[0]?.agency_id ?? null
+
+    return { user: { id: user.id, email: user.email ?? null }, memberships, activeAgencyId, isPlatformAdmin }
   },
 )
+
+// Switch the active agency for a multi-agency user. Validates membership, then
+// persists the choice in a cookie that requireAgencyContext / getAuthState read.
+export const setActiveAgency = createServerFn({ method: 'POST' })
+  .validator((d: unknown) => z.object({ agency_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const supabase = getSupabaseServerClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: member } = await supabase
+      .from('agency_members')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('agency_id', data.agency_id)
+      .maybeSingle()
+    if (!member) throw new Error('Not a member of that agency')
+
+    setCookie(ACTIVE_AGENCY_COOKIE, data.agency_id, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 365,
+    })
+    return { ok: true }
+  })
 
 // Create a new agency and make the current user its owner.
 // Uses the service-role client to bootstrap atomically (no INSERT policy needed).

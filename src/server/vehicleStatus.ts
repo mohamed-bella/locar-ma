@@ -7,6 +7,8 @@
 //   • nothing upcoming                  → available
 // A manual `maintenance` hold is preserved when no booking dictates otherwise.
 
+import { agencyToday } from '~/lib/tz'
+
 type Booking = { date_start: string; date_end: string; status: string }
 
 // Pure computation shared by write-sync and read-time display, so the two can
@@ -27,7 +29,7 @@ export function deriveVehicleStatus(bookings: Booking[], today: string, stored?:
 // Recompute and persist a single vehicle's status after a booking mutation.
 export async function syncVehicleStatus(supabase: any, vehicleId: string | null | undefined) {
   if (!vehicleId) return
-  const today = new Date().toISOString().slice(0, 10)
+  const today = agencyToday()
   const [{ data: v }, { data: rows }] = await Promise.all([
     supabase.from('vehicles').select('status').eq('id', vehicleId).maybeSingle(),
     supabase

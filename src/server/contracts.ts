@@ -108,6 +108,7 @@ export const listContracts = createServerFn({ method: 'GET' }).handler(
         'id, pdf_key, created_at, reservations(date_start, date_end, total_amount, status, vehicles(plate), clients(full_name))',
       )
       .order('created_at', { ascending: false })
+      .limit(1000) // safety ceiling; true paging is a follow-up
     if (error) throw new Error(error.message)
     return (data ?? []).map((r: any) => ({
       id: r.id,
@@ -221,8 +222,10 @@ export const createContractFromReservation = createServerFn({ method: 'POST' })
     if (error) throw new Error(error.message)
 
     await supabase.from('reservations').update({ status: 'active' }).eq('id', data.reservation_id)
+    // Derive the car's status from its bookings (may be reserved if the rental
+    // is future-dated) rather than blindly stamping 'rented'.
     if ((res as any).vehicle_id) {
-      await supabase.from('vehicles').update({ status: 'rented' }).eq('id', (res as any).vehicle_id)
+      await syncVehicleStatus(supabase, (res as any).vehicle_id)
     }
     return { id: (row as any).id as string }
   })
@@ -276,6 +279,16 @@ export const closeContract = createServerFn({ method: 'POST' })
     const reservationId = (c as any)?.reservation_id
     const vehicleId = (c as any)?.reservations?.vehicle_id
     if (reservationId) await supabase.from('reservations').update({ status: 'closed' }).eq('id', reservationId)
+
+    // Feed the return odometer back into the vehicle so maintenance ("suivi")
+    // runs on a live mileage — the whole point of the maintenance redesign.
+    if (vehicleId && data.mileage_in != null) {
+      const { data: v } = await supabase.from('vehicles').select('mileage_current').eq('id', vehicleId).maybeSingle()
+      if ((v as any)?.mileage_current == null || data.mileage_in > (v as any).mileage_current) {
+        await supabase.from('vehicles').update({ mileage_current: data.mileage_in }).eq('id', vehicleId)
+      }
+    }
+
     // Recompute status from remaining bookings (may become reserved, not just available).
     if (vehicleId) await syncVehicleStatus(supabase, vehicleId)
     return { ok: true }

@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
-import { Plus, Tag, Eye, EyeOff, Sparkles, Trash2, ImagePlus, Loader2, Building2 } from 'lucide-react'
+import { Plus, Tag, Eye, EyeOff, Sparkles, Trash2, ImagePlus, Loader2, Building2, Table } from 'lucide-react'
 import { toast } from 'sonner'
 import { listAllBrands, hideBrand, unhideBrand } from '~/server/brands'
 import { getAgencyProfile, presignAgencyLogo, updateAgencyLogo, type AgencyProfile } from '~/server/agency'
+import { getSheetStatus, enableSheetSync, disableSheetSync, type SheetStatus } from '~/server/sheets'
 import { AddBrandDialog } from '~/components/AddBrandDialog'
 import { Button, Card, CardHeader, CardBody, Badge, PageHeader, EmptyState, Modal, Field, Input, Select } from '~/components/ui'
 import { listAlertRules, createAlertRule, updateAlertRule, deleteAlertRule, type AlertRule } from '~/server/alertRules'
@@ -15,19 +16,20 @@ import { Languages } from 'lucide-react'
 
 export const Route = createFileRoute('/_app/settings')({
   loader: async () => {
-    const [brands, alertRules, documentTypes, agency] = await Promise.all([
+    const [brands, alertRules, documentTypes, agency, sheet] = await Promise.all([
       listAllBrands(),
       listAlertRules(),
       listDocumentTypes(),
       getAgencyProfile(),
+      getSheetStatus(),
     ])
-    return { brands, alertRules, documentTypes, agency }
+    return { brands, alertRules, documentTypes, agency, sheet }
   },
   component: Settings,
 })
 
 function Settings() {
-  const { brands, alertRules: rules, documentTypes, agency } = Route.useLoaderData()
+  const { brands, alertRules: rules, documentTypes, agency, sheet } = Route.useLoaderData()
   const router = useRouter()
   const { t, locale, setLocale } = useI18n()
   const [addOpen, setAddOpen] = useState(false)
@@ -165,6 +167,9 @@ function Settings() {
 
       {/* Agency logo */}
       <AgencyLogoCard agency={agency} onDone={() => router.invalidate()} />
+
+      {/* Google Sheets sync */}
+      <SheetSyncCard status={sheet} canEdit={agency.canEdit} onDone={() => router.invalidate()} />
 
       {/* Language */}
       <Card className="mt-6">
@@ -418,6 +423,223 @@ function Settings() {
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024
 
+function SheetSyncCard({ status, canEdit, onDone }: { status: SheetStatus; canEdit: boolean; onDone: () => void }) {
+  const { t } = useI18n()
+  const [busy, setBusy] = useState(false)
+  const [spreadsheetUrl, setSpreadsheetUrl] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  async function enableSync(useExistingUrl = false) {
+    setBusy(true)
+    try {
+      const { url } = await enableSheetSync({ 
+        data: { spreadsheetUrl: useExistingUrl ? spreadsheetUrl : undefined }
+      })
+      toast.success(t('set.sheetEnabled'))
+      if (url) window.open(url, '_blank')
+      setSpreadsheetUrl('')
+      onDone()
+    } catch (e: any) {
+      toast.error(e?.message ?? t('common.actionFailed'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function disable() {
+    setBusy(true)
+    try {
+      await disableSheetSync()
+      toast.success(t('set.sheetDisabled'))
+      onDone()
+    } catch (e: any) {
+      toast.error(e?.message ?? t('common.actionFailed'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function copyEmail() {
+    if (!status.serviceAccountEmail) return
+    try {
+      await navigator.clipboard.writeText(status.serviceAccountEmail)
+      setCopied(true)
+      toast.success('Service account email copied to clipboard!')
+      setTimeout(() => setCopied(false), 2000)
+    } catch (e) {
+      toast.error('Failed to copy email')
+    }
+  }
+
+  return (
+    <Card className="mt-6">
+      <CardHeader
+        title={
+          <span className="flex items-center gap-2">
+            <Table className="h-[18px] w-[18px]" /> {t('set.sheetTitle')}
+          </span>
+        }
+      />
+      <CardBody>
+        {!status.configured ? (
+          <p className="text-sm text-[var(--color-muted)]">{t('set.sheetNotConfigured')}</p>
+        ) : (
+          <div>
+            {status.enabled ? (
+              <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--color-line)] p-4 bg-emerald-50/10">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-emerald-800">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 -ml-4" />
+                    {t('set.sheetOn')}
+                  </div>
+                  <p className="mt-1 text-xs text-[var(--color-muted)]">
+                    {t('set.sheetDesc')}
+                  </p>
+                  {status.url && (
+                    <a
+                      href={status.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-brand)] hover:underline"
+                    >
+                      {t('set.sheetOpen')}
+                      <svg className="h-3.5 w-3.5 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6m4-3h6v6m-11 5L21 3" />
+                      </svg>
+                    </a>
+                  )}
+                </div>
+                {canEdit && (
+                  <Button variant="secondary" loading={busy} onClick={disable}>
+                    {t('set.sheetDisable')}
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Service Account Email Info */}
+                {status.serviceAccountEmail && (
+                  <div className="rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-muted)] p-4">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-muted)] mb-2">
+                      1. Authorize Service Account
+                    </h4>
+                    <p className="text-sm text-[var(--color-muted)] mb-3">
+                      To synchronize data, the system needs access rights. Share your Google Sheet with this email as an <strong>Editor</strong>:
+                    </p>
+                    
+                    <div className="flex flex-wrap items-center gap-2 max-w-2xl">
+                      <div className="flex-1 font-mono text-xs select-all bg-white border border-[var(--color-line)] px-3 py-2.5 rounded-lg text-[var(--color-ink)] truncate min-w-[250px]">
+                        {status.serviceAccountEmail}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={copyEmail}
+                        className={`flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-xs font-semibold border transition ${
+                          copied
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                            : 'bg-white border-[var(--color-line)] text-[var(--color-ink-soft)] hover:bg-neutral-50'
+                        }`}
+                      >
+                        {copied ? (
+                          <>
+                            <svg className="h-3.5 w-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Copied
+                          </>
+                        ) : (
+                          <>
+                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <rect x={14} y={14} width={8} height={8} rx={2} ry={2} />
+                              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                            </svg>
+                            Copy Email
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Provision Configuration Options */}
+                <div className="grid gap-6 md:grid-cols-2">
+                  {/* Option A: Auto Provision */}
+                  <div className="flex flex-col justify-between rounded-xl border border-[var(--color-line)] p-4 bg-white hover:border-[var(--color-line-strong)] transition-all">
+                    <div>
+                      <h4 className="text-sm font-bold text-[var(--color-ink)] flex items-center gap-1.5">
+                        Option A: Auto-Create
+                      </h4>
+                      <p className="mt-2 text-xs text-[var(--color-muted)] leading-relaxed">
+                        Let the service account automatically create a brand new Google Spreadsheet. It will attempt to share the created sheet with your email address.
+                      </p>
+                      <div className="mt-3 inline-flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md font-medium border border-amber-200">
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <circle cx={12} cy={12} r={10} />
+                          <line x1={12} y1={8} x2={12} y2={12} />
+                          <line x1={12} y1={16} x2={12.01} y2={16} />
+                        </svg>
+                        Note: May fail if the GCP project account has no Drive storage.
+                      </div>
+                    </div>
+                    
+                    {canEdit && (
+                      <div className="mt-6 border-t border-[var(--color-line)] pt-3">
+                        <Button 
+                          className="w-full font-semibold" 
+                          loading={busy} 
+                          onClick={() => enableSync(false)}
+                        >
+                          Auto-Create Spreadsheet
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Option B: Link Existing */}
+                  <div className="flex flex-col justify-between rounded-xl border border-[var(--color-line)] p-4 bg-white hover:border-[var(--color-line-strong)] transition-all">
+                    <div>
+                      <h4 className="text-sm font-bold text-[var(--color-ink)]">
+                        Option B: Link Existing (Recommended)
+                      </h4>
+                      <p className="mt-2 text-xs text-[var(--color-muted)] leading-relaxed">
+                        Create a blank spreadsheet in your Google Drive, share it with the service account email above, and paste its link or ID below. Required tabs will be created.
+                      </p>
+                      
+                      <div className="mt-4">
+                        <Input
+                          placeholder="https://docs.google.com/spreadsheets/d/..."
+                          value={spreadsheetUrl}
+                          onChange={(e) => setSpreadsheetUrl(e.target.value)}
+                          className="text-xs py-2 bg-neutral-50 focus:bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    {canEdit && (
+                      <div className="mt-6 border-t border-[var(--color-line)] pt-3">
+                        <Button 
+                          variant="secondary"
+                          className="w-full font-semibold"
+                          loading={busy} 
+                          disabled={!spreadsheetUrl.trim()}
+                          onClick={() => enableSync(true)}
+                        >
+                          Link & Setup Spreadsheet
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  )
+}
+
 function AgencyLogoCard({ agency, onDone }: { agency: AgencyProfile; onDone: () => void }) {
   const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -437,7 +659,7 @@ function AgencyLogoCard({ agency, onDone }: { agency: AgencyProfile; onDone: () 
     }
     setBusy(true)
     try {
-      const signed = await presignAgencyLogo({ data: { name: file.name, type: file.type } })
+      const signed = await presignAgencyLogo({ data: { name: file.name, type: file.type, size: file.size } })
       const put = await fetch(signed.url, {
         method: 'PUT',
         body: file,

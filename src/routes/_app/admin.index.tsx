@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router'
 import { format } from 'date-fns'
 import { Building2, Users, Car, AlertTriangle, Power } from 'lucide-react'
@@ -24,6 +25,7 @@ function AdminAgencies() {
   const navigate = useNavigate()
   const router = useRouter()
   const { t } = useI18n()
+  const [busyId, setBusyId] = useState<string | null>(null)
 
   const totalMrr = agencies.filter((a) => a.subscription_status === 'active').reduce((s, a) => s + a.monthly_fee, 0)
   const overdue = agencies.filter((a) => a.overdue).length
@@ -31,12 +33,16 @@ function AdminAgencies() {
 
   async function toggle(a: AgencyOverview, e: React.MouseEvent) {
     e.stopPropagation()
+    if (busyId) return // guard against double-fire while a toggle is in flight
+    setBusyId(a.id)
     try {
       await setAgencyActive({ data: { id: a.id, active: !a.is_active } })
       toast.success(t('adm.saved'))
       await router.invalidate()
     } catch (err: any) {
       toast.error(err?.message ?? t('common.actionFailed'))
+    } finally {
+      setBusyId(null)
     }
   }
 
@@ -102,7 +108,13 @@ function AdminAgencies() {
                 <td className="px-2 py-3 text-center tnum text-[var(--color-muted)]">{a.members}</td>
                 <td className="px-2 py-3 text-right font-semibold tnum text-[var(--color-ink)]">{mad(a.revMonth)}</td>
                 <td className="px-2 py-3">
-                  <Button size="sm" variant={a.is_active ? 'secondary' : 'primary'} onClick={(e) => toggle(a, e)}>
+                  <Button
+                    size="sm"
+                    variant={a.is_active ? 'secondary' : 'primary'}
+                    loading={busyId === a.id}
+                    disabled={busyId !== null && busyId !== a.id}
+                    onClick={(e) => toggle(a, e)}
+                  >
                     {a.is_active ? t('adm.deactivate') : t('adm.activate')}
                   </Button>
                 </td>

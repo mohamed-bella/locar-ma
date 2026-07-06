@@ -1,9 +1,20 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireAgencyContext } from './context'
-import { vehicleSchema, damageReportSchema } from '~/lib/schemas'
-import { presignUpload, publicUrl } from '~/lib/r2.server'
+import { vehicleSchema, damageReportSchema, MAX_IMAGE_BYTES } from '~/lib/schemas'
+import { presignUpload, publicUrl, deleteObject, docsBucket } from '~/lib/r2.server'
+import { agencyToday } from '~/lib/tz'
 import { deriveVehicleStatus } from './vehicleStatus'
+
+// Best-effort R2 cleanup — an orphaned object is harmless, a thrown error that
+// blocks a delete is not. Never let storage cleanup fail the DB operation.
+async function bestEffortDelete(keys: (string | null | undefined)[], bucket?: string) {
+  await Promise.all(
+    keys
+      .filter((k): k is string => !!k)
+      .map((k) => deleteObject(k, bucket).catch(() => {})),
+  )
+}
 
 export type Vehicle = {
   id: string
@@ -51,6 +62,14 @@ function mapVehicle(row: any): Vehicle {
   }
 }
 
+// A file the browser wants to upload: name + MIME + byte size. Size is capped
+// here and re-signed into the presigned PUT so R2 rejects an oversized body.
+const imageFileSchema = z.object({
+  name: z.string(),
+  type: z.string().startsWith('image/', 'Only image files are allowed'),
+  size: z.number().int().positive().max(MAX_IMAGE_BYTES, 'Image is too large (max 8 MB)'),
+})
+
 // Normalize optional form values to null for the DB.
 function nulls<T extends Record<string, unknown>>(obj: T) {
   const out: Record<string, unknown> = {}
@@ -61,7 +80,7 @@ function nulls<T extends Record<string, unknown>>(obj: T) {
 export const listVehicles = createServerFn({ method: 'GET' }).handler(
   async (): Promise<Vehicle[]> => {
     const { supabase } = await requireAgencyContext()
-    const today = new Date().toISOString().slice(0, 10)
+    const today = agencyToday()
     const [{ data, error }, { data: res }] = await Promise.all([
       supabase.from('vehicles').select(VEHICLE_SELECT).order('created_at', { ascending: false }),
       supabase
@@ -182,7 +201,7 @@ export const setVehicleStatus = createServerFn({ method: 'POST' })
     const { supabase } = await requireAgencyContext()
     // Guard: refuse to free a car that is currently out on a live booking.
     if (data.status === 'available') {
-      const today = new Date().toISOString().slice(0, 10)
+      const today = agencyToday()
       const { data: live } = await supabase
         .from('reservations')
         .select('id')
@@ -205,8 +224,15 @@ export const deleteVehicle = createServerFn({ method: 'POST' })
   .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { supabase } = await requireAgencyContext()
+    // Capture image keys before the row is gone so we can purge R2.
+    const { data: veh } = await supabase
+      .from('vehicles')
+      .select('image_keys')
+      .eq('id', data.id)
+      .maybeSingle()
     const { error } = await supabase.from('vehicles').delete().eq('id', data.id)
     if (error) throw new Error(error.message)
+    await bestEffortDelete((veh as any)?.image_keys ?? [])
     return { ok: true }
   })
 
@@ -218,6 +244,15 @@ export const deleteVehicleCascade = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<{ ok: true; reservations: number; contracts: number }> => {
     const { supabase } = await requireAgencyContext()
 
+    // Gather the R2 keys of everything we're about to delete FIRST — once the
+    // rows are gone we can't recover them, and leaving the objects behind means
+    // orphaned PII (ID scans, contract PDFs, damage photos) in storage forever.
+    const { data: veh } = await supabase
+      .from('vehicles')
+      .select('image_keys')
+      .eq('id', data.id)
+      .maybeSingle()
+
     const { data: res, error: resErr } = await supabase
       .from('reservations')
       .select('id')
@@ -225,10 +260,20 @@ export const deleteVehicleCascade = createServerFn({ method: 'POST' })
     if (resErr) throw new Error(resErr.message)
     const resIds = (res ?? []).map((r: any) => r.id as string)
 
+    const { data: dmg } = await supabase
+      .from('damage_reports')
+      .select('photo_keys')
+      .eq('vehicle_id', data.id)
+
     let contracts = 0
+    let pdfKeys: string[] = []
     if (resIds.length > 0) {
-      const { data: cons } = await supabase.from('contracts').select('id').in('reservation_id', resIds)
+      const { data: cons } = await supabase
+        .from('contracts')
+        .select('id, pdf_key')
+        .in('reservation_id', resIds)
       contracts = (cons ?? []).length
+      pdfKeys = (cons ?? []).map((c: any) => c.pdf_key).filter(Boolean)
       const { error: cErr } = await supabase.from('contracts').delete().in('reservation_id', resIds)
       if (cErr) throw new Error(cErr.message)
     }
@@ -243,6 +288,11 @@ export const deleteVehicleCascade = createServerFn({ method: 'POST' })
     const { error: vErr } = await supabase.from('vehicles').delete().eq('id', data.id)
     if (vErr) throw new Error(vErr.message)
 
+    // Purge storage after the DB rows are gone (best effort, never blocks).
+    const damagePhotos = (dmg ?? []).flatMap((d: any) => (d.photo_keys ?? []) as string[])
+    await bestEffortDelete([...((veh as any)?.image_keys ?? []), ...damagePhotos]) // public bucket
+    await bestEffortDelete(pdfKeys, docsBucket()) // private docs bucket
+
     return { ok: true, reservations: resIds.length, contracts }
   })
 
@@ -251,7 +301,10 @@ export const presignVehicleUploads = createServerFn({ method: 'POST' })
   .validator((d: unknown) =>
     z
       .object({
-        files: z.array(z.object({ name: z.string(), type: z.string() })).min(1).max(12),
+        files: z
+          .array(imageFileSchema)
+          .min(1)
+          .max(12),
       })
       .parse(d),
   )
@@ -261,7 +314,7 @@ export const presignVehicleUploads = createServerFn({ method: 'POST' })
     for (const f of data.files) {
       const safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-60)
       const key = `agencies/${agencyId}/vehicles/photos/${crypto.randomUUID()}-${safe}`
-      out.push({ key, url: await presignUpload(key, f.type) })
+      out.push({ key, url: await presignUpload(key, f.type, 300, f.size) })
     }
     return out
   })
@@ -285,7 +338,7 @@ export const presignDamageUploads = createServerFn({ method: 'POST' })
       .object({
         vehicle_id: z.string().uuid(),
         files: z
-          .array(z.object({ name: z.string(), type: z.string() }))
+          .array(imageFileSchema)
           .min(1)
           .max(12),
       })
@@ -297,7 +350,7 @@ export const presignDamageUploads = createServerFn({ method: 'POST' })
     for (const f of data.files) {
       const safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-60)
       const key = `agencies/${agencyId}/vehicles/${data.vehicle_id}/damage/${crypto.randomUUID()}-${safe}`
-      out.push({ key, url: await presignUpload(key, f.type) })
+      out.push({ key, url: await presignUpload(key, f.type, 300, f.size) })
     }
     return out
   })

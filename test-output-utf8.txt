@@ -1,0 +1,92 @@
+﻿Using Service Account Email: rentiq@rentiq-system.iam.gserviceaccount.com
+Key is present: true
+
+--- Testing Drive API list files ---
+Drive API Status: 200
+Drive API Response: {
+  "files": [
+    {
+      "kind": "drive#file",
+      "mimeType": "text/plain",
+      "id": "1lOCYDHyDZr5Q0PCqaArF7BwNVvA945zu",
+      "name": "Locar Test File.txt"
+    }
+  ],
+  "kind": "drive#fileList",
+  "incompleteSearch": false
+}
+
+
+--- Testing Sheets API GET mock sheet ---
+Sheets API GET Status: 404
+Sheets API GET Response: {
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND"
+  }
+}
+
+
+--- Testing Drive API create file ---
+Drive API Create Status: 200
+Drive API Create Response: {
+  "kind": "drive#file",
+  "id": "1hScdvv_D8iQZPjTxb6mcxPsxNkRET6Zv",
+  "name": "Locar Test File.txt",
+  "mimeType": "text/plain"
+}
+
+
+--- Testing Drive API create spreadsheet ---
+Drive API Create Sheet Status: 403
+Drive API Create Sheet Response: {
+  "error": {
+    "code": 403,
+    "message": "The user's Drive storage quota has been exceeded.",
+    "errors": [
+      {
+        "message": "The user's Drive storage quota has been exceeded.",
+        "domain": "usageLimits",
+        "reason": "storageQuotaExceeded"
+      }
+    ]
+  }
+}
+
+
+--- Testing scopes: "https://www.googleapis.com/auth/spreadsheets" ---
+Attempting to create spreadsheet: "Locar Test Sheet ÔÇö 1783340339894"...
+Response Status: 403
+Response Body: {
+  "error": {
+    "code": 403,
+    "message": "The caller does not have permission",
+    "status": "PERMISSION_DENIED"
+  }
+}
+
+
+--- Testing scopes: "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file" ---
+Attempting to create spreadsheet: "Locar Test Sheet ÔÇö 1783340340645"...
+Response Status: 403
+Response Body: {
+  "error": {
+    "code": 403,
+    "message": "The caller does not have permission",
+    "status": "PERMISSION_DENIED"
+  }
+}
+
+
+--- Testing scopes: "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive" ---
+Attempting to create spreadsheet: "Locar Test Sheet ÔÇö 1783340341267"...
+Response Status: 403
+Response Body: {
+  "error": {
+    "code": 403,
+    "message": "The caller does not have permission",
+    "status": "PERMISSION_DENIED"
+  }
+}
+

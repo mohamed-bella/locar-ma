@@ -171,7 +171,7 @@ function ReservationPicker({
         >
           <div className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-surface-muted)]">
             {r.image_url ? (
-              <img src={r.image_url} alt="" className="h-full w-full object-cover" />
+              <img src={r.image_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
             ) : (
               <Car className="h-5 w-5 text-[var(--color-faint)]" />
             )}

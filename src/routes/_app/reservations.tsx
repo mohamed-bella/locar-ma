@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
 import { addDays, format, parseISO } from 'date-fns'
-import { Plus, CalendarSearch, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
+import { Plus, CalendarSearch, ChevronLeft, ChevronRight, CalendarDays, Table } from 'lucide-react'
 import { listVehicles } from '~/server/fleet'
 import { listReservations, type Reservation } from '~/server/reservations'
 import { useRealtimeInvalidate } from '~/lib/useRealtime'
@@ -75,7 +75,7 @@ function Reservations() {
 
   const [drawer, setDrawer] = useState<DrawerState>({ open: false, initial: {} })
   const [checkOpen, setCheckOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'calendar' | 'table'>('calendar')
+  const [activeTab, setActiveTab] = useState<'calendar' | 'table'>('table')
 
   // Deep-link: /reservations?new=true opens the create drawer (dashboard CTA).
   useEffect(() => {
@@ -159,26 +159,28 @@ function Reservations() {
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center rounded-lg bg-[var(--color-surface-muted)] p-1 border border-[var(--color-line)] shrink-0">
             <button
-              onClick={() => setActiveTab('calendar')}
-              className={cn(
-                'rounded px-3 py-1.5 text-xs font-semibold transition-all select-none',
-                activeTab === 'calendar'
-                  ? 'bg-white shadow-[var(--shadow-card)] text-[var(--color-ink)]'
-                  : 'text-[var(--color-muted)] hover:text-[var(--color-ink)]',
-              )}
-            >
-              {t('res.calendarView')}
-            </button>
-            <button
               onClick={() => setActiveTab('table')}
+              aria-label={t('res.tableView')}
               className={cn(
-                'rounded px-3 py-1.5 text-xs font-semibold transition-all select-none',
+                'inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-semibold transition-all select-none',
                 activeTab === 'table'
                   ? 'bg-white shadow-[var(--shadow-card)] text-[var(--color-ink)]'
                   : 'text-[var(--color-muted)] hover:text-[var(--color-ink)]',
               )}
             >
-              {t('res.tableView')}
+              <Table className="h-4 w-4" /> {t('res.tableView')}
+            </button>
+            <button
+              onClick={() => setActiveTab('calendar')}
+              aria-label={t('res.calendarView')}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-semibold transition-all select-none',
+                activeTab === 'calendar'
+                  ? 'bg-white shadow-[var(--shadow-card)] text-[var(--color-ink)]'
+                  : 'text-[var(--color-muted)] hover:text-[var(--color-ink)]',
+              )}
+            >
+              <CalendarDays className="h-4 w-4" /> {t('res.calendarView')}
             </button>
           </div>
 

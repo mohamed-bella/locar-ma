@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireAgencyContext } from './context'
-import { brandSchema } from '~/lib/schemas'
+import { brandSchema, MAX_LOGO_BYTES } from '~/lib/schemas'
 import { presignUpload, publicUrl } from '~/lib/r2.server'
 
 export type Brand = {
@@ -49,12 +49,20 @@ export const listAllBrands = createServerFn({ method: 'GET' }).handler(
 )
 
 export const presignBrandLogo = createServerFn({ method: 'POST' })
-  .validator((d: unknown) => z.object({ name: z.string(), type: z.string() }).parse(d))
+  .validator((d: unknown) =>
+    z
+      .object({
+        name: z.string(),
+        type: z.string().startsWith('image/', 'Only image files are allowed'),
+        size: z.number().int().positive().max(MAX_LOGO_BYTES, 'Logo is too large (max 2 MB)'),
+      })
+      .parse(d),
+  )
   .handler(async ({ data }) => {
     await requireAgencyContext()
     const safe = data.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-50)
     const key = `brands/${crypto.randomUUID()}-${safe}`
-    return { key, url: await presignUpload(key, data.type) }
+    return { key, url: await presignUpload(key, data.type, 300, data.size) }
   })
 
 export const createBrand = createServerFn({ method: 'POST' })

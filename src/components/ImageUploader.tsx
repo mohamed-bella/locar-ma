@@ -41,7 +41,7 @@ export function ImageUploader({
 
     try {
       const signed = await presignVehicleUploads({
-        data: { files: list.map((f) => ({ name: f.name, type: f.type })) },
+        data: { files: list.map((f) => ({ name: f.name, type: f.type, size: f.size })) },
       })
       await Promise.all(
         signed.map((s, i) =>
