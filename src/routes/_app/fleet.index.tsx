@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
-import { Car, Plus, Search, Upload, MoreVertical, Eye, Pencil, Trash2, Copy } from 'lucide-react'
+import { Car, Plus, Search, Upload, MoreVertical, Eye, Pencil, Trash2, Copy, CalendarSearch } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   listVehicles,
@@ -14,6 +14,7 @@ import { listDocumentTypes } from '~/server/documentTypes'
 import { VehicleForm } from '~/components/VehicleForm'
 import { BulkImportVehicles } from '~/components/BulkImportVehicles'
 import { DeleteVehicleDialog } from '~/components/DeleteVehicleDialog'
+import { AvailabilityChecker } from '~/components/reservations/AvailabilityChecker'
 import { vehicleAlerts } from '~/lib/fleet'
 import { brandColor } from '~/lib/brandColor'
 import { VEHICLE_STATUSES } from '~/lib/schemas'
@@ -54,6 +55,7 @@ function Fleet() {
   const router = useRouter()
   const { t } = useI18n()
   const [adding, setAdding] = useState(false)
+  const [checkingAvail, setCheckingAvail] = useState(false)
   const [importing, setImporting] = useState(false)
   const [editing, setEditing] = useState<Vehicle | null>(null)
   const [deleting, setDeleting] = useState<Vehicle | null>(null)
@@ -120,12 +122,30 @@ function Fleet() {
           </span>
         }
         actions={
-          <div className="flex w-full items-center gap-2 sm:w-auto">
-            <Button variant="secondary" size="lg" className="flex-1 sm:flex-none" onClick={() => setImporting(true)}>
-              <Upload className="h-[18px] w-[18px]" /> {t('fleet.importJson')}
+          <div className="flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-2">
+            <Button
+              variant="secondary"
+              size="lg"
+              className="w-full sm:w-auto"
+              onClick={() => setCheckingAvail(true)}
+            >
+              <CalendarSearch className="h-[18px] w-[18px]" /> {t('res.checkAvailability')}
             </Button>
-            <Button size="lg" className="flex-1 sm:flex-none" onClick={() => setAdding(true)}>
+            <Button
+              size="lg"
+              className="w-full sm:w-auto font-semibold"
+              onClick={() => setAdding(true)}
+            >
               <Plus className="h-[18px] w-[18px]" /> {t('fleet.addVehicle')}
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
+              className="hidden md:inline-flex shrink-0 px-3"
+              onClick={() => setImporting(true)}
+              title={t('fleet.importJson')}
+            >
+              <Upload className="h-[18px] w-[18px]" />
             </Button>
           </div>
         }
@@ -234,6 +254,25 @@ function Fleet() {
           }}
         />
       </SlideOver>
+
+      <AvailabilityChecker
+        open={checkingAvail}
+        onOpenChange={setCheckingAvail}
+        onBook={(vehicleId, from, to) => {
+          setCheckingAvail(false)
+          router.navigate({
+            to: '/reservations',
+            search: { vehicle: vehicleId, start: from, new: true } as any,
+          })
+        }}
+        onEdit={(r) => {
+          setCheckingAvail(false)
+          router.navigate({
+            to: '/reservations',
+            search: { start: r.date_start } as any,
+          })
+        }}
+      />
 
       <BulkImportVehicles open={importing} onOpenChange={setImporting} onImported={() => router.invalidate()} />
 

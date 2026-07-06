@@ -130,13 +130,19 @@ function Reservations() {
         title={t('res.title')}
         subtitle={activeTab === 'calendar' ? t('res.calendarSubtitle') : t('res.tableSubtitle')}
         actions={
-          <div className="flex w-full items-center gap-2 sm:w-auto">
-            <Button variant="secondary" size="lg" className="flex-1 sm:flex-none" disabled={vehicles.length === 0} onClick={() => setCheckOpen(true)}>
+          <div className="flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-2">
+            <Button
+              variant="secondary"
+              size="lg"
+              className="w-full sm:w-auto"
+              disabled={vehicles.length === 0}
+              onClick={() => setCheckOpen(true)}
+            >
               <CalendarSearch className="h-[18px] w-[18px]" /> {t('res.checkAvailability')}
             </Button>
             <Button
               size="lg"
-              className="flex-1 sm:flex-none"
+              className="w-full sm:w-auto font-semibold"
               disabled={vehicles.length === 0}
               onClick={() =>
                 setDrawer({

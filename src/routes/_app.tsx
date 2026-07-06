@@ -355,9 +355,9 @@ function AppLayout() {
                 <Link
                   key={to}
                   to={to}
-                  className="mobile-nav-chip flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold text-[var(--color-ink-soft)] transition active:scale-95"
+                  className={`mobile-nav-chip chip-${to.slice(1)} flex shrink-0 items-center gap-2 rounded-full border px-[18px] py-2 text-sm font-bold transition active:scale-95`}
                 >
-                  <Icon className="h-3.5 w-3.5" />
+                  <Icon className="h-4.5 w-4.5" />
                   <span>{t(labelKey)}</span>
                 </Link>
               ))}

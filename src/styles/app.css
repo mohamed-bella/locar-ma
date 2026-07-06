@@ -284,22 +284,114 @@ body {
 
 /* Mobile nav chips — sliding pills matching UI actions */
 .mobile-nav-chip {
-  border: 1px solid var(--color-line);
-  background-image: linear-gradient(to bottom, #ffffff, #f2ede4);
-  box-shadow: inset 0 1px 0 #ffffff, 0 1px 1px rgba(60, 45, 25, 0.06);
+  transition: all 0.15s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Chip individual themes */
+
+/* 1. Dashboard (Indigo) */
+.chip-dashboard {
+  border-color: #cbd5e1;
+  background-image: linear-gradient(to bottom, #ffffff, #f0f2fe);
+  color: #4f46e5;
   text-shadow: 0 1px 0 #ffffff;
-  transition: all 0.2s ease;
 }
-.mobile-nav-chip:hover {
-  background-image: linear-gradient(to bottom, #ffffff, #ece6db);
-}
-.mobile-nav-chip.active {
-  background-image: linear-gradient(to bottom, #fd7048, var(--color-brand) 55%, #f4501d);
-  border-color: #d1461c;
+.chip-dashboard.active {
+  background-image: linear-gradient(to bottom, #6366f1, #4f46e5);
+  border-color: #4338ca;
   color: #ffffff !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.355),
-    0 1px 2px rgba(16, 24, 40, 0.25);
-  text-shadow: 0 -1px 0 rgba(120, 30, 0, 0.35);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 3px rgba(79, 70, 229, 0.3);
+}
+
+/* 2. Fleet (Emerald) */
+.chip-fleet {
+  border-color: #cbd5e1;
+  background-image: linear-gradient(to bottom, #ffffff, #ecfdf5);
+  color: #059669;
+  text-shadow: 0 1px 0 #ffffff;
+}
+.chip-fleet.active {
+  background-image: linear-gradient(to bottom, #10b981, #059669);
+  border-color: #047857;
+  color: #ffffff !important;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 3px rgba(5, 150, 105, 0.3);
+}
+
+/* 3. Reservations (Amber) */
+.chip-reservations {
+  border-color: #cbd5e1;
+  background-image: linear-gradient(to bottom, #ffffff, #fffbeb);
+  color: #d97706;
+  text-shadow: 0 1px 0 #ffffff;
+}
+.chip-reservations.active {
+  background-image: linear-gradient(to bottom, #f59e0b, #d97706);
+  border-color: #b45309;
+  color: #ffffff !important;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 3px rgba(217, 119, 6, 0.3);
+}
+
+/* 4. Contracts (Sky) */
+.chip-contracts {
+  border-color: #cbd5e1;
+  background-image: linear-gradient(to bottom, #ffffff, #f0f9ff);
+  color: #0284c7;
+  text-shadow: 0 1px 0 #ffffff;
+}
+.chip-contracts.active {
+  background-image: linear-gradient(to bottom, #0ea5e9, #0284c7);
+  border-color: #0369a1;
+  color: #ffffff !important;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 3px rgba(2, 132, 199, 0.3);
+}
+
+/* 5. Clients (Purple) */
+.chip-clients {
+  border-color: #cbd5e1;
+  background-image: linear-gradient(to bottom, #ffffff, #faf5ff);
+  color: #9333ea;
+  text-shadow: 0 1px 0 #ffffff;
+}
+.chip-clients.active {
+  background-image: linear-gradient(to bottom, #a855f7, #9333ea);
+  border-color: #6b21a8;
+  color: #ffffff !important;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 3px rgba(147, 51, 234, 0.3);
+}
+
+/* 6. Finance (Teal) */
+.chip-finance {
+  border-color: #cbd5e1;
+  background-image: linear-gradient(to bottom, #ffffff, #f0fdfa);
+  color: #0d9488;
+  text-shadow: 0 1px 0 #ffffff;
+}
+.chip-finance.active {
+  background-image: linear-gradient(to bottom, #14b8a6, #0d9488);
+  border-color: #0f766e;
+  color: #ffffff !important;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 3px rgba(13, 148, 136, 0.3);
+}
+
+/* 7. Settings (Slate) */
+.chip-settings {
+  border-color: #cbd5e1;
+  background-image: linear-gradient(to bottom, #ffffff, #f1f5f9);
+  color: #475569;
+  text-shadow: 0 1px 0 #ffffff;
+}
+.chip-settings.active {
+  background-image: linear-gradient(to bottom, #64748b, #475569);
+  border-color: #334155;
+  color: #ffffff !important;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 3px rgba(71, 85, 105, 0.3);
 }
 
