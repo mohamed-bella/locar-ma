@@ -8,6 +8,7 @@ import {
   computeService,
   resolvePlan,
   serviceTone,
+  serviceOverdueKind,
   type PlanRow,
   type ServiceCompute,
   type ServiceType,
@@ -191,7 +192,10 @@ export function ServicePanel({
                   </div>
                   <Badge tone={serviceTone(c.status)}>
                     {c.status === 'expired'
-                      ? t('svc.overdue')
+                      ? (() => {
+                          const k = serviceOverdueKind(type)
+                          return k === 'inspect' ? t('si.overdueInspect') : k === 'replace' ? t('si.overdueReplace') : t('si.overdueBlock')
+                        })()
                       : c.status === 'soon'
                         ? t('svc.dueNow')
                         : c.status === 'ok'

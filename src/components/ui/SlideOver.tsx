@@ -24,9 +24,9 @@ export function SlideOver({
         <Dialog.Content
           className="anim-sheet fixed z-50 flex flex-col bg-[var(--color-canvas)] shadow-[var(--shadow-pop)]
             inset-x-0 bottom-0 max-h-[92dvh] rounded-t-3xl
-            sm:inset-y-0 sm:right-0 sm:left-auto sm:h-dvh sm:max-h-none sm:w-[540px] sm:rounded-none sm:rounded-l-3xl"
+            sm:inset-y-0 sm:end-0 sm:start-auto sm:h-dvh sm:max-h-none sm:w-[540px] sm:rounded-none sm:rounded-s-3xl"
         >
-          <div className="flex items-start justify-between gap-4 border-b border-[var(--color-line)] bg-white px-5 py-4 sm:rounded-tl-3xl">
+          <div className="flex items-start justify-between gap-4 border-b border-[var(--color-line)] bg-white px-5 py-4 sm:rounded-ss-3xl">
             <div>
               <Dialog.Title className="text-lg font-bold text-[var(--color-ink)]">{title}</Dialog.Title>
               {description && (

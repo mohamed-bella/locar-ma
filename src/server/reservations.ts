@@ -4,6 +4,7 @@ import { requireAgencyContext } from './context'
 import { reservationSchema, blockSchema, RESERVATION_STATUSES } from '~/lib/schemas'
 import { publicUrl } from '~/lib/r2.server'
 import { agencyToday } from '~/lib/tz'
+import { resolvePlan, type PlanRow } from '~/lib/maintenance'
 import { syncVehicleStatus } from './vehicleStatus'
 import { notifyNewReservation, scheduleNotify } from '~/lib/email.server'
 
@@ -212,15 +213,22 @@ export const checkVehicleCompliance = createServerFn({ method: 'GET' })
     const { supabase } = await requireAgencyContext()
     const today = agencyToday()
 
-    const [{ data: v }, { data: docTypes }] = await Promise.all([
+    const [{ data: v }, { data: docTypes }, { data: lastVidange }, { data: planRows }] = await Promise.all([
       supabase
         .from('vehicles')
-        .select(
-          'insurance_expiry, vignette_expiry, visite_tech_expiry, mileage_current, oil_change_last_km, oil_change_interval_km, document_expiries',
-        )
+        .select('insurance_expiry, vignette_expiry, visite_tech_expiry, mileage_current, document_expiries')
         .eq('id', data.vehicle_id)
         .maybeSingle(),
       supabase.from('document_types').select('name, code'),
+      supabase
+        .from('service_records')
+        .select('odometer_km')
+        .eq('vehicle_id', data.vehicle_id)
+        .eq('type', 'vidange')
+        .order('performed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase.from('service_plans').select('*'),
     ])
     if (!v) return []
     const veh = v as any
@@ -240,11 +248,14 @@ export const checkVehicleCompliance = createServerFn({ method: 'GET' })
     for (const dt of (docTypes ?? []) as any[]) check(dt.code, dt.name, exp[dt.code])
 
     // Oil change (mileage-based): flag overdue / imminent at booking time.
-    const interval = veh.oil_change_interval_km || 10000
-    if (veh.oil_change_last_km != null) {
-      const kmLeft = veh.oil_change_last_km + interval - (veh.mileage_current ?? 0)
+    // Source of truth = the last logged vidange service_record (not the legacy
+    // vehicles.oil_change_* snapshot), so this can never disagree with Suivi.
+    const plan = resolvePlan('vidange', data.vehicle_id, (planRows ?? []) as unknown as PlanRow[])
+    const lastKm = (lastVidange as any)?.odometer_km ?? null
+    if (lastKm != null && plan.interval_km != null) {
+      const kmLeft = lastKm + plan.interval_km - (veh.mileage_current ?? 0)
       if (kmLeft <= 0) issues.push({ code: 'oil', label: null, severity: 'expired', date: null })
-      else if (kmLeft <= 1000) issues.push({ code: 'oil', label: null, severity: 'due', date: null })
+      else if (kmLeft <= plan.soon_km) issues.push({ code: 'oil', label: null, severity: 'due', date: null })
     }
 
     return issues

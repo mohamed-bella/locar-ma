@@ -1,6 +1,30 @@
 @import 'tailwindcss';
 @import '@fontsource-variable/inter';
 
+/* Tajawal — modern, clean Arabic (covers Latin too). Used for the Darija/RTL UI.
+   Self-hosted from /public/fonts so it works offline and on any host. */
+@font-face {
+  font-family: 'Tajawal';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/Tajawal-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Tajawal';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/Tajawal-Medium.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Tajawal';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/Tajawal-Bold.ttf') format('truetype');
+}
+
 /* ─────────────────────────────────────────────────────────────
    Locar design system — light only. Cool-gray canvas, white cards,
    orange primary. Inspired by Semrush / clean SaaS ops tooling.
@@ -47,6 +71,12 @@
 
 :root {
   color-scheme: light; /* lock light theme */
+}
+
+/* Arabic/Darija locale → Tajawal (Latin chars fall back to Inter). Overriding the
+   --font-sans custom prop on the <html dir="rtl"> cascades to the whole tree. */
+html[dir='rtl'] {
+  --font-sans: 'Tajawal', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
 }
 
 html {

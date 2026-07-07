@@ -75,6 +75,8 @@ import {
   Power as I_Power,
   CreditCard as I_CreditCard,
   Table as I_Table,
+  Pulse as I_Activity,
+  XCircle as I_XCircle,
 } from '@phosphor-icons/react'
 
 export type LucideIcon = Icon
@@ -162,3 +164,5 @@ export const Building2 = duo(I_Buildings)
 export const Power = duo(I_Power)
 export const CreditCard = duo(I_CreditCard)
 export const Table = duo(I_Table)
+export const Activity = duo(I_Activity)
+export const XCircle = duo(I_XCircle)

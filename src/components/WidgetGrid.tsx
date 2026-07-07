@@ -144,7 +144,7 @@ export function WidgetGrid({ widgets, storageKey }: { widgets: Widget[]; storage
               {/* Block inner interactions while organizing so links don't fire. */}
               <div className={cn('h-full', editing && 'pointer-events-none select-none')}>{w.node}</div>
               {editing && (
-                <span className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--color-line)] bg-white text-[var(--color-muted)] shadow-[var(--shadow-card)]">
+                <span className="absolute end-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--color-line)] bg-white text-[var(--color-muted)] shadow-[var(--shadow-card)]">
                   <GripVertical className="h-4 w-4" />
                 </span>
               )}

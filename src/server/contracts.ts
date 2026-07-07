@@ -4,6 +4,7 @@ import { requireAgencyContext } from './context'
 import { contractUpdateSchema } from '~/lib/schemas'
 import { publicUrl, putObject } from '~/lib/r2.server'
 import { syncVehicleStatus } from './vehicleStatus'
+import { advanceVehicleMileage } from './mileage'
 import { notifyNewContract, scheduleNotify } from '~/lib/email.server'
 import * as Sentry from '@sentry/tanstackstart-react'
 
@@ -263,6 +264,19 @@ export const updateContract = createServerFn({ method: 'POST' })
       })
       .eq('id', id)
     if (error) throw new Error(error.message)
+
+    // A mileage typed on the contract must reach the car too — otherwise the km
+    // lives only on the contract and the vehicle's odometer goes stale. Same
+    // single writer as everywhere else (forward-only).
+    const reading = rest.mileage_in ?? rest.mileage_out
+    if (reading != null) {
+      const { data: c } = await supabase
+        .from('contracts')
+        .select('reservations(vehicle_id)')
+        .eq('id', id)
+        .maybeSingle()
+      await advanceVehicleMileage(supabase, (c as any)?.reservations?.vehicle_id, reading)
+    }
     return { ok: true }
   })
 
@@ -294,13 +308,8 @@ export const closeContract = createServerFn({ method: 'POST' })
     if (reservationId) await supabase.from('reservations').update({ status: 'closed' }).eq('id', reservationId)
 
     // Feed the return odometer back into the vehicle so maintenance ("suivi")
-    // runs on a live mileage — the whole point of the maintenance redesign.
-    if (vehicleId && data.mileage_in != null) {
-      const { data: v } = await supabase.from('vehicles').select('mileage_current').eq('id', vehicleId).maybeSingle()
-      if ((v as any)?.mileage_current == null || data.mileage_in > (v as any).mileage_current) {
-        await supabase.from('vehicles').update({ mileage_current: data.mileage_in }).eq('id', vehicleId)
-      }
-    }
+    // runs on a live mileage. Single writer (forward-only). See server/mileage.ts.
+    await advanceVehicleMileage(supabase, vehicleId, data.mileage_in ?? null)
 
     // Recompute status from remaining bookings (may become reserved, not just available).
     if (vehicleId) await syncVehicleStatus(supabase, vehicleId)

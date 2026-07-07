@@ -8,7 +8,7 @@ import { Toaster } from 'sonner'
 import appCss from '~/styles/app.css?url'
 import { TopProgressBar } from '~/components/TopProgressBar'
 import { getLocale } from '~/server/locale'
-import { I18nProvider, type Locale } from '~/lib/i18n'
+import { I18nProvider, isRtl, type Locale } from '~/lib/i18n'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -47,7 +47,7 @@ function RootComponent() {
 
 function RootDocument({ children, locale }: { children: React.ReactNode; locale: Locale }) {
   return (
-    <html lang={locale} dir="ltr">
+    <html lang={locale} dir={isRtl(locale) ? 'rtl' : 'ltr'}>
       <head>
         <HeadContent />
       </head>

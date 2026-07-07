@@ -29,6 +29,10 @@ export function VehicleForm({
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [imageKeys, setImageKeys] = useState<string[]>(initial?.image_keys ?? [])
+  // Odometer + maintenance baseline are only set when ADDING a car. Once it
+  // exists, the km is owned by the maintenance flow (Suivi / service log /
+  // contract return) — editing identity must not be a second place to change it.
+  const isEdit = Boolean(initial)
 
   async function handle(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -99,14 +103,11 @@ export function VehicleForm({
           <Field label={t('vf.year')}>
             <NumberField name="year" defaultValue={initial?.year} decimalScale={0} placeholder="2022" />
           </Field>
-          <Field label={t('vd.mileage')} hint={t('vf.mileageHint')}>
-            <NumberField
-              name="mileage_current"
-              defaultValue={initial?.mileage_current ?? 0}
-              decimalScale={0}
-              suffix=" km"
-            />
-          </Field>
+          {!isEdit && (
+            <Field label={t('vd.mileage')} hint={t('vf.mileageHint')}>
+              <NumberField name="mileage_current" defaultValue={initial?.mileage_current ?? 0} decimalScale={0} suffix=" km" />
+            </Field>
+          )}
         </div>
       </Section>
 
@@ -142,29 +143,31 @@ export function VehicleForm({
       </Section>
 
       <Section icon={Wrench} title={t('vf.maintenance')} desc={t('vf.maintenanceDesc')}>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Field label={t('vd.lastServiceKm')} hint={t('vf.oilLastKmHint')}>
-            <NumberField
-              name="oil_change_last_km"
-              defaultValue={initial?.oil_change_last_km ?? undefined}
-              decimalScale={0}
-              suffix=" km"
-              placeholder="0"
-            />
-          </Field>
-          <Field label={t('vf.oilInterval')} hint={t('vf.oilIntervalHint')}>
-            <NumberField
-              name="oil_change_interval_km"
-              defaultValue={initial?.oil_change_interval_km ?? 10000}
-              decimalScale={0}
-              suffix=" km"
-            />
-          </Field>
-          <Field label={t('vf.oilLastDate')}>
-            <DateField name="oil_change_last_date" defaultValue={initial?.oil_change_last_date} />
-          </Field>
-        </div>
-        <Field label={t('vf.serviceNote')} hint={t('vf.serviceNoteHint')} className="mt-4">
+        {!isEdit && (
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label={t('vd.lastServiceKm')} hint={t('vf.oilLastKmHint')}>
+              <NumberField
+                name="oil_change_last_km"
+                defaultValue={initial?.oil_change_last_km ?? undefined}
+                decimalScale={0}
+                suffix=" km"
+                placeholder="0"
+              />
+            </Field>
+            <Field label={t('vf.oilInterval')} hint={t('vf.oilIntervalHint')}>
+              <NumberField
+                name="oil_change_interval_km"
+                defaultValue={initial?.oil_change_interval_km ?? 10000}
+                decimalScale={0}
+                suffix=" km"
+              />
+            </Field>
+            <Field label={t('vf.oilLastDate')}>
+              <DateField name="oil_change_last_date" defaultValue={initial?.oil_change_last_date} />
+            </Field>
+          </div>
+        )}
+        <Field label={t('vf.serviceNote')} hint={t('vf.serviceNoteHint')} className={isEdit ? '' : 'mt-4'}>
           <Input name="next_service_note" defaultValue={initial?.next_service_note ?? ''} placeholder={t('vf.serviceNotePlaceholder')} />
         </Field>
       </Section>

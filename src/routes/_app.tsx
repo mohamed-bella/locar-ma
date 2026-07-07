@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   Lock,
   Building2,
+  Activity,
 } from 'lucide-react'
 import { getAuthState, signOut, setActiveAgency } from '~/server/auth'
 import { useI18n, LOCALES, LOCALE_LABELS, type Locale } from '~/lib/i18n'
@@ -51,6 +52,7 @@ export const Route = createFileRoute('/_app')({
 const NAV = [
   { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard },
   { to: '/fleet', labelKey: 'nav.fleet', icon: Car },
+  { to: '/suivi', labelKey: 'nav.suivi', icon: Activity },
   { to: '/reservations', labelKey: 'nav.reservations', icon: CalendarDays },
   { to: '/contracts', labelKey: 'nav.contracts', icon: FileText },
   { to: '/clients', labelKey: 'nav.clients', icon: Users },
@@ -323,7 +325,7 @@ function AppLayout() {
   return (
     <div className="min-h-dvh bg-[var(--color-canvas)]">
       {/* Desktop sidebar */}
-      <aside className="skeu-rail fixed inset-y-0 left-0 hidden w-64 flex-col p-4 lg:flex">
+      <aside className="skeu-rail fixed inset-y-0 left-0 hidden w-64 flex-col p-4 lg:flex rtl:left-auto rtl:right-0">
         <div className="px-2 py-2">
           <BrandMark logoUrl={agency?.agency?.logo_url} name={agency?.agency?.name} />
         </div>
@@ -370,7 +372,7 @@ function AppLayout() {
       <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="anim-overlay fixed inset-0 z-40 bg-black/35 lg:hidden" />
-          <Dialog.Content className="anim-sheet fixed inset-y-0 left-0 z-50 flex w-[82%] max-w-xs flex-col bg-white p-4 lg:hidden">
+          <Dialog.Content className="anim-sheet fixed inset-y-0 left-0 z-50 flex w-[82%] max-w-xs flex-col bg-white p-4 lg:hidden rtl:left-auto rtl:right-0">
             <div className="flex items-center justify-between px-2 py-2">
               <BrandMark logoUrl={agency?.agency?.logo_url} name={agency?.agency?.name} />
               <Dialog.Close className="rounded-lg p-2 text-[var(--color-muted)] hover:bg-black/5">
@@ -386,7 +388,7 @@ function AppLayout() {
       </Dialog.Root>
 
       {/* Main */}
-      <main className="lg:pl-64">
+      <main className="lg:pl-64 rtl:lg:pl-0 rtl:lg:pr-64">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <BillingBanner agency={agency?.agency ?? null} />
           <Outlet />

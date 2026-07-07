@@ -132,7 +132,7 @@ function VehicleAvailabilityCard({
       <button
         type="button"
         onClick={available ? onBook : onToggle}
-        className="flex w-full items-center gap-3 p-3 text-left"
+        className="flex w-full items-center gap-3 p-3 text-start"
       >
         <div className="flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--color-line)] bg-white">
           {vehicle.image_url ? (

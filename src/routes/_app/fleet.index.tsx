@@ -156,12 +156,12 @@ function Fleet() {
           {/* Search + brand */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative w-full sm:max-w-xs">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-faint)]" />
+              <Search className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-faint)]" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t('fleet.searchPlaceholder')}
-                className="w-full pl-10"
+                className="w-full ps-10"
               />
             </div>
             {brands.length > 0 && (
@@ -386,7 +386,7 @@ function VehicleCard({
       <button
         type="button"
         onClick={onOpen}
-        className="flex flex-col text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-ring)]"
+        className="flex flex-col text-start focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-ring)]"
       >
         <div className="relative aspect-[16/10] w-full select-none overflow-hidden bg-[var(--color-surface-muted)]">
           {v.image_urls[0] ? (
@@ -397,7 +397,7 @@ function VehicleCard({
             </div>
           )}
 
-          <div className="absolute left-2 top-2">
+          <div className="absolute start-2 top-2">
             <Badge tone={statusTone(v.status)} dot className="bg-white/90 backdrop-blur">
               {t(`status.${v.status}`)}
             </Badge>
@@ -405,7 +405,7 @@ function VehicleCard({
 
           {alerts.length > 0 && (
             <span
-              className="absolute bottom-2 right-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--color-danger)] px-1.5 text-[11px] font-bold text-white shadow"
+              className="absolute bottom-2 end-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--color-danger)] px-1.5 text-[11px] font-bold text-white shadow"
               title={alerts
                 .map((a) => `${a.label}: ${a.daysLeft < 0 ? t('vd.overdue', { n: -a.daysLeft }) : t('vd.daysLeft', { n: a.daysLeft })}`)
                 .join(', ')}
@@ -437,15 +437,15 @@ function VehicleCard({
           <span className="rounded border border-[var(--color-line)] bg-[var(--color-surface-muted)] px-1.5 py-0.5 font-mono text-[9px] sm:text-[11px] font-semibold text-[var(--color-ink-soft)] min-w-0 truncate">
             {v.plate}
           </span>
-          <div className="shrink-0 text-right leading-tight min-w-0">
+          <div className="shrink-0 text-end leading-tight min-w-0">
             <span className="text-xs sm:text-sm font-bold tnum text-[var(--color-ink)]">{v.daily_rate.toLocaleString()}</span>
-            <span className="ml-0.5 sm:ml-1 text-[8px] sm:text-[10px] font-medium text-[var(--color-faint)]">MAD/{t('common.perDay')}</span>
+            <span className="ms-0.5 sm:ms-1 text-[8px] sm:text-[10px] font-medium text-[var(--color-faint)]">MAD/{t('common.perDay')}</span>
           </div>
         </div>
       </button>
 
       {/* Kebab menu (overlays, above the clickable surface) */}
-      <div className="absolute right-2 top-2">
+      <div className="absolute end-2 top-2">
         <Menu
           trigger={
             <button

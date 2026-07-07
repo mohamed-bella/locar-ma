@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { getCookies } from '@tanstack/react-start/server'
 import type { Locale } from '~/lib/i18n'
 
-const LOCALES = ['fr', 'en'] as const
+const LOCALES = ['fr', 'en', 'ar'] as const
 const DEFAULT_LOCALE: Locale = 'fr'
 
 // Read the persisted UI language from the request cookie so SSR renders in the

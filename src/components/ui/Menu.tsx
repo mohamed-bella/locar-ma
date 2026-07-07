@@ -1,5 +1,6 @@
 import * as DM from '@radix-ui/react-dropdown-menu'
 import { cn } from './cn'
+import { useI18n, isRtl } from '~/lib/i18n'
 
 // Thin styled wrapper over Radix dropdown menu.
 export function Menu({
@@ -11,8 +12,9 @@ export function Menu({
   children: React.ReactNode
   align?: 'start' | 'center' | 'end'
 }) {
+  const { locale } = useI18n()
   return (
-    <DM.Root>
+    <DM.Root dir={isRtl(locale) ? 'rtl' : 'ltr'}>
       <DM.Trigger asChild>{trigger}</DM.Trigger>
       <DM.Portal>
         <DM.Content

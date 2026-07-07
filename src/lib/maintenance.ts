@@ -4,7 +4,7 @@ import { addMonths, differenceInCalendarDays } from 'date-fns'
 // Mechanical maintenance is dual-axis: a service is due at a km threshold OR a
 // time threshold, WHICHEVER COMES FIRST — exactly how a garage schedules it.
 
-export const SERVICE_TYPES = ['vidange', 'courroie', 'freins', 'pneus', 'filtre', 'autre'] as const
+export const SERVICE_TYPES = ['vidange', 'courroie', 'freins', 'pneus', 'filtre', 'batterie', 'autre'] as const
 export type ServiceType = (typeof SERVICE_TYPES)[number]
 
 export type PlanShape = {
@@ -14,16 +14,56 @@ export type PlanShape = {
   soon_days: number
 }
 
-// Sensible Moroccan-fleet defaults. Seeded per agency on first use; each is
-// overridable fleet-wide or per car.
-export const DEFAULT_PLANS: Record<ServiceType, PlanShape> = {
-  vidange: { interval_km: 10000, interval_months: 12, soon_km: 1000, soon_days: 30 },
-  courroie: { interval_km: 60000, interval_months: 60, soon_km: 3000, soon_days: 60 },
-  freins: { interval_km: 30000, interval_months: 24, soon_km: 2000, soon_days: 45 },
-  pneus: { interval_km: 40000, interval_months: 48, soon_km: 3000, soon_days: 60 },
-  filtre: { interval_km: 15000, interval_months: 12, soon_km: 1000, soon_days: 30 },
-  autre: { interval_km: null, interval_months: null, soon_km: 1000, soon_days: 30 },
+// What being past-due actually MEANS for this service — the crux of why a single
+// template is wrong. It drives both the wording and whether the car is grounded.
+//   block   → real risk if driven overdue → car becomes non-rentable
+//   inspect → a *check* is due; wear can't be inferred from km, so never auto-grounds
+//   replace → part is worn/aged; advise replacement, but the car can still go out
+export type OverdueKind = 'block' | 'inspect' | 'replace'
+export type Axis = 'km' | 'time'
+
+export type ServiceStrategy = {
+  axes: Axis[] // which axes govern this service (battery = time only)
+  overdue: OverdueKind
+  defaults: PlanShape
 }
+
+// Each entretien has its OWN scheduling logic — not one shared template.
+// Moroccan-fleet (diesel-heavy) defaults; each is overridable fleet-wide or per car.
+export const SERVICE_STRATEGIES: Record<ServiceType, ServiceStrategy> = {
+  // Oil: the classic km∧time, whichever first. Overdue = engine wear → block.
+  vidange: { axes: ['km', 'time'], overdue: 'block', defaults: { interval_km: 10000, interval_months: 12, soon_km: 1000, soon_days: 30 } },
+  // Timing belt: rare but catastrophic. Warn months / thousands of km ahead. Overdue = HARD block.
+  courroie: { axes: ['km', 'time'], overdue: 'block', defaults: { interval_km: 60000, interval_months: 60, soon_km: 3000, soon_days: 90 } },
+  // Brakes: pad wear isn't linear in km — this is an INSPECTION cadence, not a replacement clock.
+  freins: { axes: ['km', 'time'], overdue: 'inspect', defaults: { interval_km: 20000, interval_months: 12, soon_km: 2000, soon_days: 45 } },
+  // Tyres: worn by km AND aged by time (rubber perishes ~6yr) — whichever comes first; then inspect.
+  pneus: { axes: ['km', 'time'], overdue: 'inspect', defaults: { interval_km: 40000, interval_months: 72, soon_km: 3000, soon_days: 60 } },
+  // Filters: cheap consumable on a km/time clock. Overdue = replace, not a blocker.
+  filtre: { axes: ['km', 'time'], overdue: 'replace', defaults: { interval_km: 15000, interval_months: 12, soon_km: 1000, soon_days: 30 } },
+  // Battery: dies of AGE, not mileage. Time-only. Overdue = replace.
+  batterie: { axes: ['time'], overdue: 'replace', defaults: { interval_km: null, interval_months: 48, soon_km: 0, soon_days: 60 } },
+  // Catch-all: no schedule, history only.
+  autre: { axes: [], overdue: 'replace', defaults: { interval_km: null, interval_months: null, soon_km: 1000, soon_days: 30 } },
+}
+
+export function strategyFor(type: string): ServiceStrategy {
+  return SERVICE_STRATEGIES[type as ServiceType] ?? SERVICE_STRATEGIES.autre
+}
+
+// Does letting THIS service lapse take the car off the road? Only 'block' types.
+export function serviceBlocksRental(type: string): boolean {
+  return strategyFor(type).overdue === 'block'
+}
+
+export function serviceOverdueKind(type: string): OverdueKind {
+  return strategyFor(type).overdue
+}
+
+// Back-compat: the raw plan shapes, derived from the strategies.
+export const DEFAULT_PLANS: Record<ServiceType, PlanShape> = Object.fromEntries(
+  (Object.keys(SERVICE_STRATEGIES) as ServiceType[]).map((k) => [k, SERVICE_STRATEGIES[k].defaults]),
+) as Record<ServiceType, PlanShape>
 
 export type ServiceStatus = 'ok' | 'soon' | 'expired' | 'unknown'
 

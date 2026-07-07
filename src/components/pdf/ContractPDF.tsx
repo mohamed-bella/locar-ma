@@ -1,4 +1,6 @@
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer'
+// Side-effect import (font registration) MUST come before StyleSheet.create below.
+import { pdfFont } from './fonts'
 
 export type ContractPdfData = {
   agency: { name: string; city: string | null }
@@ -37,16 +39,16 @@ const MUTED = '#6b7280'
 const LINE = '#e5e7eb'
 
 const s = StyleSheet.create({
-  page: { padding: 36, fontSize: 10, color: INK, fontFamily: 'Helvetica' },
+  page: { padding: 36, fontSize: 10, color: INK, fontFamily: pdfFont.regular },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 },
-  agency: { fontSize: 20, fontFamily: 'Helvetica-Bold', color: INK },
+  agency: { fontSize: 20, fontFamily: pdfFont.bold, color: INK },
   agencySub: { fontSize: 9, color: MUTED, marginTop: 2 },
-  docTitle: { fontSize: 12, fontFamily: 'Helvetica-Bold', color: ORANGE, textAlign: 'right' },
+  docTitle: { fontSize: 12, fontFamily: pdfFont.bold, color: ORANGE, textAlign: 'right' },
   docMeta: { fontSize: 8, color: MUTED, textAlign: 'right', marginTop: 2 },
   section: { marginTop: 14 },
   sectionTitle: {
     fontSize: 9,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: pdfFont.bold,
     color: ORANGE,
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -69,8 +71,8 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  totalLabel: { fontSize: 10, color: INK, fontFamily: 'Helvetica-Bold' },
-  totalValue: { fontSize: 16, color: ORANGE, fontFamily: 'Helvetica-Bold' },
+  totalLabel: { fontSize: 10, color: INK, fontFamily: pdfFont.bold },
+  totalValue: { fontSize: 16, color: ORANGE, fontFamily: pdfFont.bold },
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2 },
   signRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 40 },
   signBox: { width: '45%' },

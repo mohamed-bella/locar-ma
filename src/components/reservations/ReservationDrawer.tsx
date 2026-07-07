@@ -246,7 +246,7 @@ export function ReservationDrawer({
             <button
               type="button"
               onClick={() => setIsOpen(!isOpen)}
-              className="flex w-full items-center justify-between gap-3 rounded-lg border border-[var(--color-line)] bg-white px-3 py-2 text-left shadow-sm hover:border-[var(--color-line-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-ring)]"
+              className="flex w-full items-center justify-between gap-3 rounded-lg border border-[var(--color-line)] bg-white px-3 py-2 text-start shadow-sm hover:border-[var(--color-line-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-ring)]"
             >
               {selectedVehicle ? (
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -258,11 +258,11 @@ export function ReservationDrawer({
                     )}
                   </div>
                   <div className="min-w-0">
-                    <span className="font-semibold text-sm text-[var(--color-ink)] truncate block text-left">
+                    <span className="font-semibold text-sm text-[var(--color-ink)] truncate block text-start">
                       {selectedVehicle.plate}
                     </span>
                     {selectedVehicle.brand && (
-                      <span className="text-[11px] text-[var(--color-muted)] truncate block -mt-0.5 text-left">
+                      <span className="text-[11px] text-[var(--color-muted)] truncate block -mt-0.5 text-start">
                         {selectedVehicle.brand}
                       </span>
                     )}
@@ -296,9 +296,9 @@ export function ReservationDrawer({
                           setIsOpen(false)
                         }}
                         className={cn(
-                          'w-full flex items-center gap-3 px-3 py-2 text-left transition-colors focus:outline-none',
+                          'w-full flex items-center gap-3 px-3 py-2 text-start transition-colors focus:outline-none',
                           active
-                            ? 'bg-[var(--color-brand-soft)]/50 border-l-2 border-[var(--color-brand)]'
+                            ? 'bg-[var(--color-brand-soft)]/50 border-s-2 border-[var(--color-brand)]'
                             : 'hover:bg-[var(--color-surface-muted)]',
                         )}
                       >
@@ -502,7 +502,7 @@ function ComplianceBanner({
       >
         <AlertTriangle className="h-4 w-4 shrink-0" /> {t('res.compTitle')}
       </div>
-      <ul className="mt-1.5 space-y-1 pl-6 text-xs text-[var(--color-ink-soft)]">
+      <ul className="mt-1.5 space-y-1 ps-6 text-xs text-[var(--color-ink-soft)]">
         {issues.map((i, idx) => (
           <li key={`${i.code}-${idx}`} className="list-disc">
             {text(i)}

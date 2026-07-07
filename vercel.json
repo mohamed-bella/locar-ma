@@ -6,7 +6,7 @@
   "regions": ["dub1"],
   "functions": {
     "api/server.mjs": {
-      "includeFiles": "dist/server/**"
+      "includeFiles": "{dist/server/**,public/fonts/**}"
     }
   },
   "rewrites": [

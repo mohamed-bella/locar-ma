@@ -204,7 +204,7 @@ function Reservations() {
                 <Button variant="secondary" size="sm" onClick={() => shift(DAYS)} aria-label={t('common.next')}>
                   <ChevronRight className="h-4 w-4" />
                 </Button>
-                <span className="ml-2 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-ink-soft)]">
+                <span className="ms-2 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-ink-soft)]">
                   <CalendarDays className="h-4 w-4 text-[var(--color-faint)]" />
                   {format(windowStart, 'd MMM')} – {format(windowEnd, 'd MMM yyyy')}
                 </span>

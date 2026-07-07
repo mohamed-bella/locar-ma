@@ -183,7 +183,20 @@ export const updateVehicle = createServerFn({ method: 'POST' })
     const { supabase, agencyId } = await requireAgencyContext()
     // `status` is derived from bookings / managed via setVehicleStatus — never
     // let the edit form overwrite it (that would re-fake availability).
-    const { id, status: _ignoredStatus, ...rest } = data
+    //
+    // The odometer + legacy oil snapshot are OWNED by the maintenance flow
+    // (service log / quick check / contract return / the odometer strip). Editing
+    // a car's identity must never silently reset the km — that was a duplicate
+    // edit point that let the number drift. Strip them from the edit payload.
+    const {
+      id,
+      status: _ignoredStatus,
+      mileage_current: _ignoredKm,
+      oil_change_last_km: _ignoredOilKm,
+      oil_change_last_date: _ignoredOilDate,
+      oil_change_interval_km: _ignoredOilInterval,
+      ...rest
+    } = data
     const payload = { ...nulls(rest), document_expiries: rest.document_expiries ?? {} }
     const { error } = await supabase.from('vehicles').update(payload).eq('id', id)
     if (error) throw new Error(error.message)

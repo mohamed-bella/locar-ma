@@ -36,7 +36,7 @@ export function ReservationTable({
               <button
                 key={r.id}
                 onClick={() => onOpen(r)}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-[var(--color-surface-muted)]"
+                className="flex w-full items-center gap-3 px-4 py-3 text-start active:bg-[var(--color-surface-muted)]"
               >
                 <div className="flex h-14 w-16 shrink-0 items-center justify-center overflow-hidden border border-[var(--color-line)] bg-[var(--color-surface-muted)]">
                   {v?.image_url ? (
@@ -71,11 +71,11 @@ export function ReservationTable({
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-y border-[var(--color-line)] text-left text-xs uppercase tracking-wide text-[var(--color-faint)]">
+              <tr className="border-y border-[var(--color-line)] text-start text-xs uppercase tracking-wide text-[var(--color-faint)]">
                 <th className="px-5 py-2.5 font-medium">{t('common.vehicle')}</th>
                 <th className="px-2 py-2.5 font-medium">{t('common.client')}</th>
                 <th className="px-2 py-2.5 font-medium">{t('common.dates')}</th>
-                <th className="px-2 py-2.5 text-right font-medium">{t('res.total')}</th>
+                <th className="px-2 py-2.5 text-end font-medium">{t('res.total')}</th>
                 <th className="px-5 py-2.5 font-medium">{t('common.status')}</th>
               </tr>
             </thead>
@@ -117,7 +117,7 @@ export function ReservationTable({
                     <td className="px-2 py-3 text-[var(--color-muted)]">
                       {fmt(r.date_start)} → {fmt(r.date_end)}
                     </td>
-                    <td className="px-2 py-3 text-right font-medium tnum">
+                    <td className="px-2 py-3 text-end font-medium tnum">
                       {r.is_block ? '—' : `${(r.total_amount ?? 0).toLocaleString()} MAD`}
                     </td>
                     <td className="px-5 py-3">

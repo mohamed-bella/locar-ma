@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { addMonths } from 'date-fns'
 import { requireAgencyContext } from './context'
+import { advanceVehicleMileage } from './mileage'
 import { publicUrl } from '~/lib/r2.server'
 import { agencyToday } from '~/lib/tz'
 import {
@@ -156,25 +157,15 @@ export const logService = createServerFn({ method: 'POST' })
     })
     if (error) throw new Error(error.message)
 
-    // Advance the odometer if this reading is newer/higher.
-    if (data.odometer_km != null) {
-      const { data: v } = await supabase
+    // Odometer: single writer (forward-only). See server/mileage.ts.
+    await advanceVehicleMileage(supabase, data.vehicle_id, data.odometer_km ?? null)
+    // Legacy vidange snapshot mirror — no longer a source of truth (service_records
+    // is), kept only so any old reader stays consistent.
+    if (data.type === 'vidange' && data.odometer_km != null) {
+      await supabase
         .from('vehicles')
-        .select('mileage_current')
+        .update({ oil_change_last_km: data.odometer_km, oil_change_last_date: data.performed_at })
         .eq('id', data.vehicle_id)
-        .maybeSingle()
-      const patch: Record<string, unknown> = {}
-      if ((v as any)?.mileage_current == null || data.odometer_km > (v as any).mileage_current) {
-        patch.mileage_current = data.odometer_km
-      }
-      // Keep legacy vidange snapshot in sync so the booking compliance guard stays accurate.
-      if (data.type === 'vidange') {
-        patch.oil_change_last_km = data.odometer_km
-        patch.oil_change_last_date = data.performed_at
-      }
-      if (Object.keys(patch).length > 0) {
-        await supabase.from('vehicles').update(patch).eq('id', data.vehicle_id)
-      }
     }
     return { ok: true }
   })
