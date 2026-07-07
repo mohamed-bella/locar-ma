@@ -46,7 +46,13 @@ export function HealthCard({
 
       <div className="flex items-center gap-3">
         {vehicle.image_url ? (
-          <img src={vehicle.image_url} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
+          <img
+            src={vehicle.image_url}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="h-14 w-14 shrink-0 rounded-xl bg-[var(--color-surface-muted)] object-cover"
+          />
         ) : (
           <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[var(--color-surface-muted)] text-lg font-bold text-[var(--color-faint)]">
             {title[0]?.toUpperCase() ?? '?'}

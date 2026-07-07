@@ -9,6 +9,17 @@ import appCss from '~/styles/app.css?url'
 import { TopProgressBar } from '~/components/TopProgressBar'
 import { getLocale } from '~/server/locale'
 import { I18nProvider, isRtl, type Locale } from '~/lib/i18n'
+import { clientEnv } from '~/lib/env'
+
+// Origin of the Supabase project — every page hits it for data, auth and the
+// realtime socket. Warming the DNS/TLS handshake here shaves the first request.
+const SUPABASE_ORIGIN = (() => {
+  try {
+    return new URL(clientEnv.SUPABASE_URL).origin
+  } catch {
+    return null
+  }
+})()
 
 export const Route = createRootRoute({
   head: () => ({
@@ -49,6 +60,12 @@ function RootDocument({ children, locale }: { children: React.ReactNode; locale:
   return (
     <html lang={locale} dir={isRtl(locale) ? 'rtl' : 'ltr'}>
       <head>
+        {SUPABASE_ORIGIN && (
+          <>
+            <link rel="preconnect" href={SUPABASE_ORIGIN} crossOrigin="" />
+            <link rel="dns-prefetch" href={SUPABASE_ORIGIN} />
+          </>
+        )}
         <HeadContent />
       </head>
       <body>

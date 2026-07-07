@@ -236,6 +236,46 @@ export const setVehicleStatus = createServerFn({ method: 'POST' })
     return { ok: true }
   })
 
+// Update a single legal expiry (insurance / vignette / visite / custom doc) from
+// the per-item "suivi" popup — a focused one-field write, no full edit form.
+const LEGAL_EXPIRY_COLS: Record<string, string> = {
+  insurance: 'insurance_expiry',
+  vignette: 'vignette_expiry',
+  visite: 'visite_tech_expiry',
+}
+
+export const setVehicleExpiry = createServerFn({ method: 'POST' })
+  .validator((d: unknown) =>
+    z
+      .object({
+        vehicle_id: z.string().uuid(),
+        code: z.string().min(1),
+        date: z.preprocess((v) => (v === '' || v == null ? null : v), z.string().nullable()),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabase } = await requireAgencyContext()
+    const col = LEGAL_EXPIRY_COLS[data.code]
+    if (col) {
+      const patch: Record<string, unknown> = { [col]: data.date }
+      const { error } = await supabase.from('vehicles').update(patch).eq('id', data.vehicle_id)
+      if (error) throw new Error(error.message)
+      return { ok: true }
+    }
+    // Custom document type → merge into the document_expiries jsonb.
+    const { data: v } = await supabase
+      .from('vehicles')
+      .select('document_expiries')
+      .eq('id', data.vehicle_id)
+      .maybeSingle()
+    const exp = { ...(((v as any)?.document_expiries as Record<string, string | null>) ?? {}), [data.code]: data.date }
+    const patch: Record<string, unknown> = { document_expiries: exp }
+    const { error } = await supabase.from('vehicles').update(patch).eq('id', data.vehicle_id)
+    if (error) throw new Error(error.message)
+    return { ok: true }
+  })
+
 export const deleteVehicle = createServerFn({ method: 'POST' })
   .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {

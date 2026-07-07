@@ -25,6 +25,7 @@ import { findTracker, trackRows } from '~/lib/tracking'
 import { useRealtimeInvalidate } from '~/lib/useRealtime'
 import { useI18n } from '~/lib/i18n'
 import { PageHeader, StatCard, Card, CardHeader, CardBody } from '~/components/ui'
+import { DashboardSkeleton } from '~/components/Skeletons'
 
 export const Route = createFileRoute('/_app/dashboard')({
   loader: async () => {
@@ -38,6 +39,7 @@ export const Route = createFileRoute('/_app/dashboard')({
     return { vehicles, alertRules, documentTypes, stats, maintenance }
   },
   component: Dashboard,
+  pendingComponent: DashboardSkeleton,
 })
 
 const mad = (n: number) => `${n.toLocaleString()} MAD`

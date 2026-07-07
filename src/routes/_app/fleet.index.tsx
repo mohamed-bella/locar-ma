@@ -105,8 +105,24 @@ function Fleet() {
     })
   }, [vehicles, query, status, brand])
 
+  // Warm the image CDN (R2) handshake from the first photo — the grid is photo-heavy.
+  const imgOrigin = useMemo(() => {
+    for (const v of vehicles) {
+      const u = v.image_urls[0]
+      if (u) {
+        try {
+          return new URL(u).origin
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    return null
+  }, [vehicles])
+
   return (
     <div>
+      {imgOrigin && <link rel="preconnect" href={imgOrigin} crossOrigin="" />}
       <PageHeader
         title={t('fleet.title')}
         subtitle={
@@ -390,7 +406,7 @@ function VehicleCard({
       >
         <div className="relative aspect-[16/10] w-full select-none overflow-hidden bg-[var(--color-surface-muted)]">
           {v.image_urls[0] ? (
-            <img src={v.image_urls[0]} alt={title} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+            <img src={v.image_urls[0]} alt={title} loading="lazy" decoding="async" className="h-full w-full bg-[var(--color-surface-muted)] object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
               <Car className="h-8 w-8 text-[var(--color-faint)]" />

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   createFileRoute,
   redirect,
@@ -280,11 +280,31 @@ function AgencySwitcher() {
   )
 }
 
+// The pages a user almost always visits next. Warmed on idle so the first tap
+// paints from cache — the destination is "already there" before they ask.
+const PRELOAD_ROUTES = ['/dashboard', '/fleet', '/suivi', '/reservations'] as const
+
 function AppLayout() {
   const { agency } = Route.useRouteContext()
   const router = useRouter()
   const { t } = useI18n()
   const [menuOpen, setMenuOpen] = useState(false)
+
+  // Predictive prefetch: after the current page settles, quietly preload the
+  // main destinations during browser idle time (never competes with real work).
+  useEffect(() => {
+    if (!agency) return
+    const ric =
+      (window as any).requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1200))
+    const id = ric(() => {
+      for (const to of PRELOAD_ROUTES) router.preloadRoute({ to }).catch(() => {})
+    })
+    return () => {
+      const cic = (window as any).cancelIdleCallback
+      if (cic) cic(id)
+      else window.clearTimeout(id)
+    }
+  }, [agency, router])
 
   async function onSignOut() {
     await signOut()

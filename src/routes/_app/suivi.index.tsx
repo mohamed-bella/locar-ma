@@ -13,6 +13,7 @@ import { PageHeader } from '~/components/ui'
 import { HealthCard, type HealthVehicle } from '~/components/suivi/HealthCard'
 import { QuickCheckDialog } from '~/components/suivi/QuickCheckDialog'
 import { PngIcon } from '~/components/suivi/Icon'
+import { SuiviGridSkeleton } from '~/components/Skeletons'
 
 export const Route = createFileRoute('/_app/suivi/')({
   loader: async () => {
@@ -26,6 +27,7 @@ export const Route = createFileRoute('/_app/suivi/')({
     return { vehicles, alertRules, documentTypes, maintenance, issues }
   },
   component: SuiviGrid,
+  pendingComponent: SuiviGridSkeleton,
 })
 
 function SuiviGrid() {
@@ -58,6 +60,22 @@ function SuiviGrid() {
 
   const notRentable = cards.filter((c) => !isRentable(c.state.status)).length
 
+  // Warm the image CDN (R2) handshake from the first photo we have — the grid is
+  // photo-heavy, so the first byte arrives sooner.
+  const imgOrigin = useMemo(() => {
+    for (const v of vehicles) {
+      const u = v.image_urls[0]
+      if (u) {
+        try {
+          return new URL(u).origin
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    return null
+  }, [vehicles])
+
   // Every block across the fleet — the day's real to-do list.
   const priorities = useMemo(() => {
     const items: { plate: string; vehicleId: string; label: string; action: string }[] = []
@@ -76,6 +94,7 @@ function SuiviGrid() {
 
   return (
     <div>
+      {imgOrigin && <link rel="preconnect" href={imgOrigin} crossOrigin="" />}
       <PageHeader title={t('si.title')} subtitle={t('si.subtitle')} />
 
       {/* Today — only shown when something needs doing */}

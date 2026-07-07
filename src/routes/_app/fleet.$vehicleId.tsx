@@ -25,8 +25,7 @@ import { listVehicleReservations, type VehicleReservation } from '~/server/reser
 import { listServicePlans, listServiceRecords } from '~/server/maintenance'
 import { VehicleForm } from '~/components/VehicleForm'
 import { Gallery } from '~/components/Gallery'
-import { MaintenancePanel } from '~/components/MaintenancePanel'
-import { ServicePanel } from '~/components/ServicePanel'
+import { SuiviBoard } from '~/components/suivi/SuiviBoard'
 import { DeleteVehicleDialog } from '~/components/DeleteVehicleDialog'
 import { resBadgeTone } from '~/lib/reservations'
 import { brandColor } from '~/lib/brandColor'
@@ -199,18 +198,15 @@ function VehicleDetail() {
         </Card>
       </div>
 
-      {/* Legal compliance (papers) */}
+      {/* Tracking & maintenance cockpit — papers + mechanical, one tile each */}
       <div className="mt-5">
-        <MaintenancePanel vehicle={vehicle} alertRules={alertRules} documentTypes={documentTypes} />
-      </div>
-
-      {/* Mechanical service & maintenance (vidange, courroie, …) */}
-      <div className="mt-5">
-        <ServicePanel
-          vehicleId={vehicle.id}
-          mileage={vehicle.mileage_current}
-          plans={servicePlans}
-          records={serviceRecords}
+        <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-[var(--color-faint)]">{t('si.manage')}</div>
+        <SuiviBoard
+          vehicle={vehicle}
+          servicePlans={servicePlans}
+          serviceRecords={serviceRecords}
+          alertRules={alertRules}
+          documentTypes={documentTypes}
           onChanged={() => router.invalidate()}
         />
       </div>
