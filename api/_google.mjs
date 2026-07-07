@@ -11,43 +11,46 @@ import { createClient } from '@supabase/supabase-js'
 // row(r) reads a DB row already joined with related plate / names (see fetchTab).
 export const SHEET_TABS = ['Cars', 'Reservations', 'Contracts', 'Clients', 'Payments', 'Services']
 
+// Human, French, no database ids. Each header is what a rental-agency owner
+// would call the column — never a raw field name (no `odometer_km`, `created_at`,
+// no UUIDs). Column order = row() order.
 const MAP = {
   vehicles: {
     tab: 'Cars',
-    header: ['id', 'plate', 'brand', 'model', 'year', 'category', 'daily_rate', 'status', 'mileage_current', 'insurance_expiry', 'vignette_expiry', 'visite_tech_expiry', 'created_at', 'photo'],
+    header: ['Plaque', 'Marque', 'Modèle', 'Année', 'Catégorie', 'Prix / jour', 'Statut', 'Kilométrage', 'Assurance', 'Vignette', 'Visite technique', 'Ajoutée le', 'Photo'],
     select: '*',
-    row: (r) => [r.id, r.plate, r.brand, r.model, r.year, r.category, r.daily_rate, r.status, r.mileage_current, r.insurance_expiry, r.vignette_expiry, r.visite_tech_expiry, r.created_at, imageCell(r.image_keys?.[0])],
+    row: (r) => [r.plate, r.brand, r.model, r.year, r.category, r.daily_rate, r.status, r.mileage_current, r.insurance_expiry, r.vignette_expiry, r.visite_tech_expiry, dateOnly(r.created_at), imageCell(r.image_keys?.[0])],
   },
   reservations: {
     tab: 'Reservations',
-    header: ['id', 'vehicle_plate', 'client_name', 'date_start', 'date_end', 'status', 'daily_rate_snap', 'total_amount', 'pickup_location', 'dropoff_location', 'created_at'],
+    header: ['Voiture', 'Client', 'Départ', 'Retour', 'Statut', 'Tarif / jour', 'Total', 'Lieu de départ', 'Lieu de retour', 'Créée le'],
     select: '*, vehicles(plate), clients(full_name)',
-    row: (r) => [r.id, r.vehicles?.plate, r.clients?.full_name, r.date_start, r.date_end, r.status, r.daily_rate_snap, r.total_amount, r.pickup_location, r.dropoff_location, r.created_at],
+    row: (r) => [r.vehicles?.plate, r.clients?.full_name, r.date_start, r.date_end, r.status, r.daily_rate_snap, r.total_amount, r.pickup_location, r.dropoff_location, dateOnly(r.created_at)],
   },
   contracts: {
     tab: 'Contracts',
-    header: ['id', 'reservation_id', 'vehicle_plate', 'client_name', 'status', 'mileage_out', 'mileage_in', 'fuel_out', 'fuel_in', 'check_amount', 'check_status', 'closed_at', 'created_at', 'contract_pdf'],
+    header: ['Voiture', 'Client', 'Statut', 'Km départ', 'Km retour', 'Carburant départ', 'Carburant retour', 'Caution (MAD)', 'État caution', 'Clôturé le', 'Créé le', 'Contrat'],
     select: '*, reservations(status, vehicles(plate), clients(full_name))',
-    row: (r) => [r.id, r.reservation_id, r.reservations?.vehicles?.plate, r.reservations?.clients?.full_name, r.reservations?.status, r.mileage_out, r.mileage_in, r.fuel_out, r.fuel_in, r.check_amount, r.check_status, r.closed_at, r.created_at, pdfCell(r.pdf_key)],
+    row: (r) => [r.reservations?.vehicles?.plate, r.reservations?.clients?.full_name, r.reservations?.status, r.mileage_out, r.mileage_in, r.fuel_out, r.fuel_in, r.check_amount, r.check_status, dateOnly(r.closed_at), dateOnly(r.created_at), pdfCell(r.pdf_key)],
   },
   clients: {
     // PII excluded: no CIN/passport, email, or address.
     tab: 'Clients',
-    header: ['id', 'full_name', 'phone', 'nationality', 'status', 'created_at'],
+    header: ['Nom complet', 'Téléphone', 'Nationalité', 'Statut', 'Ajouté le'],
     select: 'id, full_name, phone, nationality, status, created_at, agency_id',
-    row: (r) => [r.id, r.full_name, r.phone, r.nationality, r.status, r.created_at],
+    row: (r) => [r.full_name, r.phone, r.nationality, r.status, dateOnly(r.created_at)],
   },
   agency_payments: {
     tab: 'Payments',
-    header: ['id', 'amount', 'period', 'method', 'notes', 'paid_at', 'created_at'],
+    header: ['Montant (MAD)', 'Période', 'Méthode', 'Notes', 'Payé le', 'Créé le'],
     select: '*',
-    row: (r) => [r.id, r.amount, r.period, r.method, r.notes, r.paid_at, r.created_at],
+    row: (r) => [r.amount, r.period, r.method, r.notes, dateOnly(r.paid_at), dateOnly(r.created_at)],
   },
   service_records: {
     tab: 'Services',
-    header: ['id', 'vehicle_plate', 'type', 'performed_at', 'odometer_km', 'cost', 'garage', 'notes', 'next_due_km', 'next_due_date', 'created_at'],
+    header: ['Voiture', 'Type', 'Fait le', 'Kilométrage', 'Coût (MAD)', 'Garage', 'Notes', 'Prochain (km)', 'Prochaine date', 'Créé le'],
     select: '*, vehicles(plate)',
-    row: (r) => [r.id, r.vehicles?.plate, r.type, r.performed_at, r.odometer_km, r.cost, r.garage, r.notes, r.next_due_km, r.next_due_date, r.created_at],
+    row: (r) => [r.vehicles?.plate, r.type, r.performed_at, r.odometer_km, r.cost, r.garage, r.notes, r.next_due_km, r.next_due_date, dateOnly(r.created_at)],
   },
 }
 // table order → tab order in the sheet
@@ -206,6 +209,8 @@ export async function ensureSpreadsheet(token, existingId, title) {
 }
 
 const cell = (v) => (v == null ? '' : v)
+// Timestamps → a plain YYYY-MM-DD (owners don't need the time / timezone tail).
+const dateOnly = (v) => (v ? String(v).slice(0, 10) : '')
 
 // Public R2 URL helpers. Rendered as Sheets formulas (needs USER_ENTERED):
 // car photo shown inline, contract PDF as a clickable link.

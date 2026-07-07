@@ -23,6 +23,7 @@ import {
 } from '~/server/fleet'
 import { listVehicleReservations, type VehicleReservation } from '~/server/reservations'
 import { listServicePlans, listServiceRecords } from '~/server/maintenance'
+import { listVehicleExpenses } from '~/server/expenses'
 import { VehicleForm } from '~/components/VehicleForm'
 import { Gallery } from '~/components/Gallery'
 import { SuiviBoard } from '~/components/suivi/SuiviBoard'
@@ -48,7 +49,7 @@ import {
 
 export const Route = createFileRoute('/_app/fleet/$vehicleId')({
   loader: async ({ params }) => {
-    const [vehicle, damage, alertRules, documentTypes, reservations, servicePlans, serviceRecords] = await Promise.all([
+    const [vehicle, damage, alertRules, documentTypes, reservations, servicePlans, serviceRecords, expenses] = await Promise.all([
       getVehicle({ data: { id: params.vehicleId } }),
       listDamageReports({ data: { vehicle_id: params.vehicleId } }),
       listAlertRules(),
@@ -56,9 +57,10 @@ export const Route = createFileRoute('/_app/fleet/$vehicleId')({
       listVehicleReservations({ data: { vehicle_id: params.vehicleId } }),
       listServicePlans(),
       listServiceRecords({ data: { vehicle_id: params.vehicleId } }),
+      listVehicleExpenses({ data: { vehicle_id: params.vehicleId } }),
     ])
     if (!vehicle) throw notFound()
-    return { vehicle, damage, alertRules, documentTypes, reservations, servicePlans, serviceRecords }
+    return { vehicle, damage, alertRules, documentTypes, reservations, servicePlans, serviceRecords, expenses }
   },
   component: VehicleDetail,
   pendingComponent: () => (
@@ -86,7 +88,7 @@ function VehicleNotFound() {
 }
 
 function VehicleDetail() {
-  const { vehicle, damage, alertRules, documentTypes, reservations, servicePlans, serviceRecords } = Route.useLoaderData()
+  const { vehicle, damage, alertRules, documentTypes, reservations, servicePlans, serviceRecords, expenses } = Route.useLoaderData()
   const router = useRouter()
   const navigate = useNavigate()
   const { t } = useI18n()
@@ -97,6 +99,7 @@ function VehicleDetail() {
   useRealtimeInvalidate('document_alert_rules')
   useRealtimeInvalidate('reservations')
   useRealtimeInvalidate('service_records')
+  useRealtimeInvalidate('vehicle_expenses')
 
   async function changeStatus(status: 'available' | 'maintenance') {
     try {
@@ -199,14 +202,15 @@ function VehicleDetail() {
       </div>
 
       {/* Tracking & maintenance cockpit — papers + mechanical, one tile each */}
-      <div className="mt-5">
-        <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-[var(--color-faint)]">{t('si.manage')}</div>
+      <div className="mt-8">
+        <h2 className="mb-3 text-lg font-black tracking-tight text-[var(--color-ink)]">{t('si.manage')}</h2>
         <SuiviBoard
           vehicle={vehicle}
           servicePlans={servicePlans}
           serviceRecords={serviceRecords}
           alertRules={alertRules}
           documentTypes={documentTypes}
+          expenses={expenses}
           onChanged={() => router.invalidate()}
         />
       </div>

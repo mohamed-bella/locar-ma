@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import type { Vehicle } from '~/server/fleet'
 import { setVehicleExpiry } from '~/server/fleet'
 import { logService, updateOdometer, type ServicePlan, type ServiceRecord } from '~/server/maintenance'
+import { addExpense, deleteExpense, type VehicleExpense } from '~/server/expenses'
 import type { AlertRule } from '~/server/alertRules'
 import type { DocumentType } from '~/server/documentTypes'
 import {
@@ -26,6 +27,7 @@ const BLUE = '#1d5b8d'
 
 type Tile =
   | { kind: 'odometer'; label: string; icon: string; status: null }
+  | { kind: 'expense'; label: string; icon: string; status: null }
   | { kind: 'legal'; code: string; label: string; icon: string; status: CondStatus; date: string | null; daysLeft: number | null }
   | { kind: 'service'; type: string; label: string; icon: string; status: CondStatus; last: ServiceRecord | undefined; compute: ReturnType<typeof computeService> }
 
@@ -38,6 +40,7 @@ export function SuiviBoard({
   serviceRecords,
   alertRules,
   documentTypes,
+  expenses,
   onChanged,
 }: {
   vehicle: Vehicle
@@ -45,6 +48,7 @@ export function SuiviBoard({
   serviceRecords: ServiceRecord[]
   alertRules: AlertRule[]
   documentTypes: DocumentType[]
+  expenses: VehicleExpense[]
   onChanged: () => void
 }) {
   const { t } = useI18n()
@@ -87,8 +91,21 @@ export function SuiviBoard({
       })
       out.push({ kind: 'service', type, label: t(`svc.type.${type}`), icon: serviceIconPath(type), status: compute.status, last, compute })
     }
+
+    out.push({ kind: 'expense', label: t('exp.title'), icon: 'misc/cout', status: null })
     return out
   }, [vehicle, documentTypes, alertRules, servicePlans, latestByType, today, t])
+
+  // Soon / expired items → a plain hint bar so the warning is visible without
+  // opening anything.
+  const hints = useMemo(
+    () =>
+      tiles
+        .filter((x): x is Extract<Tile, { status: CondStatus }> => x.status === 'soon' || x.status === 'expired')
+        .map((x) => ({ label: x.label, expired: x.status === 'expired' }))
+        .sort((a, b) => Number(b.expired) - Number(a.expired)),
+    [tiles],
+  )
 
   const title = [vehicle.brand, vehicle.model, vehicle.year].filter(Boolean).join(' ') || vehicle.plate
 
@@ -118,27 +135,39 @@ export function SuiviBoard({
         </div>
       </div>
 
-      {/* Icon tile grid on blue */}
-      <div className="grid grid-cols-3 gap-px sm:grid-cols-4 md:grid-cols-6" style={{ backgroundColor: BLUE }}>
+      {/* Hint bar — soon / expired items, visible at a glance */}
+      {hints.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-[var(--color-line)] bg-[var(--color-warn-soft)] px-3 py-2 text-xs">
+          <span className="font-bold uppercase tracking-wide text-[var(--color-warn)]">⚠ {t('si.today')}</span>
+          {hints.map((h, i) => (
+            <span key={i} className={cn('inline-flex items-center gap-1 font-semibold', h.expired ? 'text-[var(--color-danger)]' : 'text-[var(--color-warn)]')}>
+              {h.label} · {h.expired ? t('vd.condExpired') : t('vd.condSoon')}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Icon tile grid on blue — the main section, big tap targets */}
+      <div className="grid grid-cols-2 gap-px sm:grid-cols-3 md:grid-cols-4" style={{ backgroundColor: BLUE }}>
         {tiles.map((tile) => (
           <button
             key={tile.kind === 'legal' ? `l-${tile.code}` : tile.kind === 'service' ? `s-${tile.type}` : 'odo'}
             onClick={() => setOpen(tile)}
-            className="group relative flex flex-col items-center gap-1.5 bg-white px-2 py-3.5 text-center transition hover:bg-[var(--color-surface-muted)]"
+            className="group relative flex flex-col items-center gap-3 bg-white px-3 py-7 text-center transition hover:bg-[var(--color-surface-muted)]"
           >
             {tile.status && (
-              <span className="absolute end-1.5 top-1.5">
-                <StatusDot status={tile.status} />
+              <span className="absolute end-2.5 top-2.5">
+                <StatusDot status={tile.status} className="h-2.5 w-2.5" />
               </span>
             )}
-            <PngIcon path={tile.icon} size={34} />
-            <span className="text-[11px] font-semibold leading-tight text-[var(--color-ink-soft)]">{tile.label}</span>
+            <PngIcon path={tile.icon} size={56} />
+            <span className="text-sm font-semibold leading-tight text-[var(--color-ink)]">{tile.label}</span>
           </button>
         ))}
       </div>
 
       {open && (
-        <ManageModal tile={open} vehicle={vehicle} onClose={() => setOpen(null)} onChanged={onChanged} records={serviceRecords} />
+        <ManageModal tile={open} vehicle={vehicle} onClose={() => setOpen(null)} onChanged={onChanged} records={serviceRecords} expenses={expenses} />
       )}
     </div>
   )
@@ -151,12 +180,14 @@ function ManageModal({
   onClose,
   onChanged,
   records,
+  expenses,
 }: {
   tile: Tile
   vehicle: Vehicle
   onClose: () => void
   onChanged: () => void
   records: ServiceRecord[]
+  expenses: VehicleExpense[]
 }) {
   const { t } = useI18n()
   return (
@@ -173,6 +204,7 @@ function ManageModal({
       {tile.kind === 'odometer' && <OdometerForm vehicle={vehicle} onDone={() => { onChanged(); onClose() }} />}
       {tile.kind === 'legal' && <LegalForm vehicle={vehicle} tile={tile} onDone={() => { onChanged(); onClose() }} />}
       {tile.kind === 'service' && <ServiceForm vehicle={vehicle} tile={tile} records={records} onDone={() => { onChanged(); onClose() }} />}
+      {tile.kind === 'expense' && <ExpenseForm vehicle={vehicle} expenses={expenses} onChanged={onChanged} />}
     </Modal>
   )
 }
@@ -258,6 +290,83 @@ function LegalForm({ vehicle, tile, onDone }: { vehicle: Vehicle; tile: Extract<
         <Button type="submit" loading={busy}>{t('common.save')}</Button>
       </div>
     </form>
+  )
+}
+
+// ── Free expenses: name + amount + date, a running list ──
+function ExpenseForm({ vehicle, expenses, onChanged }: { vehicle: Vehicle; expenses: VehicleExpense[]; onChanged: () => void }) {
+  const { t } = useI18n()
+  const { busy, run } = useBusy()
+  const list = expenses.filter((e) => e.vehicle_id === vehicle.id)
+  const total = list.reduce((s, e) => s + (e.amount ?? 0), 0)
+
+  return (
+    <div className="mt-4 space-y-4">
+      <div className="flex items-center justify-between border border-[var(--color-line)] px-3 py-2 text-sm">
+        <span className="text-[var(--color-muted)]">{t('exp.total')}</span>
+        <span className="font-bold tnum text-[var(--color-ink)]">{total.toLocaleString()} MAD</span>
+      </div>
+
+      <form
+        className="grid grid-cols-2 gap-2"
+        onSubmit={(e) => {
+          e.preventDefault()
+          const form = e.currentTarget
+          const fd = new FormData(form)
+          run(async () => {
+            await addExpense({
+              data: {
+                vehicle_id: vehicle.id,
+                name: String(fd.get('name') ?? ''),
+                amount: Number(fd.get('amount') || 0),
+                spent_at: String(fd.get('spent_at') ?? '') || undefined,
+              },
+            })
+            form.reset()
+            onChanged()
+          }, t('common.saved'))
+        }}
+      >
+        <div className="col-span-2">
+          <label className="block text-xs font-semibold text-[var(--color-muted)]">{t('exp.name')}</label>
+          <Input name="name" required placeholder={t('exp.namePlaceholder')} />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-[var(--color-muted)]">{t('exp.amount')}</label>
+          <Input type="number" name="amount" min={0} inputMode="numeric" required placeholder="0" />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-[var(--color-muted)]">{t('exp.date')}</label>
+          <Input type="date" name="spent_at" defaultValue={agencyToday()} />
+        </div>
+        <div className="col-span-2 flex justify-end">
+          <Button type="submit" loading={busy}>{t('common.add')}</Button>
+        </div>
+      </form>
+
+      {list.length > 0 && (
+        <table className="w-full text-xs">
+          <tbody>
+            {list.map((e) => (
+              <tr key={e.id} className="border-b border-[var(--color-line)] last:border-b-0">
+                <td className="py-1.5 font-medium text-[var(--color-ink)]">{e.name}</td>
+                <td className="py-1.5 text-[var(--color-muted)]">{format(new Date(`${e.spent_at}T00:00:00`), 'd MMM yyyy')}</td>
+                <td className="py-1.5 text-end font-semibold tnum text-[var(--color-ink)]">{e.amount.toLocaleString()} MAD</td>
+                <td className="py-1.5 ps-2 text-end">
+                  <button
+                    aria-label={t('common.delete')}
+                    onClick={() => run(async () => { await deleteExpense({ data: { id: e.id } }); onChanged() }, t('common.deleted'))}
+                    className="text-[var(--color-faint)] hover:text-[var(--color-danger)]"
+                  >
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
   )
 }
 
