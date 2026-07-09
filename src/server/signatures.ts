@@ -152,8 +152,7 @@ export const submitSignature = createServerFn({ method: 'POST' })
 
     // Regenerate the contract PDF so the signature is baked into the document.
     try {
-      const { renderContractPdf } = await import('./pdf.server')
-      const { buildSignedPdfData } = await import('./contracts')
+      const { renderContractPdf, buildSignedPdfData } = await import('./pdf.server')
       const pdfData = await buildSignedPdfData(c.id)
       if (pdfData) {
         const buf = await renderContractPdf(pdfData)
