@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="brand">#1d5b8d</color>
+    <color name="brand_dark">#164a73</color>
+    <color name="ink">#0f172a</color>
+    <color name="muted">#64748b</color>
+    <color name="white">#ffffff</color>
+    <color name="status_bar">#1d5b8d</color>
+    <color name="track">#e2e8f0</color>
+</resources>

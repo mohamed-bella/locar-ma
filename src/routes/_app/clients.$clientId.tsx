@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { createFileRoute, Link, useRouter, notFound } from '@tanstack/react-router'
 import { format } from 'date-fns'
-import { ArrowLeft, Users, ShieldAlert, ShieldCheck, Flag, Loader2, History } from 'lucide-react'
+import { ArrowLeft, Users, ShieldAlert, ShieldCheck, Flag, History } from 'lucide-react'
 import { toast } from 'sonner'
 import { getClient, updateClient, setClientStatus } from '~/server/clients'
 import { clientStatusTone } from '~/lib/clients'
@@ -16,6 +16,7 @@ import {
   Field,
   Input,
   EmptyState,
+  PageLoader,
 } from '~/components/ui'
 
 export const Route = createFileRoute('/_app/clients/$clientId')({
@@ -25,11 +26,7 @@ export const Route = createFileRoute('/_app/clients/$clientId')({
     return data
   },
   component: ClientDetail,
-  pendingComponent: () => (
-    <div className="flex min-h-[50vh] items-center justify-center">
-      <Loader2 className="h-6 w-6 animate-spin text-[var(--color-brand)]" />
-    </div>
-  ),
+  pendingComponent: () => <PageLoader />,
   notFoundComponent: ClientNotFound,
 })
 

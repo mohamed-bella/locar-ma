@@ -1,0 +1,19 @@
+{
+  "name": "locar-whatsapp-bot",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "@react-pdf/renderer": "^4.5.1",
+    "@supabase/supabase-js": "^2.110.0",
+    "baileys": "^7.0.0-rc13",
+    "dotenv": "^16.5.0",
+    "pino": "^9.6.0",
+    "qrcode-terminal": "^0.12.0",
+    "react": "^19.2.7",
+    "sharp": "^0.35.3"
+  }
+}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Rentiq</string>
+    <string name="choose_file">Choisir un fichier</string>
+    <string name="downloading">Téléchargement…</string>
+    <string name="no_app">Aucune application pour ouvrir ce lien</string>
+    <string name="offline_title">Pas de connexion</string>
+    <string name="offline_desc">Vérifiez votre connexion internet puis réessayez.</string>
+    <string name="retry">Réessayer</string>
+</resources>

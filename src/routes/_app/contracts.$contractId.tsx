@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { createFileRoute, Link, useRouter, notFound } from '@tanstack/react-router'
 import { format } from 'date-fns'
+import * as Dialog from '@radix-ui/react-dialog'
 import {
   ArrowLeft,
   FileText,
@@ -10,15 +11,20 @@ import {
   Plus,
   Trash2,
   Loader2,
+  Eye,
+  X,
+  Pencil,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   getContract,
   updateContract,
   generateContractPdf,
+  previewContractPdf,
   closeContract,
   type Extra,
 } from '~/server/contracts'
+import { createSignatureLink } from '~/server/signatures'
 import { FUEL_LEVELS, CHECK_STATUSES } from '~/lib/schemas'
 import { resBadgeTone } from '~/lib/reservations'
 import { waLink } from '~/lib/whatsapp'
@@ -34,6 +40,7 @@ import {
   Input,
   Select,
   EmptyState,
+  PageLoader,
 } from '~/components/ui'
 
 const FUEL_KEY: Record<string, string> = {
@@ -56,11 +63,7 @@ export const Route = createFileRoute('/_app/contracts/$contractId')({
     return { contract }
   },
   component: ContractDetail,
-  pendingComponent: () => (
-    <div className="flex min-h-[50vh] items-center justify-center">
-      <Loader2 className="h-6 w-6 animate-spin text-[var(--color-brand)]" />
-    </div>
-  ),
+  pendingComponent: () => <PageLoader />,
   notFoundComponent: ContractNotFound,
 })
 
@@ -95,9 +98,15 @@ function ContractDetail() {
   const [checkAmount, setCheckAmount] = useState(c.check_amount?.toString() ?? '')
   const [checkStatus, setCheckStatus] = useState(c.check_status)
   const [extras, setExtras] = useState<Extra[]>(c.extras)
+  const [form, setForm] = useState<Record<string, string>>(c.form ?? {})
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [previewing, setPreviewing] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const hasPdf = c.has_pdf
+
+  const setF = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }))
 
   // Contracts live in the public bucket → a permanent link, resolved on the
   // server into c.pdf_url. Works on any device with no session/regeneration.
@@ -132,6 +141,7 @@ function ContractDetail() {
       check_amount: checkAmount ? Number(checkAmount) : undefined,
       check_status: checkStatus as any,
       extras,
+      form,
     }
   }
 
@@ -159,6 +169,42 @@ function ContractDetail() {
       toast.error(err?.message ?? t('con.pdfGenFailed'))
     } finally {
       setGenerating(false)
+    }
+  }
+
+  const [signLoading, setSignLoading] = useState(false)
+
+  // Generate a signing link and hand it to the client over WhatsApp.
+  async function sendSignLink() {
+    setSignLoading(true)
+    try {
+      const { path } = await createSignatureLink({ data: { contract_id: c.id } })
+      const url = `${window.location.origin}${path}`
+      await navigator.clipboard?.writeText(url).catch(() => {})
+      const start = c.reservation ? format(new Date(`${c.reservation.date_start}T00:00:00`), 'dd/MM/yyyy') : ''
+      const msg =
+        `Bonjour ${c.client?.full_name ?? ''}, merci de signer votre contrat de location ${c.agency.name}` +
+        `${start ? ` (à partir du ${start})` : ''} en ligne :\n${url}`
+      window.open(waLink(c.client?.phone, msg), '_blank')
+      toast.success(t('con.signLinkSent'))
+    } catch (err: any) {
+      toast.error(err?.message ?? t('common.actionFailed'))
+    } finally {
+      setSignLoading(false)
+    }
+  }
+
+  async function preview() {
+    setPreviewing(true)
+    try {
+      await updateContract({ data: payload() }) // persist current edits first
+      const { dataUrl } = await previewContractPdf({ data: { id: c.id } })
+      setPreviewUrl(dataUrl)
+      setPreviewOpen(true)
+    } catch (err: any) {
+      toast.error(err?.message ?? t('con.pdfGenFailed'))
+    } finally {
+      setPreviewing(false)
     }
   }
 
@@ -207,6 +253,18 @@ function ContractDetail() {
           {closed && <Badge tone="neutral">{t('con.closedBadge')}</Badge>}
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {c.signed_at ? (
+            <Badge tone="ok">
+              <CheckCircle2 className="h-3.5 w-3.5" /> {t('con.signed')}
+            </Badge>
+          ) : (
+            <Button variant="secondary" loading={signLoading} onClick={sendSignLink}>
+              <Pencil className="h-4 w-4" /> {t('con.signOnline')}
+            </Button>
+          )}
+          <Button variant="secondary" loading={previewing} onClick={preview}>
+            <Eye className="h-4 w-4" /> {t('con.preview')}
+          </Button>
           <Button variant="secondary" loading={generating} onClick={generate}>
             <FileText className="h-4 w-4" /> {hasPdf ? t('con.regeneratePdf') : t('con.generatePdf')}
           </Button>
@@ -255,16 +313,16 @@ function ContractDetail() {
 
         {/* Condition + guarantee */}
         <Card className="lg:col-span-2">
-          <CardHeader title={t('con.conditionGuarantee')} subtitle={t('con.conditionSub')} />
+          <CardHeader title={bi('État & garantie', 'الحالة والضمان')} subtitle={t('con.conditionSub')} />
           <CardBody className="space-y-5">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label={t('con.mileageOutKm')}>
+              <Field label={bi('Km départ', 'الكيلومتراج عند الانطلاق')}>
                 <Input type="number" value={mileageOut} onChange={(e) => setMileageOut(e.target.value)} />
               </Field>
-              <Field label={t('con.mileageInKm')}>
+              <Field label={bi('Km retour', 'الكيلومتراج عند الرجوع')}>
                 <Input type="number" value={mileageIn} onChange={(e) => setMileageIn(e.target.value)} />
               </Field>
-              <Field label={t('con.fuelOut')}>
+              <Field label={bi('Carburant départ', 'الوقود عند الانطلاق')}>
                 <Select value={fuelOut} onChange={(e) => setFuelOut(e.target.value)}>
                   <option value="">—</option>
                   {FUEL_LEVELS.map((f) => (
@@ -274,7 +332,7 @@ function ContractDetail() {
                   ))}
                 </Select>
               </Field>
-              <Field label={t('con.fuelIn')}>
+              <Field label={bi('Carburant retour', 'الوقود عند الرجوع')}>
                 <Select value={fuelIn} onChange={(e) => setFuelIn(e.target.value)}>
                   <option value="">—</option>
                   {FUEL_LEVELS.map((f) => (
@@ -287,18 +345,18 @@ function ContractDetail() {
             </div>
 
             <div className="rounded-xl border border-[var(--color-line)] p-4">
-              <div className="mb-3 text-sm font-semibold text-[var(--color-ink)]">{t('con.guaranteeCheque')}</div>
+              <div className="mb-3 text-sm font-semibold text-[var(--color-ink)]">{bi('Garantie (chèque)', 'الضمان (شيك)')}</div>
               <div className="grid gap-4 sm:grid-cols-4">
-                <Field label={t('con.numberField')}>
+                <Field label={bi('N° chèque', 'رقم الشيك')}>
                   <Input value={checkNumber} onChange={(e) => setCheckNumber(e.target.value)} />
                 </Field>
-                <Field label={t('con.bank')}>
+                <Field label={bi('Banque', 'البنك')}>
                   <Input value={checkBank} onChange={(e) => setCheckBank(e.target.value)} />
                 </Field>
-                <Field label={t('con.amount')}>
+                <Field label={bi('Montant', 'المبلغ')}>
                   <Input type="number" value={checkAmount} onChange={(e) => setCheckAmount(e.target.value)} />
                 </Field>
-                <Field label={t('common.status')}>
+                <Field label={bi('Statut', 'الحالة')}>
                   <Select value={checkStatus} onChange={(e) => setCheckStatus(e.target.value)}>
                     {CHECK_STATUSES.map((s) => (
                       <option key={s} value={s}>
@@ -313,7 +371,7 @@ function ContractDetail() {
             {/* Extras */}
             <div className="rounded-xl border border-[var(--color-line)] p-4">
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-semibold text-[var(--color-ink)]">{t('con.extras')}</span>
+                <span className="text-sm font-semibold text-[var(--color-ink)]">{bi('Suppléments', 'الإضافات')}</span>
                 <Button
                   type="button"
                   size="sm"
@@ -371,6 +429,45 @@ function ContractDetail() {
         </Card>
       </div>
 
+      {/* Printed-contract fields (fed into the PDF) */}
+      <Card className="mt-5">
+        <CardHeader title={bi('Détails du contrat (PDF)', 'تفاصيل العقد')} subtitle={t('con.pdfFieldsSub')} />
+        <CardBody className="space-y-6">
+          <FieldGroup title={bi('Détails du client', 'معلومات الزبون')}>
+            {CLIENT_FIELDS.map(([k, fr, ar]) => (
+              <Field key={k} label={bi(fr, ar)}>
+                <Input value={form[k] ?? ''} onChange={(e) => setF(k, e.target.value)} />
+              </Field>
+            ))}
+          </FieldGroup>
+
+          <FieldGroup title={bi('Deuxième conducteur', 'السائق الثاني')}>
+            {DRIVER2_FIELDS.map(([k, fr, ar]) => (
+              <Field key={k} label={bi(fr, ar)}>
+                <Input value={form[k] ?? ''} onChange={(e) => setF(k, e.target.value)} />
+              </Field>
+            ))}
+          </FieldGroup>
+
+          <FieldGroup title={bi('Heures de départ / retour', 'ساعات الانطلاق والرجوع')}>
+            {TIME_FIELDS.map(([k, fr, ar]) => (
+              <Field key={k} label={bi(fr, ar)}>
+                <Input value={form[k] ?? ''} onChange={(e) => setF(k, e.target.value)} placeholder="12:00" />
+              </Field>
+            ))}
+          </FieldGroup>
+
+          <div className="flex flex-wrap items-center gap-2 border-t border-[var(--color-line)] pt-4">
+            <Button loading={saving} onClick={save}>
+              {t('common.saveChanges')}
+            </Button>
+            <Button variant="secondary" loading={previewing} onClick={preview}>
+              <Eye className="h-4 w-4" /> {t('con.preview')}
+            </Button>
+          </div>
+        </CardBody>
+      </Card>
+
       {/* Contract PDF */}
       <Card className="mt-5">
         <CardHeader
@@ -420,6 +517,81 @@ function ContractDetail() {
           )}
         </CardBody>
       </Card>
+
+      {/* PDF preview modal */}
+      <Dialog.Root open={previewOpen} onOpenChange={setPreviewOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="anim-overlay fixed inset-0 z-50 bg-black/50" />
+          <Dialog.Content className="anim-pop fixed left-1/2 top-1/2 z-50 flex h-[90vh] w-[94vw] max-w-4xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white shadow-[var(--shadow-pop)]">
+            <div className="flex items-center justify-between border-b border-[var(--color-line)] px-5 py-3">
+              <Dialog.Title className="text-sm font-bold text-[var(--color-ink)]">
+                {t('con.preview')} — #{c.short_id}
+              </Dialog.Title>
+              <div className="flex items-center gap-2">
+                <Button size="sm" loading={generating} onClick={generate}>
+                  <FileText className="h-4 w-4" /> {hasPdf ? t('con.regeneratePdf') : t('con.generatePdf')}
+                </Button>
+                <Dialog.Close className="rounded-lg p-1.5 text-[var(--color-muted)] hover:bg-black/5">
+                  <X className="h-5 w-5" />
+                </Dialog.Close>
+              </div>
+            </div>
+            <div className="flex-1 bg-[var(--color-surface-muted)]">
+              {previewUrl ? (
+                <iframe src={previewUrl} title="Contract preview" className="h-full w-full" />
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-[var(--color-brand)]" />
+                </div>
+              )}
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+    </div>
+  )
+}
+
+// Field lists for the printed-contract form. Keys match ContractPDF's `form.*`.
+// [key, French, Arabic] — both languages always shown on this page.
+const CLIENT_FIELDS: [string, string, string][] = [
+  ['client_prenom', 'Prénom', 'الإسم الشخصي'],
+  ['client_cin_expiry', 'Expiration CIN', 'صلاحية البطاقة'],
+  ['client_birthdate', 'Date de naissance', 'تاريخ الازدياد'],
+  ['client_profession', 'Profession', 'المهنة'],
+  ['client_permit_number', 'N° permis', 'رقم رخصة السياقة'],
+  ['client_permit_date', 'Date permis', 'تاريخ الرخصة'],
+  ['client_permit_place', 'Lieu délivrance permis', 'مكان التسليم'],
+  ['client_phone2', 'Téléphone 2', 'الهاتف 2'],
+  ['client_ville', 'Ville', 'المدينة'],
+]
+const DRIVER2_FIELDS: [string, string, string][] = [
+  ['d2_nom', 'Nom', 'الإسم العائلي'],
+  ['d2_prenom', 'Prénom', 'الإسم الشخصي'],
+  ['d2_cin', 'CIN', 'البطاقة الوطنية'],
+  ['d2_cin_expiry', 'Expiration CIN', 'صلاحية البطاقة'],
+  ['d2_birthdate', 'Date de naissance', 'تاريخ الازدياد'],
+  ['d2_profession', 'Profession', 'المهنة'],
+  ['d2_permit_number', 'N° permis', 'رقم رخصة السياقة'],
+  ['d2_permit_date', 'Date permis', 'تاريخ الرخصة'],
+  ['d2_permit_place', 'Lieu délivrance permis', 'مكان التسليم'],
+  ['d2_phone', 'Téléphone', 'الهاتف'],
+  ['d2_address', 'Adresse', 'العنوان'],
+  ['d2_ville', 'Ville', 'المدينة'],
+]
+const TIME_FIELDS: [string, string, string][] = [
+  ['heure_depart', 'Heure départ', 'ساعة الانطلاق'],
+  ['heure_retour', 'Heure retour', 'ساعة الرجوع'],
+]
+
+// French · Arabic label for the contract page (bilingual regardless of locale).
+const bi = (fr: string, ar: string) => `${fr} · ${ar}`
+
+function FieldGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="mb-3 text-sm font-semibold text-[var(--color-ink)]">{title}</div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
     </div>
   )
 }

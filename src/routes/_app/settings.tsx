@@ -1,9 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
-import { Plus, Tag, Eye, EyeOff, Sparkles, Trash2, ImagePlus, Loader2, Building2, Table } from 'lucide-react'
+import { Plus, Tag, Eye, EyeOff, Sparkles, Trash2, ImagePlus, Loader2, Building2, Table, Settings as SettingsIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { listAllBrands, hideBrand, unhideBrand } from '~/server/brands'
-import { getAgencyProfile, presignAgencyLogo, updateAgencyLogo, type AgencyProfile } from '~/server/agency'
+import {
+  getAgencyProfile,
+  presignAgencyLogo,
+  updateAgencyLogo,
+  presignAgencyStamp,
+  updateAgencyStamp,
+  updateAgencyProfile,
+  type AgencyProfile,
+} from '~/server/agency'
 import { getSheetStatus, getGoogleAuthUrl, syncNow, disconnectSheet, type SheetStatus } from '~/server/sheets'
 import { AddBrandDialog } from '~/components/AddBrandDialog'
 import { Button, Card, CardHeader, CardBody, Badge, PageHeader, EmptyState, Modal, Field, Input, Select } from '~/components/ui'
@@ -165,8 +173,14 @@ function Settings() {
     <div>
       <PageHeader title={t('set.title')} subtitle={t('set.subtitle')} />
 
+      {/* Account settings — name + WhatsApp notification number */}
+      <AccountSettingsCard agency={agency} onDone={() => router.invalidate()} />
+
       {/* Agency logo */}
       <AgencyLogoCard agency={agency} onDone={() => router.invalidate()} />
+
+      {/* Agency stamp / cachet */}
+      <AgencyStampCard agency={agency} onDone={() => router.invalidate()} />
 
       {/* Google Sheets sync */}
       <SheetSyncCard status={sheet} canEdit={agency.canEdit} onDone={() => router.invalidate()} />
@@ -565,6 +579,128 @@ function SheetSyncCard({ status, canEdit, onDone }: { status: SheetStatus; canEd
   )
 }
 
+function AccountSettingsCard({ agency, onDone }: { agency: AgencyProfile; onDone: () => void }) {
+  const { t } = useI18n()
+  const canEdit = agency.canEdit
+  const [busy, setBusy] = useState(false)
+
+  // Single form state for the whole account card.
+  const initial = {
+    name: agency.name,
+    whatsapp_number: agency.whatsapp_number ?? '',
+    legal_name: agency.legal_name ?? '',
+    address: agency.address ?? '',
+    ice: agency.ice ?? '',
+    rc: agency.rc ?? '',
+    patente: agency.patente ?? '',
+    rib: agency.rib ?? '',
+    company_phone: agency.company_phone ?? '',
+  }
+  const [f, setF] = useState(initial)
+  const set = (k: keyof typeof initial, v: string) => setF((p) => ({ ...p, [k]: v }))
+  const dirty = (Object.keys(initial) as (keyof typeof initial)[]).some((k) => f[k].trim() !== initial[k])
+
+  async function save(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (!f.name.trim()) {
+      toast.error(t('common.actionFailed'))
+      return
+    }
+    setBusy(true)
+    try {
+      await updateAgencyProfile({
+        data: {
+          name: f.name.trim(),
+          whatsapp_number: f.whatsapp_number.trim() || null,
+          legal_name: f.legal_name.trim() || null,
+          address: f.address.trim() || null,
+          ice: f.ice.trim() || null,
+          rc: f.rc.trim() || null,
+          patente: f.patente.trim() || null,
+          rib: f.rib.trim() || null,
+          company_phone: f.company_phone.trim() || null,
+        },
+      })
+      toast.success(t('common.saveChanges'))
+      onDone()
+    } catch (err: any) {
+      toast.error(err?.message ?? t('common.actionFailed'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card className="mt-6">
+      <CardHeader
+        title={
+          <span className="flex items-center gap-2">
+            <SettingsIcon className="h-4 w-4 text-[var(--color-brand)]" /> {t('set.account')}
+          </span>
+        }
+        subtitle={t('set.accountDesc')}
+      />
+      <CardBody>
+        <form onSubmit={save} className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={t('set.agencyName')} required>
+              <Input value={f.name} onChange={(e) => set('name', e.target.value)} disabled={!canEdit || busy} required />
+            </Field>
+            <Field label={t('set.whatsappNumber')}>
+              <Input
+                type="tel"
+                value={f.whatsapp_number}
+                onChange={(e) => set('whatsapp_number', e.target.value)}
+                placeholder="06 12 34 56 78"
+                disabled={!canEdit || busy}
+              />
+            </Field>
+          </div>
+          <p className="-mt-3 text-xs text-[var(--color-muted)]">{t('set.whatsappHint')}</p>
+
+          <div>
+            <div className="mb-3 text-sm font-semibold text-[var(--color-ink)]">{t('set.companyLegal')}</div>
+            <p className="mb-4 text-xs text-[var(--color-muted)]">{t('set.companyLegalDesc')}</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label={t('set.legalName')}>
+                <Input value={f.legal_name} onChange={(e) => set('legal_name', e.target.value)} placeholder="KAWTAR'S PARC SARL" disabled={!canEdit || busy} />
+              </Field>
+              <Field label={t('set.companyPhone')}>
+                <Input value={f.company_phone} onChange={(e) => set('company_phone', e.target.value)} placeholder="06 58 37 39 37" disabled={!canEdit || busy} />
+              </Field>
+              <Field label={t('set.address')} className="sm:col-span-2">
+                <Input value={f.address} onChange={(e) => set('address', e.target.value)} placeholder="Rés El Bahja Imm 5 Magasin 5 cym, RABAT" disabled={!canEdit || busy} />
+              </Field>
+              <Field label="ICE">
+                <Input value={f.ice} onChange={(e) => set('ice', e.target.value)} disabled={!canEdit || busy} />
+              </Field>
+              <Field label="RC">
+                <Input value={f.rc} onChange={(e) => set('rc', e.target.value)} disabled={!canEdit || busy} />
+              </Field>
+              <Field label={t('set.patente')}>
+                <Input value={f.patente} onChange={(e) => set('patente', e.target.value)} disabled={!canEdit || busy} />
+              </Field>
+              <Field label="RIB">
+                <Input value={f.rib} onChange={(e) => set('rib', e.target.value)} disabled={!canEdit || busy} />
+              </Field>
+            </div>
+          </div>
+
+          {canEdit ? (
+            <div className="flex justify-end border-t border-[var(--color-line)] pt-4">
+              <Button type="submit" loading={busy} disabled={!dirty}>
+                {t('common.saveChanges')}
+              </Button>
+            </div>
+          ) : (
+            <p className="text-sm text-[var(--color-muted)]">{t('set.logoOwnerOnly')}</p>
+          )}
+        </form>
+      </CardBody>
+    </Card>
+  )
+}
+
 function AgencyLogoCard({ agency, onDone }: { agency: AgencyProfile; onDone: () => void }) {
   const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -668,6 +804,108 @@ function AgencyLogoCard({ agency, onDone }: { agency: AgencyProfile; onDone: () 
           hidden
           onChange={(e) => onFile(e.target.files)}
         />
+      </CardBody>
+    </Card>
+  )
+}
+
+function AgencyStampCard({ agency, onDone }: { agency: AgencyProfile; onDone: () => void }) {
+  const { t } = useI18n()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [busy, setBusy] = useState(false)
+  const canEdit = agency.canEdit
+
+  async function onFile(files: FileList | null) {
+    const file = files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('img.uploadFailed'))
+      return
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      toast.error(t('set.logoTooBig'))
+      return
+    }
+    setBusy(true)
+    try {
+      const signed = await presignAgencyStamp({ data: { name: file.name, type: file.type, size: file.size } })
+      const put = await fetch(signed.url, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type },
+      })
+      if (!put.ok) throw new Error(`Upload failed (${put.status})`)
+      await updateAgencyStamp({ data: { stamp_url: signed.publicUrl } })
+      toast.success(t('set.stampUpdated'))
+      onDone()
+    } catch (err: any) {
+      toast.error(err?.message ?? t('img.uploadFailed'))
+    } finally {
+      setBusy(false)
+      if (inputRef.current) inputRef.current.value = ''
+    }
+  }
+
+  async function removeStamp() {
+    setBusy(true)
+    try {
+      await updateAgencyStamp({ data: { stamp_url: null } })
+      toast.success(t('set.stampRemoved'))
+      onDone()
+    } catch (err: any) {
+      toast.error(err?.message ?? t('common.actionFailed'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card className="mt-6">
+      <CardHeader
+        title={
+          <span className="flex items-center gap-2">
+            <ImagePlus className="h-4 w-4 text-[var(--color-brand)]" /> {t('set.stamp')}
+          </span>
+        }
+        subtitle={t('set.stampDesc')}
+      />
+      <CardBody>
+        <div className="flex items-center gap-5">
+          <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-dashed border-[var(--color-line)] bg-white">
+            {agency.stamp_url ? (
+              <img src={agency.stamp_url} alt="" className="h-full w-full object-contain p-2" />
+            ) : (
+              <ImagePlus className="h-9 w-9 text-[var(--color-faint)]" />
+            )}
+          </div>
+
+          <div className="min-w-0">
+            {canEdit ? (
+              <>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="secondary" onClick={() => inputRef.current?.click()} disabled={busy}>
+                    {busy ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <ImagePlus className="h-[18px] w-[18px]" />
+                    )}
+                    {agency.stamp_url ? t('set.changeStamp') : t('set.uploadStamp')}
+                  </Button>
+                  {agency.stamp_url && (
+                    <Button variant="ghost" onClick={removeStamp} disabled={busy}>
+                      <Trash2 className="h-4 w-4" /> {t('set.removeStamp')}
+                    </Button>
+                  )}
+                </div>
+                <p className="mt-2 text-xs text-[var(--color-muted)]">{t('set.stampHint')}</p>
+              </>
+            ) : (
+              <p className="text-sm text-[var(--color-muted)]">{t('set.logoOwnerOnly')}</p>
+            )}
+          </div>
+        </div>
+
+        <input ref={inputRef} type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files)} />
       </CardBody>
     </Card>
   )

@@ -7,6 +7,7 @@ import { agencyToday } from '~/lib/tz'
 import { resolvePlan, type PlanRow } from '~/lib/maintenance'
 import { syncVehicleStatus } from './vehicleStatus'
 import { notifyNewReservation, scheduleNotify } from '~/lib/email.server'
+import { enqueueReservationNotification } from './notifications'
 
 export type Reservation = {
   id: string
@@ -339,8 +340,11 @@ export const createReservation = createServerFn({ method: 'POST' })
     if (error) rethrow(error as any)
     // Booking created → reflect it on the car (reserved / rented).
     await syncVehicleStatus(supabase, data.vehicle_id)
-    scheduleNotify(() => notifyNewReservation(agencyId, (row as any).id)) // fire-and-forget email
-    return { id: (row as any).id as string }
+    const newId = (row as any).id as string
+    console.log(`[reservation] created id=${newId} agency=${agencyId} — scheduling notifications`)
+    scheduleNotify(() => notifyNewReservation(agencyId, newId)) // fire-and-forget email
+    scheduleNotify(() => enqueueReservationNotification(agencyId, newId))
+    return { id: newId }
   })
 
 export const updateReservation = createServerFn({ method: 'POST' })

@@ -2,10 +2,12 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireAgencyContext } from './context'
 import { contractUpdateSchema } from '~/lib/schemas'
-import { publicUrl, putObject } from '~/lib/r2.server'
+import { publicUrl, putObject, presignDownload, docsBucket } from '~/lib/r2.server'
+import { getSupabaseAdminClient } from '~/lib/supabase.server'
 import { syncVehicleStatus } from './vehicleStatus'
 import { advanceVehicleMileage } from './mileage'
 import { notifyNewContract, scheduleNotify } from '~/lib/email.server'
+import { enqueueContractNotification, enqueuePdfNotification } from './notifications'
 import * as Sentry from '@sentry/tanstackstart-react'
 
 export type Extra = { name: string; price: number }
@@ -36,6 +38,10 @@ export type ContractDetail = {
   check_amount: number | null
   check_status: string
   extras: Extra[]
+  form: Record<string, string>
+  signature_key: string | null
+  signed_at: string | null
+  signer_name: string | null
   pdf_key: string | null
   pdf_url: string | null // permanent public URL (contracts live in the public bucket)
   has_pdf: boolean
@@ -59,13 +65,25 @@ export type ContractDetail = {
     address: string | null
     nationality: string | null
   } | null
-  agency: { name: string; city: string | null }
+  agency: {
+    name: string
+    city: string | null
+    logo_url: string | null
+    stamp_url: string | null
+    legal_name: string | null
+    address: string | null
+    ice: string | null
+    rc: string | null
+    patente: string | null
+    rib: string | null
+    company_phone: string | null
+  }
 }
 
 const short = (id: string) => id.slice(0, 8).toUpperCase()
 
 const DETAIL_SELECT =
-  '*, agencies(name, city), reservations(date_start, date_end, status, total_amount, daily_rate_snap, pickup_location, dropoff_location, vehicles(id, plate, brand, model, year), clients(id, full_name, cin_passport, phone, address, nationality))'
+  '*, agencies(name, city, logo_url, stamp_url, legal_name, address, ice, rc, patente, rib, company_phone), reservations(date_start, date_end, status, total_amount, daily_rate_snap, pickup_location, dropoff_location, vehicles(id, plate, brand, model, year), clients(id, full_name, cin_passport, phone, address, nationality))'
 
 function mapDetail(r: any): ContractDetail {
   const res = r.reservations ?? null
@@ -82,8 +100,14 @@ function mapDetail(r: any): ContractDetail {
     check_amount: r.check_amount ?? null,
     check_status: r.check_status ?? 'held',
     extras: (r.extras ?? []) as Extra[],
+    form: (r.form ?? {}) as Record<string, string>,
+    signature_key: r.signature_key ?? null,
+    signed_at: r.signed_at ?? null,
+    signer_name: r.signer_name ?? null,
     pdf_key: r.pdf_key ?? null,
-    pdf_url: r.pdf_key ? publicUrl(r.pdf_key) : null,
+    // Presigned per-request in getContract (contracts hold PII → private bucket,
+    // never a public URL). Null here.
+    pdf_url: null,
     has_pdf: !!r.pdf_key,
     closed_at: r.closed_at ?? null,
     created_at: r.created_at,
@@ -100,7 +124,33 @@ function mapDetail(r: any): ContractDetail {
       : null,
     vehicle: res?.vehicles ?? null,
     client: res?.clients ?? null,
-    agency: r.agencies ?? { name: 'Agency', city: null },
+    agency: r.agencies
+      ? {
+          name: r.agencies.name,
+          city: r.agencies.city ?? null,
+          logo_url: r.agencies.logo_url ?? null,
+          stamp_url: r.agencies.stamp_url ?? null,
+          legal_name: r.agencies.legal_name ?? null,
+          address: r.agencies.address ?? null,
+          ice: r.agencies.ice ?? null,
+          rc: r.agencies.rc ?? null,
+          patente: r.agencies.patente ?? null,
+          rib: r.agencies.rib ?? null,
+          company_phone: r.agencies.company_phone ?? null,
+        }
+      : {
+          name: 'Agency',
+          city: null,
+          logo_url: null,
+          stamp_url: null,
+          legal_name: null,
+          address: null,
+          ice: null,
+          rc: null,
+          patente: null,
+          rib: null,
+          company_phone: null,
+        },
   }
 }
 
@@ -188,7 +238,13 @@ export const getContract = createServerFn({ method: 'GET' })
       .eq('id', data.id)
       .maybeSingle()
     if (error) throw new Error(error.message)
-    return row ? mapDetail(row) : null
+    if (!row) return null
+    const detail = mapDetail(row)
+    // Short-lived presigned link from the PRIVATE bucket (PII). Never public.
+    if (detail.pdf_key) {
+      detail.pdf_url = await presignDownload(detail.pdf_key, 3600, docsBucket())
+    }
+    return detail
   })
 
 // "Start rental" — create a contract from a reservation, mark it active.
@@ -234,6 +290,7 @@ export const createContractFromReservation = createServerFn({ method: 'POST' })
       await syncVehicleStatus(supabase, (res as any).vehicle_id)
     }
     scheduleNotify(() => notifyNewContract(agencyId, (row as any).id)) // fire-and-forget email
+    scheduleNotify(() => enqueueContractNotification(agencyId, (row as any).id))
     return { id: (row as any).id as string }
    } catch (e: any) {
     // Surface the real reason to the client instead of letting the custom
@@ -261,6 +318,7 @@ export const updateContract = createServerFn({ method: 'POST' })
         check_amount: rest.check_amount ?? null,
         check_status: rest.check_status,
         extras: rest.extras,
+        ...(rest.form ? { form: rest.form } : {}),
       })
       .eq('id', id)
     if (error) throw new Error(error.message)
@@ -316,6 +374,117 @@ export const closeContract = createServerFn({ method: 'POST' })
     return { ok: true }
   })
 
+// ContractDetail → the shape the PDF component expects. Shared by generate +
+// preview so both always render identical output.
+function toPdfData(c: ContractDetail) {
+  return {
+    agency: {
+      name: c.agency.name,
+      city: c.agency.city,
+      logo_url: c.agency.logo_url,
+      stamp_url: c.agency.stamp_url,
+      legal_name: c.agency.legal_name,
+      address: c.agency.address,
+      ice: c.agency.ice,
+      rc: c.agency.rc,
+      patente: c.agency.patente,
+      rib: c.agency.rib,
+      phone: c.agency.company_phone, // PDF header/footer GSM line
+    },
+    contract: {
+      short_id: c.short_id,
+      mileage_out: c.mileage_out,
+      mileage_in: c.mileage_in,
+      fuel_out: c.fuel_out,
+      fuel_in: c.fuel_in,
+      check_number: c.check_number,
+      check_bank: c.check_bank,
+      check_amount: c.check_amount,
+      extras: c.extras,
+    },
+    reservation: c.reservation!,
+    vehicle: c.vehicle!,
+    client: c.client ?? {
+      full_name: 'Client',
+      cin_passport: null,
+      phone: null,
+      address: null,
+      nationality: null,
+    },
+    form: c.form,
+    signer_name: c.signer_name,
+    signed_at: c.signed_at,
+    signature: null as string | null, // filled by buildPdfData (data URL)
+  }
+}
+
+// react-pdf guesses image format from the URL extension — our R2 keys don't
+// always end in .png/.jpg, so it rejects them ("Not valid image extension").
+// Fetch the bytes and hand react-pdf a data URL (carries the real MIME type),
+// which sidesteps extension detection and any CDN caching entirely.
+async function fetchAsDataUrl(url: string | null | undefined): Promise<string | null> {
+  if (!url) return null
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
+    if (!res.ok) return null
+    const ct = res.headers.get('content-type') || 'image/png'
+    const buf = Buffer.from(await res.arrayBuffer())
+    if (!buf.length) return null
+    return `data:${ct};base64,${buf.toString('base64')}`
+  } catch {
+    return null // never let a missing image break the PDF
+  }
+}
+
+// toPdfData + inline the logo/stamp/signature images so they always render.
+async function buildPdfData(c: ContractDetail) {
+  const data = toPdfData(c)
+  // Signature lives in the PRIVATE bucket → presign then inline.
+  const sigUrl = c.signature_key ? await presignDownload(c.signature_key, 600, docsBucket()) : null
+  const [logo, stamp, signature] = await Promise.all([
+    fetchAsDataUrl(data.agency.logo_url),
+    fetchAsDataUrl(data.agency.stamp_url),
+    fetchAsDataUrl(sigUrl),
+  ])
+  data.agency.logo_url = logo
+  data.agency.stamp_url = stamp
+  data.signature = signature
+  return data
+}
+
+// Build PDF data for the PUBLIC signing flow (no agency session) — admin lookup
+// by id. Used by server/signatures.ts to bake the signature into the PDF.
+export async function buildSignedPdfData(contractId: string) {
+  const admin = getSupabaseAdminClient()
+  const { data: row } = await (admin as any).from('contracts').select(DETAIL_SELECT).eq('id', contractId).maybeSingle()
+  if (!row) return null
+  const c = mapDetail(row)
+  if (!c.reservation || !c.vehicle) return null
+  return buildPdfData(c)
+}
+
+// Preview: render the CURRENT saved state to an inline base64 data URL. Nothing
+// is written to R2 — used by the preview modal (the stored PDF has an
+// attachment disposition and would download instead of display in an iframe).
+export const previewContractPdf = createServerFn({ method: 'POST' })
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }): Promise<{ dataUrl: string }> => {
+    const { supabase } = await requireAgencyContext()
+    const { data: row, error } = await supabase
+      .from('contracts')
+      .select(DETAIL_SELECT)
+      .eq('id', data.id)
+      .maybeSingle()
+    if (error) throw new Error(error.message)
+    if (!row) throw new Error('Contract not found')
+    const c = mapDetail(row)
+    if (!c.reservation || !c.vehicle) throw new Error('Contract is missing reservation or vehicle data')
+
+    const { renderContractPdf } = await import('./pdf.server')
+    const buffer = await renderContractPdf(await buildPdfData(c))
+    return { dataUrl: `data:application/pdf;base64,${buffer.toString('base64')}` }
+  })
+
 // Render the PDF, store to R2, save the key.
 export const generateContractPdf = createServerFn({ method: 'POST' })
   .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
@@ -332,29 +501,7 @@ export const generateContractPdf = createServerFn({ method: 'POST' })
     if (!c.reservation || !c.vehicle) throw new Error('Contract is missing reservation or vehicle data')
 
     const { renderContractPdf } = await import('./pdf.server')
-    const buffer = await renderContractPdf({
-      agency: c.agency,
-      contract: {
-        short_id: c.short_id,
-        mileage_out: c.mileage_out,
-        mileage_in: c.mileage_in,
-        fuel_out: c.fuel_out,
-        fuel_in: c.fuel_in,
-        check_number: c.check_number,
-        check_bank: c.check_bank,
-        check_amount: c.check_amount,
-        extras: c.extras,
-      },
-      reservation: c.reservation,
-      vehicle: c.vehicle,
-      client: c.client ?? {
-        full_name: 'Client',
-        cin_passport: null,
-        phone: null,
-        address: null,
-        nationality: null,
-      },
-    })
+    const buffer = await renderContractPdf(await buildPdfData(c))
 
     const key = `agencies/${agencyId}/contracts/${c.id}.pdf`
     // Download filename = car + reservation date (ASCII-safe).
@@ -366,13 +513,13 @@ export const generateContractPdf = createServerFn({ method: 'POST' })
         .replace(/[^a-zA-Z0-9]+/g, '-') // …then strip marks + spaces to hyphens
         .replace(/^-+|-+$/g, '') || 'contrat'
     const filename = `${safe}.pdf`
-    // NOTE: contracts currently stored in the public R2_BUCKET (locar), not the
-    // private docs bucket. Revert to docsBucket() to move them back. The
-    // Content-Disposition makes the public link download directly with `filename`.
-    await putObject(key, buffer, 'application/pdf', undefined, `attachment; filename="${filename}"`)
+    // Contracts hold client PII (CIN, address, licence) → PRIVATE bucket only.
+    // Served via short-lived presigned links, never a public URL.
+    await putObject(key, buffer, 'application/pdf', docsBucket(), `attachment; filename="${filename}"`)
     await supabase.from('contracts').update({ pdf_key: key }).eq('id', c.id)
-    // Permanent public link — works on any device, no session/presign needed.
-    return { key, url: publicUrl(key), filename }
+    const url = await presignDownload(key, 3600, docsBucket())
+    scheduleNotify(() => enqueuePdfNotification(agencyId, c.id))
+    return { key, url, filename }
   })
 
 // Permanent public URL for an existing contract PDF (contracts live in the
@@ -390,5 +537,5 @@ export const getContractPdfUrl = createServerFn({ method: 'POST' })
     if (error) throw new Error(error.message)
     const key = (row as any)?.pdf_key as string | null
     if (!key) throw new Error('No PDF generated yet')
-    return { url: publicUrl(key) }
+    return { url: await presignDownload(key, 3600, docsBucket()) }
   })

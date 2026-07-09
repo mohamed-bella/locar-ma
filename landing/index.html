@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Rentiq — Le logiciel de gestion pour agences de location de voitures au Maroc</title>
+<meta name="description" content="Rentiq gère vos voitures, réservations, contrats PDF, entretien et finances. Savez en 2 secondes si une voiture peut être louée aujourd'hui. Fini les cahiers et les erreurs." />
+<style>
+  :root{
+    --blue:#1d5b8d; --blue-dark:#164a73; --blue-light:#2f7bb5;
+    --orange:#fa5a28; --orange-dark:#e04a1c;
+    --ink:#1f1b16; --muted:#6f6a62; --faint:#9a948a;
+    --line:#c9c4ba; --card:#ffffff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Helvetica Neue",Helvetica,Arial,"Segoe UI",sans-serif;
+    color:var(--ink); font-size:16px; line-height:1.55;
+    background:linear-gradient(#ececec,#d8d8d8); background-attachment:fixed;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--blue); text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 20px}
+  h1,h2,h3{margin:0}
+  .tshadow-dark{text-shadow:0 -1px 0 rgba(0,0,0,.35)}
+  .tshadow-light{text-shadow:0 1px 0 #fff}
+
+  /* Glossy buttons (2012) */
+  .btn{
+    display:inline-block; font-weight:bold; font-size:15px; color:#fff;
+    padding:12px 22px; border-radius:5px; cursor:pointer; border:1px solid;
+    text-shadow:0 -1px 0 rgba(0,0,0,.3); transition:transform .05s;
+  }
+  .btn:hover{text-decoration:none}
+  .btn:active{transform:translateY(1px)}
+  .btn-orange{
+    background:linear-gradient(#ff7a4d,var(--orange)); border-color:var(--orange-dark);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 1px 2px rgba(0,0,0,.25);
+  }
+  .btn-orange:hover{background:linear-gradient(var(--orange),var(--orange-dark))}
+  .btn-blue{
+    background:linear-gradient(var(--blue-light),var(--blue)); border-color:var(--blue-dark);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 2px rgba(0,0,0,.25);
+  }
+  .btn-ghost{
+    background:linear-gradient(#fff,#eee); color:var(--ink); border-color:#bdb8ae;
+    text-shadow:0 1px 0 #fff; box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(0,0,0,.12);
+  }
+  .btn-lg{font-size:17px; padding:15px 30px}
+
+  /* Logo badge */
+  .badge{
+    width:40px;height:40px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;
+    font-weight:900;color:#fff;font-size:22px;
+    background:linear-gradient(var(--blue-light),var(--blue));border:1px solid var(--blue-dark);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 2px 3px rgba(0,0,0,.3);text-shadow:0 -1px 0 rgba(0,0,0,.35);
+  }
+
+  /* Top bar */
+  header.top{
+    background:linear-gradient(#fbfbfb,#ececec);border-bottom:1px solid #c4bfb5;
+    box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 2px 6px rgba(0,0,0,.06);
+    position:sticky;top:0;z-index:50;
+  }
+  .top .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:bold;font-size:19px}
+  nav.menu a{color:#4a4640;font-weight:bold;font-size:14px;margin:0 12px}
+  nav.menu a:hover{color:var(--blue)}
+  @media(max-width:760px){nav.menu{display:none}}
+
+  /* Hero */
+  .hero{
+    background:linear-gradient(var(--blue),var(--blue-dark));
+    border-bottom:1px solid var(--blue-dark);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.15),inset 0 -30px 60px rgba(0,0,0,.18);
+    color:#fff;padding:64px 0 72px;
+  }
+  .hero .wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center}
+  @media(max-width:860px){.hero .wrap{grid-template-columns:1fr;text-align:center}}
+  .hero h1{font-size:40px;line-height:1.1;font-weight:900}
+  .hero h1 .hl{color:#ffd7c7}
+  .hero p.sub{font-size:19px;color:rgba(255,255,255,.9);margin:18px 0 26px;max-width:560px}
+  @media(max-width:860px){.hero p.sub{margin-left:auto;margin-right:auto}}
+  .hero .cta{display:flex;gap:12px;flex-wrap:wrap}
+  @media(max-width:860px){.hero .cta{justify-content:center}}
+  .pill{display:inline-block;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.25);
+    color:#fff;font-size:12px;font-weight:bold;padding:5px 12px;border-radius:20px;margin-bottom:18px}
+
+  /* Verdict card in hero (the selling visual) */
+  .verdict{
+    background:linear-gradient(#fff,#f4f6f8);border:1px solid #b9b4aa;border-radius:8px;
+    box-shadow:inset 0 1px 0 #fff,0 10px 30px rgba(0,0,0,.35);padding:0;overflow:hidden;color:var(--ink);
+  }
+  .verdict .strip{background:linear-gradient(var(--blue-light),var(--blue));color:#fff;
+    padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--blue-dark)}
+  .verdict .strip b{font-size:15px}
+  .verdict .strip .plate{margin-left:auto;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.3);
+    font-family:monospace;font-weight:bold;padding:2px 8px;border-radius:3px;font-size:12px}
+  .verdict .body{padding:14px 16px}
+  .vrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #eceae5;font-size:14px}
+  .vrow:last-child{border-bottom:0}
+  .vrow img{width:26px;height:26px}
+  .vrow .dot{margin-left:auto;width:11px;height:11px;border-radius:50%}
+  .ok{background:#0e9f6e}.warn{background:#c27803}.bad{background:#e02424}
+  .verdict .yes{display:flex;align-items:center;gap:8px;background:#def7ec;color:#0e7a54;
+    font-weight:bold;padding:10px 16px;border-top:1px solid #b8e6d1}
+
+  /* Sections */
+  section{padding:60px 0}
+  .sec-head{text-align:center;max-width:680px;margin:0 auto 40px}
+  .sec-head h2{font-size:30px;font-weight:900;color:var(--ink)}
+  .sec-head p{color:var(--muted);font-size:17px;margin-top:10px}
+  .kicker{color:var(--orange);font-weight:bold;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+
+  /* Feature cards */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  @media(max-width:860px){.grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}}
+  .card{
+    background:linear-gradient(#fff,#f7f7f5);border:1px solid #cbc6bc;border-radius:8px;padding:22px;
+    box-shadow:inset 0 1px 0 #fff,0 2px 5px rgba(0,0,0,.08);
+  }
+  .card img.ico{width:56px;height:56px;margin-bottom:12px}
+  .card h3{font-size:18px;font-weight:bold;margin-bottom:6px}
+  .card p{color:var(--muted);font-size:15px;margin:0}
+
+  /* Pain / benefits band */
+  .band{background:linear-gradient(#f3f1ec,#e7e3da);border-top:1px solid #d3cec4;border-bottom:1px solid #d3cec4}
+  .benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  @media(max-width:760px){.benefits{grid-template-columns:1fr}}
+  .benefit{display:flex;gap:12px;align-items:flex-start}
+  .benefit .n{flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:linear-gradient(var(--orange),#e04a1c);
+    color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;border:1px solid #c53f18;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
+  .benefit h4{margin:2px 0 4px;font-size:16px}
+  .benefit p{margin:0;color:var(--muted);font-size:14px}
+
+  /* Pricing */
+  .prices{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:stretch}
+  @media(max-width:760px){.prices{grid-template-columns:1fr}}
+  .price{background:linear-gradient(#fff,#f6f6f4);border:1px solid #cbc6bc;border-radius:8px;overflow:hidden;
+    box-shadow:inset 0 1px 0 #fff,0 3px 8px rgba(0,0,0,.09);display:flex;flex-direction:column}
+  .price.pop{border-color:var(--blue);box-shadow:0 6px 18px rgba(29,91,141,.28)}
+  .price .ph{padding:16px;text-align:center;background:linear-gradient(#fafafa,#efefef);border-bottom:1px solid #ddd8ce}
+  .price.pop .ph{background:linear-gradient(var(--blue-light),var(--blue));color:#fff;border-bottom-color:var(--blue-dark)}
+  .price .name{font-weight:bold;font-size:16px}
+  .price .amt{font-size:32px;font-weight:900;margin-top:6px}
+  .price .amt small{font-size:13px;font-weight:normal;opacity:.75}
+  .price ul{list-style:none;margin:0;padding:18px 20px;flex:1}
+  .price li{padding:6px 0;border-bottom:1px dashed #e6e2d8;font-size:14px;color:#4a4640}
+  .price li:last-child{border-bottom:0}
+  .price .pf{padding:16px;text-align:center}
+
+  /* Quote */
+  .quote{background:linear-gradient(#fff,#f7f7f5);border:1px solid #cbc6bc;border-radius:8px;
+    box-shadow:inset 0 1px 0 #fff,0 2px 6px rgba(0,0,0,.08);padding:30px;max-width:760px;margin:0 auto;text-align:center}
+  .quote p{font-size:20px;font-style:italic;color:#3a352e;margin:0}
+  .quote .who{margin-top:14px;color:var(--muted);font-weight:bold;font-size:14px;font-style:normal}
+
+  /* Final CTA */
+  .final{background:linear-gradient(var(--blue),var(--blue-dark));color:#fff;text-align:center;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
+  .final h2{font-size:30px;font-weight:900}
+  .final p{color:rgba(255,255,255,.9);font-size:18px;margin:12px 0 24px}
+
+  /* Footer */
+  footer{background:linear-gradient(#2a2620,#1c1915);color:#c9c3b8;padding:34px 0;font-size:14px}
+  footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+  footer a{color:#ffd7c7}
+  footer .mail{font-weight:bold;color:#fff}
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><span class="badge">R</span><span>Rentiq</span></div>
+    <nav class="menu">
+      <a href="#features">Fonctionnalités</a>
+      <a href="#etat">État véhicule</a>
+      <a href="#prix">Tarifs</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <a class="btn btn-orange" href="#contact">Demander une démo</a>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <span class="pill">Fait pour les agences de location au Maroc 🇲🇦</span>
+      <h1 class="tshadow-dark">Gérez votre agence sans <span class="hl">cahiers</span> ni erreurs.</h1>
+      <p class="sub">Voitures, réservations, contrats PDF, entretien, finances — tout au même endroit. Et surtout : sachez en <b>2 secondes</b> si une voiture peut être louée aujourd'hui.</p>
+      <div class="cta">
+        <a class="btn btn-orange btn-lg" href="#contact">Commencer maintenant</a>
+        <a class="btn btn-ghost btn-lg" href="#features">Voir les fonctionnalités</a>
+      </div>
+    </div>
+
+    <!-- The selling visual: "peut-elle sortir aujourd'hui ?" -->
+    <div class="verdict">
+      <div class="strip">
+        <b>Dacia Logan 2022</b>
+        <span class="plate">12345-A-6</span>
+      </div>
+      <div class="body">
+        <div class="vrow"><img src="https://img.icons8.com/color/96/car-insurance-card.png" alt=""> Assurance <span class="dot bad"></span></div>
+        <div class="vrow"><img src="https://img.icons8.com/color/96/engine-oil-level--v3.png" alt=""> Vidange <span class="dot warn"></span></div>
+        <div class="vrow"><img src="https://img.icons8.com/color/96/tire.png" alt=""> Pneus <span class="dot ok"></span></div>
+        <div class="vrow"><img src="https://img.icons8.com/color/96/car-service.png" alt=""> Visite technique <span class="dot ok"></span></div>
+      </div>
+      <div class="yes" style="background:#fde8e8;color:#a01818;border-top-color:#f3c6c6">
+        <img src="https://img.icons8.com/color/96/cancel--v3.png" alt="" style="width:20px;height:20px"> Ne pas louer aujourd'hui — assurance expirée
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pain points -->
+<section class="band">
+  <div class="wrap sec-head" style="margin-bottom:34px">
+    <div class="kicker">Le problème</div>
+    <h2>Un carnet, un Excel, et des mauvaises surprises</h2>
+    <p>Une assurance oubliée, une vidange en retard, une voiture louée alors qu'elle ne devait pas sortir… ça coûte cher.</p>
+  </div>
+  <div class="wrap benefits">
+    <div class="benefit"><div class="n">✕</div><div><h4>Documents oubliés</h4><p>Assurance, vignette, visite technique qui expirent sans prévenir.</p></div></div>
+    <div class="benefit"><div class="n">✕</div><div><h4>Entretien en retard</h4><p>Vidange, freins, pneus — impossible à suivre sur papier.</p></div></div>
+    <div class="benefit"><div class="n">✕</div><div><h4>Zéro visibilité</h4><p>Quelle voiture rapporte ? Laquelle coûte trop cher ? Personne ne sait.</p></div></div>
+  </div>
+</section>
+
+<!-- Features -->
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">La solution</div>
+      <h2>Tout ce dont votre agence a besoin</h2>
+      <p>Un seul outil, simple, en français. Rien à installer.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><img class="ico" src="https://img.icons8.com/color/96/approval.png" alt=""><h3>État véhicule</h3><p>Chaque voiture a un statut clair : prête à louer, à surveiller, ou non louable. Décidez sans réfléchir.</p></div>
+      <div class="card"><img class="ico" src="https://img.icons8.com/color/96/checklist.png" alt=""><h3>Check rapide</h3><p>30 secondes au retour : kilométrage, carburant, dommages. Le système met tout à jour tout seul.</p></div>
+      <div class="card"><img class="ico" src="https://img.icons8.com/color/96/engine-oil-level--v3.png" alt=""><h3>Suivi & entretien</h3><p>Vidange, courroie, freins, pneus, batterie — chaque entretien suivi avec sa propre logique.</p></div>
+      <div class="card"><img class="ico" src="https://img.icons8.com/color/96/car-insurance-card.png" alt=""><h3>Papiers & alertes</h3><p>Assurance, vignette, visite technique. Alerte avant l'expiration, jamais après.</p></div>
+      <div class="card"><img class="ico" src="https://img.icons8.com/color/96/checked.png" alt=""><h3>Réservations & contrats</h3><p>Planning des voitures, contrats PDF générés en un clic, envoyés par WhatsApp.</p></div>
+      <div class="card"><img class="ico" src="https://img.icons8.com/color/96/pocket-money.png" alt=""><h3>Finances & dépenses</h3><p>Revenus, dépenses par voiture, rentabilité. Savez enfin ce que chaque voiture gagne.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- État véhicule highlight -->
+<section id="etat" class="band">
+  <div class="wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center">
+    <div>
+      <div class="kicker">La fonctionnalité qui change tout</div>
+      <h2 style="font-size:28px;font-weight:900;margin:8px 0 14px">« Cette voiture peut-elle sortir aujourd'hui ? »</h2>
+      <p style="color:var(--muted);font-size:17px">Rentiq combine les papiers, l'entretien et les problèmes ouverts pour donner une réponse claire : <b>louable</b> ou <b>non louable</b>. Fini les erreurs qui vous coûtent une voiture immobilisée ou une amende.</p>
+      <ul style="margin:18px 0 0;padding:0;list-style:none">
+        <li style="padding:6px 0"><b style="color:#0e9f6e">✔</b> Assurance expirée → voiture bloquée automatiquement</li>
+        <li style="padding:6px 0"><b style="color:#0e9f6e">✔</b> Vidange dépassée → alerte immédiate</li>
+        <li style="padding:6px 0"><b style="color:#0e9f6e">✔</b> Problème signalé → voiture non louable jusqu'à réparation</li>
+      </ul>
+    </div>
+    <div style="text-align:center">
+      <img src="https://img.icons8.com/color/96/garage.png" alt="" style="width:96px;height:96px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.2))">
+      <div style="margin-top:14px;display:inline-flex;gap:10px">
+        <img src="https://img.icons8.com/color/96/speedometer.png" style="width:52px;height:52px" alt="">
+        <img src="https://img.icons8.com/color/96/brake-discs.png" style="width:52px;height:52px" alt="">
+        <img src="https://img.icons8.com/color/96/car-battery.png" style="width:52px;height:52px" alt="">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section id="prix">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">Tarifs</div>
+      <h2>Simple, sans engagement</h2>
+      <p>Choisissez selon la taille de votre flotte. Annulez quand vous voulez.</p>
+    </div>
+    <div class="prices">
+      <div class="price">
+        <div class="ph"><div class="name">Starter</div><div class="amt">199 <small>DH / mois</small></div></div>
+        <ul>
+          <li>Jusqu'à 5 voitures</li>
+          <li>Réservations & contrats</li>
+          <li>Suivi entretien & papiers</li>
+          <li>1 utilisateur</li>
+        </ul>
+        <div class="pf"><a class="btn btn-ghost" href="#contact">Choisir</a></div>
+      </div>
+      <div class="price pop">
+        <div class="ph"><div class="name">Pro — le plus choisi</div><div class="amt">399 <small>DH / mois</small></div></div>
+        <ul>
+          <li>Jusqu'à 20 voitures</li>
+          <li>État véhicule intelligent</li>
+          <li>Finances & dépenses</li>
+          <li>Contrats WhatsApp + PDF</li>
+          <li>3 utilisateurs</li>
+        </ul>
+        <div class="pf"><a class="btn btn-orange" href="#contact">Commencer</a></div>
+      </div>
+      <div class="price">
+        <div class="ph"><div class="name">Agence</div><div class="amt">Sur mesure</div></div>
+        <ul>
+          <li>Voitures illimitées</li>
+          <li>Plusieurs agences</li>
+          <li>Utilisateurs illimités</li>
+          <li>Support prioritaire</li>
+        </ul>
+        <div class="pf"><a class="btn btn-ghost" href="#contact">Nous contacter</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Quote -->
+<section class="band">
+  <div class="wrap">
+    <div class="quote">
+      <p>« Avant, on notait tout sur un cahier. Maintenant je vois d'un coup d'œil quelle voiture peut sortir. On a arrêté de perdre de l'argent sur les assurances oubliées. »</p>
+      <div class="who">— Karim, agence de location · Marrakech</div>
+    </div>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section class="final">
+  <div class="wrap">
+    <h2 class="tshadow-dark">Prêt à reprendre le contrôle de votre flotte ?</h2>
+    <p>Demandez une démo gratuite. On vous montre tout en 15 minutes.</p>
+    <a class="btn btn-orange btn-lg" href="mailto:contact@rentiq-system.com?subject=Démo%20Rentiq">Demander une démo</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer id="contact">
+  <div class="wrap">
+    <div>
+      <div class="brand" style="color:#fff"><span class="badge">R</span><span>Rentiq</span></div>
+      <div style="margin-top:8px">Le logiciel de gestion pour agences de location de voitures.</div>
+    </div>
+    <div style="text-align:right">
+      <div>Contact : <a class="mail" href="mailto:contact@rentiq-system.com">contact@rentiq-system.com</a></div>
+      <div style="margin-top:6px;color:#8f887c">© <span id="y"></span> Rentiq. Tous droits réservés.</div>
+    </div>
+  </div>
+</footer>
+
+<script>document.getElementById('y').textContent=new Date().getFullYear();</script>
+</body>
+</html>

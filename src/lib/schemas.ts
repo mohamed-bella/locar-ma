@@ -120,6 +120,11 @@ export const CHECK_STATUSES = ['held', 'released', 'disputed'] as const
 const optNum = z.preprocess(emptyToUndef, z.coerce.number().min(0).optional())
 const optFuel = z.preprocess(emptyToUndef, z.enum(FUEL_LEVELS).optional())
 
+// Free-form printed-contract fields (2nd driver, permit details, times…).
+// Flat string map; every key optional. Values capped to keep the row sane.
+export const contractFormSchema = z.record(z.string(), z.string().max(200)).default({})
+export type ContractForm = z.infer<typeof contractFormSchema>
+
 export const contractUpdateSchema = z.object({
   id: z.string().uuid(),
   mileage_out: optNum,
@@ -133,6 +138,7 @@ export const contractUpdateSchema = z.object({
   extras: z
     .array(z.object({ name: z.string().min(1), price: z.coerce.number() }))
     .default([]),
+  form: contractFormSchema.optional(),
 })
 export type ContractUpdateInput = z.infer<typeof contractUpdateSchema>
 

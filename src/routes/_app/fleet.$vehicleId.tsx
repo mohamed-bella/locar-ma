@@ -10,7 +10,6 @@ import {
   Wrench,
   CalendarPlus,
   CalendarClock,
-  Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -45,6 +44,7 @@ import {
   SlideOver,
   EmptyState,
   cn,
+  PageLoader,
 } from '~/components/ui'
 
 export const Route = createFileRoute('/_app/fleet/$vehicleId')({
@@ -63,11 +63,7 @@ export const Route = createFileRoute('/_app/fleet/$vehicleId')({
     return { vehicle, damage, alertRules, documentTypes, reservations, servicePlans, serviceRecords, expenses }
   },
   component: VehicleDetail,
-  pendingComponent: () => (
-    <div className="flex min-h-[50vh] items-center justify-center">
-      <Loader2 className="h-6 w-6 animate-spin text-[var(--color-brand)]" />
-    </div>
-  ),
+  pendingComponent: () => <PageLoader />,
   notFoundComponent: VehicleNotFound,
 })
 

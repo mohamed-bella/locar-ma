@@ -10,6 +10,16 @@ export type AgencyProfile = {
   slug: string
   city: string | null
   logo_url: string | null
+  stamp_url: string | null
+  whatsapp_number: string | null
+  // Company legal info printed on the contract.
+  legal_name: string | null
+  address: string | null
+  ice: string | null
+  rc: string | null
+  patente: string | null
+  rib: string | null
+  company_phone: string | null
   role: string
   canEdit: boolean
 }
@@ -20,21 +30,87 @@ export const getAgencyProfile = createServerFn({ method: 'GET' }).handler(
     const { supabase, agencyId, role } = await requireAgencyContext()
     const { data, error } = await supabase
       .from('agencies')
-      .select('id, name, slug, city, logo_url')
+      .select(
+        'id, name, slug, city, logo_url, stamp_url, whatsapp_number, legal_name, address, ice, rc, patente, rib, company_phone',
+      )
       .eq('id', agencyId)
       .single()
     if (error || !data) throw new Error(error?.message ?? 'Agency not found')
+    const a = data as any
     return {
-      id: (data as any).id,
-      name: (data as any).name,
-      slug: (data as any).slug,
-      city: (data as any).city ?? null,
-      logo_url: (data as any).logo_url ?? null,
+      id: a.id,
+      name: a.name,
+      slug: a.slug,
+      city: a.city ?? null,
+      logo_url: a.logo_url ?? null,
+      stamp_url: a.stamp_url ?? null,
+      whatsapp_number: a.whatsapp_number ?? null,
+      legal_name: a.legal_name ?? null,
+      address: a.address ?? null,
+      ice: a.ice ?? null,
+      rc: a.rc ?? null,
+      patente: a.patente ?? null,
+      rib: a.rib ?? null,
+      company_phone: a.company_phone ?? null,
       role,
       canEdit: role === 'owner',
     }
   },
 )
+
+// Normalize a Moroccan/international number to bare digits (no +, no spaces).
+// Empty string → null (clears the field).
+function normalizeWhatsApp(raw: string | null | undefined): string | null {
+  let digits = (raw ?? '').replace(/\D/g, '')
+  if (!digits) return null
+  if (digits.startsWith('00')) digits = digits.slice(2)
+  if (digits.startsWith('0')) digits = `212${digits.slice(1)}`
+  return digits
+}
+
+// Update the agency's display name and/or WhatsApp notification number.
+// Owner-only (RLS also enforces it).
+export const updateAgencyProfile = createServerFn({ method: 'POST' })
+  .validator((d: unknown) => {
+    const optText = z.preprocess(
+      (v) => (typeof v === 'string' && v.trim() === '' ? null : v),
+      z.string().trim().max(200).nullable().optional(),
+    )
+    return z
+      .object({
+        name: z.string().trim().min(1, 'Name is required').max(120),
+        whatsapp_number: z.string().trim().max(30).nullable().optional(),
+        legal_name: optText,
+        address: optText,
+        ice: optText,
+        rc: optText,
+        patente: optText,
+        rib: optText,
+        company_phone: optText,
+      })
+      .parse(d)
+  })
+  .handler(async ({ data }) => {
+    const { supabase, agencyId, role } = await requireAgencyContext()
+    if (role !== 'owner') throw new Error('Only the owner can change account settings')
+
+    const { error } = await supabase
+      .from('agencies')
+      .update({
+        name: data.name,
+        whatsapp_number: normalizeWhatsApp(data.whatsapp_number ?? null),
+        legal_name: data.legal_name ?? null,
+        address: data.address ?? null,
+        ice: data.ice ?? null,
+        rc: data.rc ?? null,
+        patente: data.patente ?? null,
+        rib: data.rib ?? null,
+        company_phone: data.company_phone ?? null,
+      })
+      .eq('id', agencyId)
+    if (error) throw new Error(error.message)
+    return { ok: true }
+  })
 
 // Presigned PUT so the browser uploads the logo straight to R2.
 export const presignAgencyLogo = createServerFn({ method: 'POST' })
@@ -91,6 +167,61 @@ export const updateAgencyLogo = createServerFn({ method: 'POST' })
     const { error } = await supabase
       .from('agencies')
       .update({ logo_url: data.logo_url })
+      .eq('id', agencyId)
+    if (error) throw new Error(error.message)
+    return { ok: true }
+  })
+
+// Presigned PUT for the agency stamp / cachet (same flow as the logo).
+export const presignAgencyStamp = createServerFn({ method: 'POST' })
+  .validator((d: unknown) =>
+    z
+      .object({
+        name: z.string(),
+        type: z.string().startsWith('image/', 'Stamp must be an image'),
+        size: z.number().int().positive().max(MAX_LOGO_BYTES, 'Stamp is too large (max 2 MB)'),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { agencyId, role } = await requireAgencyContext()
+    if (role !== 'owner') throw new Error('Only the owner can change the stamp')
+    const safe = data.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-40)
+    const key = `agencies/${agencyId}/stamp-${crypto.randomUUID()}-${safe}`
+    return { key, url: await presignUpload(key, data.type, 300, data.size), publicUrl: publicUrl(key) }
+  })
+
+// Persist the new stamp URL (or clear it). Owner-only (RLS enforced too).
+export const updateAgencyStamp = createServerFn({ method: 'POST' })
+  .validator((d: unknown) => z.object({ stamp_url: z.string().url().nullable() }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabase, agencyId, role } = await requireAgencyContext()
+    if (role !== 'owner') throw new Error('Only the owner can change the stamp')
+
+    if (data.stamp_url && !data.stamp_url.startsWith(publicUrl(''))) {
+      throw new Error('Invalid stamp URL')
+    }
+
+    const { data: prev } = await supabase
+      .from('agencies')
+      .select('stamp_url')
+      .eq('id', agencyId)
+      .single()
+    const oldUrl = (prev as any)?.stamp_url as string | null
+    if (oldUrl && oldUrl !== data.stamp_url) {
+      const base = publicUrl('')
+      if (oldUrl.startsWith(base)) {
+        try {
+          await deleteObject(oldUrl.slice(base.length))
+        } catch {
+          /* ignore — orphan object is harmless */
+        }
+      }
+    }
+
+    const { error } = await supabase
+      .from('agencies')
+      .update({ stamp_url: data.stamp_url })
       .eq('id', agencyId)
     if (error) throw new Error(error.message)
     return { ok: true }

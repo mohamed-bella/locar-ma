@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { createFileRoute, Link, useRouter, notFound } from '@tanstack/react-router'
 import { format } from 'date-fns'
-import { ArrowLeft, Car, Loader2, Trash2 } from 'lucide-react'
+import { ArrowLeft, Car, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { getVehicle, listDamageReports } from '~/server/fleet'
 import { listAlertRules } from '~/server/alertRules'
@@ -12,7 +12,7 @@ import { legalInputs, serviceInputs, issueInputs } from '~/lib/suivi'
 import { computeVehicleState, isRentable } from '~/lib/intelligence'
 import { useRealtimeInvalidate } from '~/lib/useRealtime'
 import { useI18n } from '~/lib/i18n'
-import { Button, EmptyState, cn } from '~/components/ui'
+import { Button, EmptyState, cn, PageLoader } from '~/components/ui'
 import { LogServiceSheet } from '~/components/LogServiceSheet'
 import { StatusPill } from '~/components/suivi/StatusPill'
 import { HealthList } from '~/components/suivi/HealthList'
@@ -36,11 +36,7 @@ export const Route = createFileRoute('/_app/suivi/$vehicleId')({
     return { vehicle, alertRules, documentTypes, maintenance, serviceRecords, issues, damage }
   },
   component: SuiviDetail,
-  pendingComponent: () => (
-    <div className="flex min-h-[50vh] items-center justify-center">
-      <Loader2 className="h-6 w-6 animate-spin text-[var(--color-brand)]" />
-    </div>
-  ),
+  pendingComponent: () => <PageLoader />,
   notFoundComponent: () => {
     const { t } = useI18n()
     return (

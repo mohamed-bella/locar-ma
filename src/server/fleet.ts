@@ -6,6 +6,7 @@ import { presignUpload, publicUrl, deleteObject } from '~/lib/r2.server'
 import { agencyToday } from '~/lib/tz'
 import { deriveVehicleStatus } from './vehicleStatus'
 import { notifyVehicle, scheduleNotify } from '~/lib/email.server'
+import { enqueueVehicleNotification } from './notifications'
 
 // Best-effort R2 cleanup — an orphaned object is harmless, a thrown error that
 // blocks a delete is not. Never let storage cleanup fail the DB operation.
@@ -172,6 +173,7 @@ export const createVehicle = createServerFn({ method: 'POST' })
       .single()
     if (error) throw new Error(error.message)
     scheduleNotify(() => notifyVehicle(agencyId, (row as any).id, true)) // fire-and-forget email
+    scheduleNotify(() => enqueueVehicleNotification(agencyId, (row as any).id))
     return { id: (row as any).id as string }
   })
 
