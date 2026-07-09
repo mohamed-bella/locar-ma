@@ -20,8 +20,11 @@ export function useRealtimeInvalidate(table: string, filter?: string) {
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient()
+    // Append a unique suffix to the channel name to avoid cached channel conflicts
+    // between concurrent mounts/StrictMode double-mounts.
+    const channelId = Math.random().toString(36).substring(2, 9)
     const channel = supabase
-      .channel(`rt:${table}:${effectiveFilter ?? 'all'}`)
+      .channel(`rt:${table}:${effectiveFilter ?? 'all'}:${channelId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table, ...(effectiveFilter ? { filter: effectiveFilter } : {}) },

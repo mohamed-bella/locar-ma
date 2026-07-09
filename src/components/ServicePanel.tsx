@@ -133,16 +133,18 @@ export function ServicePanel({
   return (
     <Card>
       <CardHeader
+        className="flex-wrap gap-y-2"
         title={
           <span className="flex items-center gap-2">
             <Wrench className="h-[18px] w-[18px] text-[var(--color-brand)]" />
             {t('svc.title')}
           </span>
         }
-        subtitle={t('svc.subtitle')}
         action={
           <Button size="sm" onClick={() => openLog('vidange')}>
-            <Plus className="h-4 w-4" /> {t('svc.logService')}
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('svc.logService')}</span>
+            <span className="sm:hidden">{t('common.add') || 'Ajouter'}</span>
           </Button>
         }
       />

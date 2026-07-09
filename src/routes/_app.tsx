@@ -25,6 +25,8 @@ import {
   Activity,
 } from 'lucide-react'
 import { getAuthState, signOut, setActiveAgency } from '~/server/auth'
+import { getNavCounts, type NavCounts } from '~/server/navCounts'
+import { useRealtimeInvalidate } from '~/lib/useRealtime'
 import { useI18n, LOCALES, LOCALE_LABELS, type Locale } from '~/lib/i18n'
 
 export const Route = createFileRoute('/_app')({
@@ -46,19 +48,29 @@ export const Route = createFileRoute('/_app')({
       null
     return { auth, agency }
   },
+  // Sidebar badge counts — skipped for platform admins with no agency (they'd
+  // hit "No agency membership" in requireAgencyContext).
+  loader: async ({ context }): Promise<{ counts: NavCounts | null }> => {
+    if (!context.agency) return { counts: null }
+    try {
+      return { counts: await getNavCounts() }
+    } catch {
+      return { counts: null }
+    }
+  },
   component: AppLayout,
 })
 
 const NAV = [
-  { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard },
-  { to: '/fleet', labelKey: 'nav.fleet', icon: Car },
-  { to: '/suivi', labelKey: 'nav.suivi', icon: Activity },
-  { to: '/reservations', labelKey: 'nav.reservations', icon: CalendarDays },
-  { to: '/contracts', labelKey: 'nav.contracts', icon: FileText },
-  { to: '/clients', labelKey: 'nav.clients', icon: Users },
-  { to: '/finance', labelKey: 'nav.finance', icon: BarChart3 },
-  { to: '/settings', labelKey: 'nav.settings', icon: Settings },
-] as const
+  { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, countKey: null },
+  { to: '/fleet', labelKey: 'nav.fleet', icon: Car, countKey: 'fleet' },
+  { to: '/suivi', labelKey: 'nav.suivi', icon: Activity, countKey: null },
+  { to: '/reservations', labelKey: 'nav.reservations', icon: CalendarDays, countKey: 'reservations' },
+  { to: '/contracts', labelKey: 'nav.contracts', icon: FileText, countKey: 'contracts' },
+  { to: '/clients', labelKey: 'nav.clients', icon: Users, countKey: 'clients' },
+  { to: '/finance', labelKey: 'nav.finance', icon: BarChart3, countKey: null },
+  { to: '/settings', labelKey: 'nav.settings', icon: Settings, countKey: null },
+] as const satisfies readonly { to: string; labelKey: string; icon: any; countKey: keyof NavCounts | null }[]
 
 function BrandMark({ logoUrl, name }: { logoUrl?: string | null; name?: string | null }) {
   return (
@@ -79,9 +91,26 @@ function BrandMark({ logoUrl, name }: { logoUrl?: string | null; name?: string |
   )
 }
 
+function NavBadge({ n }: { n: number }) {
+  if (n <= 0) return null
+  return (
+    <span className="ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-danger)] px-1.5 text-[11px] font-bold tabular-nums text-white">
+      {n > 99 ? '99+' : n}
+    </span>
+  )
+}
+
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useI18n()
   const { auth, agency } = Route.useRouteContext()
+  const { counts } = Route.useLoaderData()
+
+  // Live counts: any change to these tables refreshes the loader, so badges
+  // update without a manual reload. No-ops (empty channel) when !agency.
+  useRealtimeInvalidate('vehicles')
+  useRealtimeInvalidate('reservations')
+  useRealtimeInvalidate('contracts')
+  useRealtimeInvalidate('clients')
 
   // A platform admin with no agency membership gets an admin-only menu —
   // the agency pages (cars, reservations…) have no agency to load.
@@ -108,7 +137,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
       <div className="skeu-emboss px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-faint)]">
         {t('nav.menu')}
       </div>
-      {NAV.map(({ to, labelKey, icon: Icon }) => (
+      {NAV.map(({ to, labelKey, icon: Icon, countKey }) => (
         <Link
           key={to}
           to={to}
@@ -117,6 +146,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
         >
           <Icon className="h-[18px] w-[18px]" />
           {t(labelKey)}
+          {countKey && counts && <NavBadge n={counts[countKey]} />}
         </Link>
       ))}
       {auth.isPlatformAdmin && (

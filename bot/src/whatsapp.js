@@ -9,9 +9,26 @@ import qrcode from 'qrcode-terminal'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { rm } from 'fs/promises'
+import { existsSync, mkdirSync, cpSync } from 'fs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const AUTH_DIR = join(__dirname, '..', 'auth_info')
+const SEED_DIR = join(__dirname, '..', 'auth_seed')
+
+// First boot on CapRover: the persistent volume at auth_info is empty, so copy
+// the session baked into the image (auth_seed) into it — no QR rescan. Runs once;
+// once creds.json exists in the volume, the seed is ignored forever.
+function seedAuthIfEmpty() {
+  try {
+    if (existsSync(join(AUTH_DIR, 'creds.json'))) return
+    if (!existsSync(SEED_DIR)) return
+    mkdirSync(AUTH_DIR, { recursive: true })
+    cpSync(SEED_DIR, AUTH_DIR, { recursive: true })
+    console.log('🌱 Seeded WhatsApp session from image → persistent volume')
+  } catch (e) {
+    console.error('seedAuthIfEmpty failed:', e.message)
+  }
+}
 
 let sock = null
 let connected = false // tracked from connection.update — reliable across versions
@@ -305,6 +322,7 @@ function handleConnectionUpdate(update) {
 }
 
 export async function startWhatsApp() {
+  seedAuthIfEmpty()
   return connect()
 }
 

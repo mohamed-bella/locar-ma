@@ -6,12 +6,27 @@ console.log = (...args) => {
   _log(...args)
 }
 
-import { startWhatsApp, connectionReady, onIncoming } from './whatsapp.js'
+import { createServer } from 'node:http'
+import { startWhatsApp, connectionReady, onIncoming, isConnected } from './whatsapp.js'
 import { startListener } from './listener.js'
 import { startScheduler } from './scheduler.js'
 import { handleIncomingMessage } from './commands.js'
 
 console.log('🤖 Locar WhatsApp Bot starting...\n')
+
+// Health endpoint — CapRover (and any orchestrator) health-checks a port.
+// Start it FIRST so the container is reachable immediately, even while the
+// first-run QR is still waiting to be scanned (connectionReady blocks below).
+const PORT = process.env.PORT || 80
+createServer((req, res) => {
+  if (req.url === '/health' || req.url === '/') {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    res.end(JSON.stringify({ status: 'ok', whatsapp: isConnected() ? 'connected' : 'connecting' }))
+  } else {
+    res.writeHead(404)
+    res.end()
+  }
+}).listen(PORT, () => console.log(`🩺 Health server on :${PORT}`))
 
 // 0. Wire inbound command handling (authorized numbers only)
 onIncoming(handleIncomingMessage)

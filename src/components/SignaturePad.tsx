@@ -15,8 +15,8 @@ export type SignaturePadHandle = {
 }
 
 const VELOCITY_FILTER = 0.7
-const MIN_W = 0.8
-const MAX_W = 3.2
+const MIN_W = 2.4
+const MAX_W = 6.5
 
 export const SignaturePad = forwardRef<SignaturePadHandle, { onChange?: (empty: boolean) => void }>(
   function SignaturePad({ onChange }, ref) {
@@ -41,8 +41,8 @@ export const SignaturePad = forwardRef<SignaturePadHandle, { onChange?: (empty: 
       ctx.scale(ratio, ratio)
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
-      ctx.fillStyle = '#0f172a'
-      ctx.strokeStyle = '#0f172a'
+      ctx.fillStyle = '#000000'
+      ctx.strokeStyle = '#000000'
       ctxRef.current = ctx
     }
 
@@ -196,7 +196,7 @@ export const SignaturePad = forwardRef<SignaturePadHandle, { onChange?: (empty: 
     return (
       <canvas
         ref={canvasRef}
-        className="h-48 w-full touch-none rounded-2xl border-2 border-dashed border-[var(--color-line-strong)] bg-white"
+        className="h-64 w-full touch-none rounded-2xl border-2 border-dashed border-[var(--color-line-strong)] bg-white sm:h-72"
         style={{ touchAction: 'none' }}
       />
     )

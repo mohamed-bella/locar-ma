@@ -292,16 +292,18 @@ function ReservationsSection({
   return (
     <Card>
       <CardHeader
+        className="flex-wrap gap-y-2"
         title={
           <span className="flex items-center gap-2">
             <CalendarClock className="h-[18px] w-[18px] text-[var(--color-brand)]" />
             {t('fleet.reservations')}
           </span>
         }
-        subtitle={t('fleet.reservationsSub', { n: reservations.length })}
         action={
           <Button size="sm" onClick={onAdd}>
-            <CalendarPlus className="h-4 w-4" /> {t('fleet.addReservation')}
+            <CalendarPlus className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('fleet.addReservation')}</span>
+            <span className="sm:hidden">{t('common.add') || 'Ajouter'}</span>
           </Button>
         }
       />
