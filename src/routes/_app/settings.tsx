@@ -600,6 +600,24 @@ function AccountSettingsCard({ agency, onDone }: { agency: AgencyProfile; onDone
   const set = (k: keyof typeof initial, v: string) => setF((p) => ({ ...p, [k]: v }))
   const dirty = (Object.keys(initial) as (keyof typeof initial)[]).some((k) => f[k].trim() !== initial[k])
 
+  // WhatsApp on/off — saved immediately on toggle (independent of the form).
+  const [waEnabled, setWaEnabled] = useState(agency.whatsapp_enabled)
+  const [waBusy, setWaBusy] = useState(false)
+  async function toggleWhatsApp(next: boolean) {
+    setWaEnabled(next)
+    setWaBusy(true)
+    try {
+      await updateAgencyProfile({ data: { name: f.name.trim() || agency.name, whatsapp_enabled: next } })
+      toast.success(next ? t('set.waOn') : t('set.waOff'))
+      onDone()
+    } catch (err: any) {
+      setWaEnabled(!next) // revert on failure
+      toast.error(err?.message ?? t('common.actionFailed'))
+    } finally {
+      setWaBusy(false)
+    }
+  }
+
   async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!f.name.trim()) {
@@ -657,6 +675,32 @@ function AccountSettingsCard({ agency, onDone }: { agency: AgencyProfile; onDone
             </Field>
           </div>
           <p className="-mt-3 text-xs text-[var(--color-muted)]">{t('set.whatsappHint')}</p>
+
+          {/* WhatsApp notifications on/off — saves instantly */}
+          <div className="flex items-center justify-between rounded-xl border border-[var(--color-line)] px-4 py-3">
+            <div className="min-w-0 pr-4">
+              <div className="text-sm font-semibold text-[var(--color-ink)]">{t('set.waToggle')}</div>
+              <div className="mt-0.5 text-xs text-[var(--color-muted)]">
+                {waEnabled ? t('set.waToggleOnDesc') : t('set.waToggleOffDesc')}
+              </div>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={waEnabled}
+              disabled={!canEdit || waBusy}
+              onClick={() => toggleWhatsApp(!waEnabled)}
+              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+                waEnabled ? 'bg-[var(--color-brand)]' : 'bg-[var(--color-line-strong)]'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                  waEnabled ? 'translate-x-[22px]' : 'translate-x-0.5'
+                }`}
+              />
+            </button>
+          </div>
 
           <div>
             <div className="mb-3 text-sm font-semibold text-[var(--color-ink)]">{t('set.companyLegal')}</div>

@@ -16,6 +16,18 @@ export async function enqueueNotification(
 ): Promise<void> {
   try {
     const admin = getSupabaseAdminClient()
+
+    // Respect the per-agency WhatsApp switch — if paused, don't enqueue at all.
+    const { data: agency } = await admin
+      .from('agencies')
+      .select('whatsapp_enabled')
+      .eq('id', agencyId)
+      .maybeSingle()
+    if (agency && (agency as any).whatsapp_enabled === false) {
+      console.log(`[notify] skipped type=${type} agency=${agencyId} — WhatsApp disabled`)
+      return
+    }
+
     // NOTE: .insert() RESOLVES with { error } on failure — it does NOT throw.
     // Must inspect the returned error explicitly or failures are invisible.
     const { data, error } = await admin

@@ -12,6 +12,7 @@ export type AgencyProfile = {
   logo_url: string | null
   stamp_url: string | null
   whatsapp_number: string | null
+  whatsapp_enabled: boolean
   // Company legal info printed on the contract.
   legal_name: string | null
   address: string | null
@@ -31,7 +32,7 @@ export const getAgencyProfile = createServerFn({ method: 'GET' }).handler(
     const { data, error } = await supabase
       .from('agencies')
       .select(
-        'id, name, slug, city, logo_url, stamp_url, whatsapp_number, legal_name, address, ice, rc, patente, rib, company_phone',
+        'id, name, slug, city, logo_url, stamp_url, whatsapp_number, whatsapp_enabled, legal_name, address, ice, rc, patente, rib, company_phone',
       )
       .eq('id', agencyId)
       .single()
@@ -45,6 +46,7 @@ export const getAgencyProfile = createServerFn({ method: 'GET' }).handler(
       logo_url: a.logo_url ?? null,
       stamp_url: a.stamp_url ?? null,
       whatsapp_number: a.whatsapp_number ?? null,
+      whatsapp_enabled: a.whatsapp_enabled ?? true,
       legal_name: a.legal_name ?? null,
       address: a.address ?? null,
       ice: a.ice ?? null,
@@ -80,6 +82,7 @@ export const updateAgencyProfile = createServerFn({ method: 'POST' })
       .object({
         name: z.string().trim().min(1, 'Name is required').max(120),
         whatsapp_number: z.string().trim().max(30).nullable().optional(),
+        whatsapp_enabled: z.boolean().optional(),
         legal_name: optText,
         address: optText,
         ice: optText,
@@ -94,20 +97,17 @@ export const updateAgencyProfile = createServerFn({ method: 'POST' })
     const { supabase, agencyId, role } = await requireAgencyContext()
     if (role !== 'owner') throw new Error('Only the owner can change account settings')
 
-    const { error } = await supabase
-      .from('agencies')
-      .update({
-        name: data.name,
-        whatsapp_number: normalizeWhatsApp(data.whatsapp_number ?? null),
-        legal_name: data.legal_name ?? null,
-        address: data.address ?? null,
-        ice: data.ice ?? null,
-        rc: data.rc ?? null,
-        patente: data.patente ?? null,
-        rib: data.rib ?? null,
-        company_phone: data.company_phone ?? null,
-      })
-      .eq('id', agencyId)
+    // Partial update — only touch fields actually sent (undefined = skip), so a
+    // toggle-only call doesn't wipe the legal fields. An empty string arrives as
+    // null (clear), which is distinct from undefined.
+    const upd: Record<string, unknown> = { name: data.name }
+    if (data.whatsapp_number !== undefined) upd.whatsapp_number = normalizeWhatsApp(data.whatsapp_number)
+    if (data.whatsapp_enabled !== undefined) upd.whatsapp_enabled = data.whatsapp_enabled
+    for (const k of ['legal_name', 'address', 'ice', 'rc', 'patente', 'rib', 'company_phone'] as const) {
+      if (data[k] !== undefined) upd[k] = data[k]
+    }
+
+    const { error } = await supabase.from('agencies').update(upd).eq('id', agencyId)
     if (error) throw new Error(error.message)
     return { ok: true }
   })

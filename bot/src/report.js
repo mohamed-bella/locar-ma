@@ -98,14 +98,15 @@ export async function buildReport(agencyId, agencyName, today) {
 // Run the daily report for every agency that has a WhatsApp number configured.
 export async function runDailyReports() {
   const today = casablancaToday()
-  const { data: agencies, error } = await supabase.from('agencies').select('id, name')
+  const { data: agencies, error } = await supabase.from('agencies').select('id, name, whatsapp_enabled')
   if (error) {
     console.error('[report] failed to list agencies:', error.message)
     return
   }
 
-  console.log(`[report] running daily report for ${agencies?.length ?? 0} agencies (${today})`)
-  for (const a of agencies ?? []) {
+  const active = (agencies ?? []).filter((a) => a.whatsapp_enabled !== false)
+  console.log(`[report] running daily report for ${active.length} agencies (${today})`)
+  for (const a of active) {
     const jid = await getOwnerJid(a.id)
     if (!jid) {
       console.log(`[report] skip ${a.name} — no WhatsApp number`)
