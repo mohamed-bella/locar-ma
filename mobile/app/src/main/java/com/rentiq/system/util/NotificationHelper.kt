@@ -22,16 +22,26 @@ object NotificationHelper {
     fun createChannels(ctx: Context) {
         val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-        val attrs = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION).build()
+        val attrs = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+            .build()
 
-        val events = NotificationChannel(CHANNEL_EVENTS, "Événements Rentiq", NotificationManager.IMPORTANCE_HIGH).apply {
-            description = "Nouvelles réservations, signatures, véhicules"
+        val events = NotificationChannel(
+            CHANNEL_EVENTS,
+            "Evenements Rentiq",
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply {
+            description = "Alertes operations: reservations, contrats, suivi, vehicules"
             enableVibration(true)
             vibrationPattern = longArrayOf(0, 250, 100, 250)
             setSound(sound, attrs)
         }
-        val service = NotificationChannel(CHANNEL_SERVICE, "Service temps réel", NotificationManager.IMPORTANCE_LOW).apply {
-            description = "Connexion Supabase Realtime en arrière-plan"
+        val service = NotificationChannel(
+            CHANNEL_SERVICE,
+            "Service temps reel",
+            NotificationManager.IMPORTANCE_LOW,
+        ).apply {
+            description = "Connexion Supabase Realtime en arriere-plan"
         }
         nm.createNotificationChannel(events)
         nm.createNotificationChannel(service)
@@ -43,7 +53,7 @@ object NotificationHelper {
         val pi = clickIntent?.let {
             PendingIntent.getActivity(ctx, id, it, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         }
-        val n = NotificationCompat.Builder(ctx, CHANNEL_EVENTS)
+        val notification = NotificationCompat.Builder(ctx, CHANNEL_EVENTS)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
             .setContentText(body)
@@ -52,14 +62,14 @@ object NotificationHelper {
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .apply { if (pi != null) setContentIntent(pi) }
             .build()
-        nm.notify(id, n)
+        nm.notify(id, notification)
     }
 
     fun buildServiceNotification(ctx: Context): Notification =
         NotificationCompat.Builder(ctx, CHANNEL_SERVICE)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("Rentiq")
-            .setContentText("Notifications temps réel actives")
+            .setContentText("Notifications temps reel actives")
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .build()

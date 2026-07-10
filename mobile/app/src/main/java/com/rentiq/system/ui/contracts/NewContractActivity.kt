@@ -35,7 +35,12 @@ class NewContractActivity : AppCompatActivity() {
             .also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
         b.fuelOut.setSelection(4)
 
+        b.clientCinExpiry.setOnClickListener { pickDate(b.clientCinExpiry) }
+        b.clientBirthdate.setOnClickListener { pickDate(b.clientBirthdate) }
         b.permitDate.setOnClickListener { pickDate(b.permitDate) }
+        b.d2CinExpiry.setOnClickListener { pickDate(b.d2CinExpiry) }
+        b.d2Birthdate.setOnClickListener { pickDate(b.d2Birthdate) }
+        b.d2PermitDate.setOnClickListener { pickDate(b.d2PermitDate) }
         b.heureDepart.setOnClickListener { pickTime(b.heureDepart) }
         b.heureRetour.setOnClickListener { pickTime(b.heureRetour) }
         b.saveButton.setOnClickListener { save() }
@@ -48,10 +53,15 @@ class NewContractActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val res = SupabaseClient.rest.getReservations()
+                val contractRes = SupabaseClient.rest.getContracts()
                 b.progress.visibility = View.GONE
                 if (res.isSuccessful) {
+                    val reservedWithContract = contractRes.body().orEmpty()
+                        .mapNotNull { it.reservationId }
+                        .toSet()
                     reservations = (res.body() ?: emptyList()).filter {
-                        it.status == "confirmed" || it.status == "active"
+                        (it.status == "pending" || it.status == "confirmed" || it.status == "active") &&
+                            it.id !in reservedWithContract
                     }
                     b.reservationSpinner.adapter = ArrayAdapter(
                         this@NewContractActivity,
@@ -102,15 +112,28 @@ class NewContractActivity : AppCompatActivity() {
         fun addIfNotEmpty(key: String, value: String) {
             if (value.isNotBlank()) form[key] = value
         }
+        addIfNotEmpty("client_nom", b.clientNom.text.toString())
+        addIfNotEmpty("client_prenom", b.clientPrenom.text.toString())
+        addIfNotEmpty("client_cin_expiry", b.clientCinExpiry.text.toString())
+        addIfNotEmpty("client_birthdate", b.clientBirthdate.text.toString())
+        addIfNotEmpty("client_ville", b.clientVille.text.toString())
         addIfNotEmpty("client_permit_number", b.permitNumber.text.toString())
         addIfNotEmpty("client_permit_date", b.permitDate.text.toString())
         addIfNotEmpty("client_permit_place", b.permitPlace.text.toString())
         addIfNotEmpty("client_phone2", b.clientPhone2.text.toString())
         addIfNotEmpty("client_profession", b.clientProfession.text.toString())
         addIfNotEmpty("d2_nom", b.d2Name.text.toString())
+        addIfNotEmpty("d2_prenom", b.d2Prenom.text.toString())
         addIfNotEmpty("d2_cin", b.d2Cin.text.toString())
+        addIfNotEmpty("d2_cin_expiry", b.d2CinExpiry.text.toString())
+        addIfNotEmpty("d2_birthdate", b.d2Birthdate.text.toString())
+        addIfNotEmpty("d2_profession", b.d2Profession.text.toString())
         addIfNotEmpty("d2_permit_number", b.d2Permit.text.toString())
+        addIfNotEmpty("d2_permit_date", b.d2PermitDate.text.toString())
+        addIfNotEmpty("d2_permit_place", b.d2PermitPlace.text.toString())
         addIfNotEmpty("d2_phone", b.d2Phone.text.toString())
+        addIfNotEmpty("d2_address", b.d2Address.text.toString())
+        addIfNotEmpty("d2_ville", b.d2Ville.text.toString())
         addIfNotEmpty("heure_depart", b.heureDepart.text.toString())
         addIfNotEmpty("heure_retour", b.heureRetour.text.toString())
 

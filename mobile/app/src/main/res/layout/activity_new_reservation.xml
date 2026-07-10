@@ -3,22 +3,23 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/bg">
+    android:background="@color/bg"
+    android:orientation="vertical">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/navy"
+        app:navigationIcon="?attr/homeAsUpIndicator"
         app:title="@string/new_reservation"
-        app:titleTextColor="@color/white"
-        app:navigationIcon="?attr/homeAsUpIndicator" />
+        app:titleTextColor="@color/white" />
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -26,90 +27,224 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Vehicle spinner -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="@string/vehicle" android:textColor="@color/ink" android:textSize="13sp" android:textStyle="bold" />
-            <Spinner
-                android:id="@+id/vehicleSpinner"
+            <TextView
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/input_bg" />
+                android:layout_height="wrap_content"
+                android:text="Reservation rapide"
+                android:textColor="@color/ink"
+                android:textSize="23sp"
+                android:textStyle="bold" />
 
-            <!-- Client spinner -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Choisissez le client, les dates et laissez l'app verifier les conflits avant validation."
+                android:textColor="@color/muted"
+                android:textSize="13sp" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="@color/card_bg"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/divider"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:letterSpacing="0.08"
+                        android:text="MISSION"
+                        android:textColor="@color/muted"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/vehicle"
+                        android:textColor="@color/ink"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <Spinner
+                        android:id="@+id/vehicleSpinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="5dp"
+                        android:background="@drawable/input_bg"
+                        android:paddingHorizontal="8dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/client"
+                        android:textColor="@color/ink"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <Spinner
+                        android:id="@+id/clientSpinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="5dp"
+                        android:background="@drawable/input_bg"
+                        android:paddingHorizontal="8dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal">
+
+                        <EditText
+                            android:id="@+id/dateStart"
+                            android:layout_width="0dp"
+                            android:layout_height="50dp"
+                            android:layout_marginEnd="5dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/input_bg"
+                            android:clickable="true"
+                            android:focusable="false"
+                            android:hint="Date depart"
+                            android:paddingHorizontal="12dp"
+                            android:textSize="14sp" />
+
+                        <EditText
+                            android:id="@+id/dateEnd"
+                            android:layout_width="0dp"
+                            android:layout_height="50dp"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/input_bg"
+                            android:clickable="true"
+                            android:focusable="false"
+                            android:hint="Date retour"
+                            android:paddingHorizontal="12dp"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/warningText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/chip_blue"
+                        android:padding="10dp"
+                        android:textColor="@color/navy"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
-                android:text="@string/client" android:textColor="@color/ink" android:textSize="13sp" android:textStyle="bold" />
-            <Spinner
-                android:id="@+id/clientSpinner"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/input_bg" />
+                app:cardBackgroundColor="@color/card_bg"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/divider"
+                app:strokeWidth="1dp">
 
-            <!-- Date start -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:text="Date début" android:textColor="@color/ink" android:textSize="13sp" android:textStyle="bold" />
-            <EditText
-                android:id="@+id/dateStart"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/input_bg"
-                android:paddingHorizontal="10dp"
-                android:focusable="false"
-                android:clickable="true"
-                android:hint="YYYY-MM-DD"
-                android:textSize="14sp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-            <!-- Date end -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:text="Date fin" android:textColor="@color/ink" android:textSize="13sp" android:textStyle="bold" />
-            <EditText
-                android:id="@+id/dateEnd"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/input_bg"
-                android:paddingHorizontal="10dp"
-                android:focusable="false"
-                android:clickable="true"
-                android:hint="YYYY-MM-DD"
-                android:textSize="14sp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:letterSpacing="0.08"
+                        android:text="PRIX ET LIEUX"
+                        android:textColor="@color/muted"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
 
-            <!-- Total -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:text="@string/total" android:textColor="@color/ink" android:textSize="13sp" android:textStyle="bold" />
-            <EditText
-                android:id="@+id/totalAmount"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/input_bg"
-                android:inputType="numberDecimal"
-                android:paddingHorizontal="10dp"
-                android:hint="0"
-                android:textSize="14sp" />
+                    <EditText
+                        android:id="@+id/totalAmount"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/input_bg"
+                        android:hint="Total DH"
+                        android:inputType="numberDecimal"
+                        android:paddingHorizontal="12dp"
+                        android:textSize="14sp" />
 
-            <Button
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:orientation="horizontal">
+
+                        <EditText
+                            android:id="@+id/pickupLocation"
+                            android:layout_width="0dp"
+                            android:layout_height="50dp"
+                            android:layout_marginEnd="5dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/input_bg"
+                            android:hint="Depart"
+                            android:inputType="textCapWords"
+                            android:paddingHorizontal="12dp"
+                            android:textSize="14sp" />
+
+                        <EditText
+                            android:id="@+id/dropoffLocation"
+                            android:layout_width="0dp"
+                            android:layout_height="50dp"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/input_bg"
+                            android:hint="Retour"
+                            android:inputType="textCapWords"
+                            android:paddingHorizontal="12dp"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <EditText
+                        android:id="@+id/notes"
+                        android:layout_width="match_parent"
+                        android:layout_height="86dp"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/input_bg"
+                        android:gravity="top"
+                        android:hint="Notes internes"
+                        android:padding="12dp"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/saveButton"
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="24dp"
-                android:backgroundTint="@color/navy"
+                android:layout_height="54dp"
+                android:layout_marginTop="16dp"
+                android:backgroundTint="@color/blue_action"
                 android:text="@string/save"
+                android:textAllCaps="false"
                 android:textColor="@color/white"
-                android:textAllCaps="true" />
+                android:textStyle="bold" />
 
             <ProgressBar
                 android:id="@+id/progress"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
                 android:layout_gravity="center"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
                 android:indeterminateTint="@color/navy"
                 android:visibility="gone" />
         </LinearLayout>

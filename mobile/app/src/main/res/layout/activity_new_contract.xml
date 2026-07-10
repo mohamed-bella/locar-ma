@@ -3,17 +3,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/bg">
+    android:background="@color/bg"
+    android:orientation="vertical">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/navy"
+        app:navigationIcon="?attr/homeAsUpIndicator"
         app:title="@string/new_contract"
-        app:titleTextColor="@color/white"
-        app:navigationIcon="?attr/homeAsUpIndicator" />
+        app:titleTextColor="@color/white" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -26,135 +26,369 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Reservation picker -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="RÉSERVATION" android:textColor="@color/muted" android:textSize="11sp"
-                android:textStyle="bold" android:letterSpacing="0.08" />
+            <TextView
+                style="@style/ContractFormSection"
+                android:text="RESERVATION" />
+
             <Spinner
                 android:id="@+id/reservationSpinner"
                 android:layout_width="match_parent"
                 android:layout_height="44dp"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="6dp"
                 android:background="@drawable/input_bg" />
 
-            <View android:layout_width="match_parent" android:layout_height="1dp"
-                android:background="@color/divider" android:layout_marginVertical="12dp" />
+            <View style="@style/ContractFormDivider" />
 
-            <!-- Mileage + Fuel -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="VÉHICULE DÉPART" android:textColor="@color/muted" android:textSize="11sp"
-                android:textStyle="bold" android:letterSpacing="0.08" />
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="horizontal" android:layout_marginTop="4dp">
-                <EditText android:id="@+id/mileageOut" android:layout_width="0dp" android:layout_weight="1"
-                    android:layout_height="44dp" android:background="@drawable/input_bg"
-                    android:inputType="number" android:paddingHorizontal="10dp" android:hint="Km départ"
-                    android:textSize="14sp" android:layout_marginEnd="4dp" />
-                <Spinner android:id="@+id/fuelOut" android:layout_width="0dp" android:layout_weight="1"
-                    android:layout_height="44dp" android:background="@drawable/input_bg"
-                    android:layout_marginStart="4dp" />
+            <TextView
+                style="@style/ContractFormSection"
+                android:text="VEHICULE DEPART" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/mileageOut"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:hint="Km depart"
+                    android:inputType="number" />
+
+                <Spinner
+                    android:id="@+id/fuelOut"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/input_bg" />
             </LinearLayout>
 
-            <View android:layout_width="match_parent" android:layout_height="1dp"
-                android:background="@color/divider" android:layout_marginVertical="12dp" />
+            <View style="@style/ContractFormDivider" />
 
-            <!-- Client permit info -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="PERMIS CLIENT" android:textColor="@color/muted" android:textSize="11sp"
-                android:textStyle="bold" android:letterSpacing="0.08" />
-            <EditText android:id="@+id/permitNumber" android:layout_width="match_parent"
-                android:layout_height="44dp" android:layout_marginTop="4dp" android:background="@drawable/input_bg"
-                android:paddingHorizontal="10dp" android:hint="N° permis" android:textSize="14sp" />
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="horizontal" android:layout_marginTop="6dp">
-                <EditText android:id="@+id/permitDate" android:layout_width="0dp" android:layout_weight="1"
-                    android:layout_height="44dp" android:background="@drawable/input_bg"
-                    android:paddingHorizontal="10dp" android:hint="Date permis" android:textSize="14sp"
-                    android:focusable="false" android:clickable="true" android:layout_marginEnd="4dp" />
-                <EditText android:id="@+id/permitPlace" android:layout_width="0dp" android:layout_weight="1"
-                    android:layout_height="44dp" android:background="@drawable/input_bg"
-                    android:paddingHorizontal="10dp" android:hint="Lieu" android:textSize="14sp"
-                    android:layout_marginStart="4dp" />
-            </LinearLayout>
-            <EditText android:id="@+id/clientPhone2" android:layout_width="match_parent"
-                android:layout_height="44dp" android:layout_marginTop="6dp" android:background="@drawable/input_bg"
-                android:paddingHorizontal="10dp" android:hint="Téléphone 2" android:inputType="phone"
-                android:textSize="14sp" />
-            <EditText android:id="@+id/clientProfession" android:layout_width="match_parent"
-                android:layout_height="44dp" android:layout_marginTop="6dp" android:background="@drawable/input_bg"
-                android:paddingHorizontal="10dp" android:hint="Profession" android:textSize="14sp" />
+            <TextView
+                style="@style/ContractFormSection"
+                android:text="IDENTITE CLIENT" />
 
-            <View android:layout_width="match_parent" android:layout_height="1dp"
-                android:background="@color/divider" android:layout_marginVertical="12dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
 
-            <!-- 2nd driver -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="2ÈME CONDUCTEUR (optionnel)" android:textColor="@color/muted" android:textSize="11sp"
-                android:textStyle="bold" android:letterSpacing="0.08" />
-            <EditText android:id="@+id/d2Name" android:layout_width="match_parent"
-                android:layout_height="44dp" android:layout_marginTop="4dp" android:background="@drawable/input_bg"
-                android:paddingHorizontal="10dp" android:hint="Nom complet" android:textSize="14sp" />
-            <EditText android:id="@+id/d2Cin" android:layout_width="match_parent"
-                android:layout_height="44dp" android:layout_marginTop="6dp" android:background="@drawable/input_bg"
-                android:paddingHorizontal="10dp" android:hint="CIN" android:textSize="14sp" />
-            <EditText android:id="@+id/d2Permit" android:layout_width="match_parent"
-                android:layout_height="44dp" android:layout_marginTop="6dp" android:background="@drawable/input_bg"
-                android:paddingHorizontal="10dp" android:hint="N° permis" android:textSize="14sp" />
-            <EditText android:id="@+id/d2Phone" android:layout_width="match_parent"
-                android:layout_height="44dp" android:layout_marginTop="6dp" android:background="@drawable/input_bg"
-                android:paddingHorizontal="10dp" android:hint="Téléphone" android:inputType="phone"
-                android:textSize="14sp" />
+                <EditText
+                    android:id="@+id/clientNom"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:hint="Nom" />
 
-            <View android:layout_width="match_parent" android:layout_height="1dp"
-                android:background="@color/divider" android:layout_marginVertical="12dp" />
-
-            <!-- Caution / check -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="CAUTION / CHÈQUE" android:textColor="@color/muted" android:textSize="11sp"
-                android:textStyle="bold" android:letterSpacing="0.08" />
-            <EditText android:id="@+id/checkNumber" android:layout_width="match_parent"
-                android:layout_height="44dp" android:layout_marginTop="4dp" android:background="@drawable/input_bg"
-                android:paddingHorizontal="10dp" android:hint="N° chèque" android:textSize="14sp" />
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="horizontal" android:layout_marginTop="6dp">
-                <EditText android:id="@+id/checkBank" android:layout_width="0dp" android:layout_weight="1"
-                    android:layout_height="44dp" android:background="@drawable/input_bg"
-                    android:paddingHorizontal="10dp" android:hint="Banque" android:textSize="14sp"
-                    android:layout_marginEnd="4dp" />
-                <EditText android:id="@+id/checkAmount" android:layout_width="0dp" android:layout_weight="1"
-                    android:layout_height="44dp" android:background="@drawable/input_bg"
-                    android:inputType="numberDecimal" android:paddingHorizontal="10dp" android:hint="Montant"
-                    android:textSize="14sp" android:layout_marginStart="4dp" />
+                <EditText
+                    android:id="@+id/clientPrenom"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:hint="Prenom" />
             </LinearLayout>
 
-            <View android:layout_width="match_parent" android:layout_height="1dp"
-                android:background="@color/divider" android:layout_marginVertical="12dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
 
-            <!-- Times -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="HORAIRES" android:textColor="@color/muted" android:textSize="11sp"
-                android:textStyle="bold" android:letterSpacing="0.08" />
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="horizontal" android:layout_marginTop="4dp">
-                <EditText android:id="@+id/heureDepart" android:layout_width="0dp" android:layout_weight="1"
-                    android:layout_height="44dp" android:background="@drawable/input_bg"
-                    android:paddingHorizontal="10dp" android:hint="Heure départ" android:textSize="14sp"
-                    android:focusable="false" android:clickable="true" android:layout_marginEnd="4dp" />
-                <EditText android:id="@+id/heureRetour" android:layout_width="0dp" android:layout_weight="1"
-                    android:layout_height="44dp" android:background="@drawable/input_bg"
-                    android:paddingHorizontal="10dp" android:hint="Heure retour" android:textSize="14sp"
-                    android:focusable="false" android:clickable="true" android:layout_marginStart="4dp" />
+                <EditText
+                    android:id="@+id/clientCinExpiry"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:hint="Expiration CIN" />
+
+                <EditText
+                    android:id="@+id/clientBirthdate"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:hint="Naissance" />
             </LinearLayout>
 
-            <Button
+            <EditText
+                android:id="@+id/clientVille"
+                style="@style/ContractFormInput"
+                android:layout_marginTop="6dp"
+                android:hint="Ville" />
+
+            <EditText
+                android:id="@+id/clientPhone2"
+                style="@style/ContractFormInput"
+                android:layout_marginTop="6dp"
+                android:hint="Telephone 2"
+                android:inputType="phone" />
+
+            <EditText
+                android:id="@+id/clientProfession"
+                style="@style/ContractFormInput"
+                android:layout_marginTop="6dp"
+                android:hint="Profession" />
+
+            <View style="@style/ContractFormDivider" />
+
+            <TextView
+                style="@style/ContractFormSection"
+                android:text="PERMIS CLIENT" />
+
+            <EditText
+                android:id="@+id/permitNumber"
+                style="@style/ContractFormInput"
+                android:layout_marginTop="6dp"
+                android:hint="Numero permis" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/permitDate"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:hint="Date permis" />
+
+                <EditText
+                    android:id="@+id/permitPlace"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:hint="Lieu" />
+            </LinearLayout>
+
+            <View style="@style/ContractFormDivider" />
+
+            <TextView
+                style="@style/ContractFormSection"
+                android:text="2EME CONDUCTEUR OPTIONNEL" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/d2Name"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:hint="Nom" />
+
+                <EditText
+                    android:id="@+id/d2Prenom"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:hint="Prenom" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/d2Cin"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:hint="CIN" />
+
+                <EditText
+                    android:id="@+id/d2CinExpiry"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:hint="Expiration CIN" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/d2Birthdate"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:hint="Naissance" />
+
+                <EditText
+                    android:id="@+id/d2Profession"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:hint="Profession" />
+            </LinearLayout>
+
+            <EditText
+                android:id="@+id/d2Permit"
+                style="@style/ContractFormInput"
+                android:layout_marginTop="6dp"
+                android:hint="Numero permis" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/d2PermitDate"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:hint="Date permis" />
+
+                <EditText
+                    android:id="@+id/d2PermitPlace"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:hint="Lieu permis" />
+            </LinearLayout>
+
+            <EditText
+                android:id="@+id/d2Phone"
+                style="@style/ContractFormInput"
+                android:layout_marginTop="6dp"
+                android:hint="Telephone"
+                android:inputType="phone" />
+
+            <EditText
+                android:id="@+id/d2Address"
+                style="@style/ContractFormInput"
+                android:layout_marginTop="6dp"
+                android:hint="Adresse" />
+
+            <EditText
+                android:id="@+id/d2Ville"
+                style="@style/ContractFormInput"
+                android:layout_marginTop="6dp"
+                android:hint="Ville" />
+
+            <View style="@style/ContractFormDivider" />
+
+            <TextView
+                style="@style/ContractFormSection"
+                android:text="CAUTION / CHEQUE" />
+
+            <EditText
+                android:id="@+id/checkNumber"
+                style="@style/ContractFormInput"
+                android:layout_marginTop="6dp"
+                android:hint="Numero cheque" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/checkBank"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:hint="Banque" />
+
+                <EditText
+                    android:id="@+id/checkAmount"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:hint="Montant"
+                    android:inputType="numberDecimal" />
+            </LinearLayout>
+
+            <View style="@style/ContractFormDivider" />
+
+            <TextView
+                style="@style/ContractFormSection"
+                android:text="HORAIRES" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/heureDepart"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:hint="Heure depart" />
+
+                <EditText
+                    android:id="@+id/heureRetour"
+                    style="@style/ContractFormInput"
+                    android:layout_width="0dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:hint="Heure retour" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/saveButton"
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
+                android:layout_height="52dp"
                 android:layout_marginTop="24dp"
                 android:backgroundTint="@color/navy"
-                android:text="Créer le contrat"
+                android:text="Creer le contrat"
+                android:textAllCaps="false"
                 android:textColor="@color/white"
-                android:textAllCaps="true" />
+                app:icon="@drawable/ic_contract"
+                app:iconGravity="textStart"
+                app:iconTint="@color/white" />
 
             <ProgressBar
                 android:id="@+id/progress"

@@ -39,6 +39,29 @@ object R2Uploader {
         } catch (_: Exception) { null }
     }
 
+    suspend fun uploadPublicImage(ctx: Context, uri: Uri, folder: String): String? {
+        val safeFolder = folder.trim('/').ifBlank { "agency" }
+        val key = uploadImageTo(ctx, uri, safeFolder) ?: return null
+        return "${BuildConfig.R2_PUBLIC_URL}/$key"
+    }
+
+    private suspend fun uploadImageTo(ctx: Context, uri: Uri, folder: String): String? = withContext(Dispatchers.IO) {
+        try {
+            val bytes = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                ?: return@withContext null
+            val mime = ctx.contentResolver.getType(uri) ?: "image/jpeg"
+            val ext = when {
+                mime.contains("png", ignoreCase = true) -> "png"
+                mime.contains("webp", ignoreCase = true) -> "webp"
+                else -> "jpg"
+            }
+            val key = "$folder/${UUID.randomUUID()}.$ext"
+            put(bytes, key, mime)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     // Raw PUT — returns key on success, null on failure.
     private fun put(bytes: ByteArray, key: String, contentType: String): String? = try {
         val utcDate = sdf("yyyyMMdd")

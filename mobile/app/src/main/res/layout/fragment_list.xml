@@ -48,25 +48,39 @@
 
     <LinearLayout
         android:id="@+id/emptyView"
-        android:layout_width="280dp"
+        android:layout_width="320dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
+        android:background="@drawable/main_content_surface"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="24dp"
+        android:paddingHorizontal="24dp"
+        android:paddingVertical="28dp"
         android:visibility="gone">
 
         <ImageView
+            android:id="@+id/emptyIcon"
             android:layout_width="88dp"
             android:layout_height="88dp"
             android:contentDescription="@string/loading"
             android:src="@drawable/ic_empty_state" />
 
         <TextView
+            android:id="@+id/emptyTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:text="@string/list_empty_title"
+            android:textColor="@color/ink"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
             android:id="@+id/emptyText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="8dp"
             android:gravity="center"
             android:textColor="@color/muted"
             android:textSize="15sp" />

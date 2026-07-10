@@ -11,6 +11,7 @@ import com.rentiq.system.data.api.RefreshRequest
 import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.databinding.ActivityLoginBinding
 import com.rentiq.system.ui.main.MainActivity
+import com.rentiq.system.util.AuthSession
 import com.rentiq.system.util.SessionManager
 import kotlinx.coroutines.launch
 
@@ -49,6 +50,11 @@ class LoginActivity : AppCompatActivity() {
                     session.refreshToken = body.refreshToken
                     session.userId = body.user?.id ?: session.userId
                     SupabaseClient.accessToken = body.accessToken
+                    if (AuthSession.ensureAgencyId(this@LoginActivity, showMessage = false).isNullOrBlank()) {
+                        session.clear()
+                        showLogin()
+                        return@launch
+                    }
                     goToMain()
                 } else {
                     session.clear()
@@ -86,8 +92,11 @@ class LoginActivity : AppCompatActivity() {
                     session.userId = body.user?.id
                     SupabaseClient.accessToken = body.accessToken
 
-                    val members = SupabaseClient.rest.getMembers()
-                    session.agencyId = members.body()?.firstOrNull()?.agencyId
+                    val agencyId = AuthSession.ensureAgencyId(this@LoginActivity, showMessage = false)
+                    if (agencyId.isNullOrBlank()) {
+                        showError(getString(R.string.agency_not_found))
+                        return@launch
+                    }
 
                     goToMain()
                 } else {

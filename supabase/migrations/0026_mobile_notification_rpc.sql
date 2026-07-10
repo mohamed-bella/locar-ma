@@ -30,8 +30,10 @@ begin
     'reservation_cancelled',
     'contract_created',
     'contract_signed',
+    'contract_closed',
     'vehicle_added',
-    'service_record_created'
+    'service_record_created',
+    'vehicle_issue_created'
   ) then
     raise exception 'Unsupported notification type';
   end if;

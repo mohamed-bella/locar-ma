@@ -98,6 +98,10 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".ui.reservations.ReservationDetailActivity"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".ui.contracts.NewContractActivity"
             android:windowSoftInputMode="adjustResize" />
 

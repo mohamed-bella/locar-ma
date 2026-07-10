@@ -68,7 +68,7 @@ class ClientFormActivity : AppCompatActivity() {
                     order = "full_name.asc"
                 )
                 val risky = (res.body() ?: emptyList()).filter {
-                    it.cin == cin && it.status in setOf("flagged", "blacklisted")
+                    it.cin == cin && (it.status == "flagged" || it.status == "blacklisted")
                 }
                 b.progress.visibility = View.GONE
                 if (risky.isNotEmpty()) {

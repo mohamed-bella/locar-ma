@@ -79,6 +79,17 @@ export function formatContractSigned(p) {
   ].join('\n')
 }
 
+export function formatContractClosed(p) {
+  return [
+    `*Contrat cloture*`,
+    ``,
+    `- Vehicule: ${p.vehicle || '---'} (${p.plate || '---'})`,
+    `- Client: ${p.client || '---'}`,
+    `- Km retour: ${p.mileage_in ?? '---'}`,
+    `- Carburant retour: ${p.fuel_in || '---'}`,
+  ].join('\n')
+}
+
 export function formatVehicle(p) {
   return [
     `🆕 *Nouveau Véhicule*`,
@@ -103,6 +114,20 @@ export function formatServiceRecordCreated(p) {
   ].join('\n')
 }
 
+export function formatVehicleIssueCreated(p) {
+  return [
+    `*Probleme vehicule signale*`,
+    ``,
+    `- Vehicule: ${p.vehicle || '---'}`,
+    `- Titre: ${p.title || '---'}`,
+    `- Type: ${p.kind || '---'}`,
+    `- Categorie: ${p.category || '---'}`,
+    `- Severite: ${p.severity || '---'}`,
+    `- Bloque location: ${p.blocks_rental ? 'Oui' : 'Non'}`,
+    `- Date: ${fdate(p.opened_at)}`,
+  ].join('\n')
+}
+
 export function formatPdfReady(p) {
   return [
     `📄 *Contrat PDF Prêt*`,
@@ -119,8 +144,10 @@ const formatters = {
   reservation_cancelled: formatReservationCancelled,
   contract_created: formatContract,
   contract_signed: formatContractSigned,
+  contract_closed: formatContractClosed,
   vehicle_added: formatVehicle,
   service_record_created: formatServiceRecordCreated,
+  vehicle_issue_created: formatVehicleIssueCreated,
   contract_pdf_ready: formatPdfReady,
 }
 

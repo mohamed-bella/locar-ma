@@ -12,6 +12,7 @@ import com.rentiq.system.R
 import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.data.model.Contract
 import com.rentiq.system.databinding.FragmentListBinding
+import com.rentiq.system.util.AuthSession
 import com.rentiq.system.util.FilterPills
 import kotlinx.coroutines.launch
 
@@ -49,6 +50,7 @@ class ContractsFragment : Fragment() {
         binding.addButton.setOnClickListener {
             startActivity(Intent(requireContext(), NewContractActivity::class.java))
         }
+        binding.emptyIcon.setImageResource(R.drawable.ic_contract)
         setupFilters()
         load()
     }
@@ -67,13 +69,15 @@ class ContractsFragment : Fragment() {
                 val res = SupabaseClient.rest.getContracts()
                 binding.swipeRefresh.isRefreshing = false
                 binding.progressBar.visibility = View.GONE
-                if (res.isSuccessful) {
+                if (AuthSession.isAuthError(res.code())) {
+                    AuthSession.returnToLogin(requireContext())
+                } else if (res.isSuccessful) {
                     allContracts = res.body() ?: emptyList()
                     binding.filterBar.visibility = if (allContracts.isEmpty()) View.GONE else View.VISIBLE
                     applyFilter()
                 } else {
                     android.util.Log.e("ContractsTab", "HTTP ${res.code()}: ${res.errorBody()?.string()}")
-                    showError("Erreur ${res.code()}")
+                    showError(AuthSession.messageFor(res.code()))
                 }
             } catch (e: Exception) {
                 android.util.Log.e("ContractsTab", "Exception", e)
@@ -85,13 +89,20 @@ class ContractsFragment : Fragment() {
     }
 
     private fun setupFilters() {
-        FilterPills.build(requireContext(), binding.filterChips, filterOptions, stateFilter) { value ->
+        val counts = mapOf<String?, Int>(
+            null to allContracts.size,
+            "closed" to allContracts.count { it.closedAt != null },
+            "signed" to allContracts.count { it.signedAt != null && it.closedAt == null },
+            "pending" to allContracts.count { it.signedAt == null && it.closedAt == null },
+        )
+        FilterPills.build(requireContext(), binding.filterChips, filterOptions, stateFilter, counts) { value ->
             stateFilter = value
             applyFilter()
         }
     }
 
     private fun applyFilter() {
+        setupFilters()
         val filtered = when (stateFilter) {
             "closed" -> allContracts.filter { it.closedAt != null }
             "signed" -> allContracts.filter { it.signedAt != null && it.closedAt == null }
@@ -101,6 +112,8 @@ class ContractsFragment : Fragment() {
         adapter.submitList(filtered)
         if (filtered.isEmpty()) {
             binding.emptyView.visibility = View.VISIBLE
+            binding.emptyTitle.text = getString(R.string.contracts_empty_title)
+            binding.retryButton.visibility = View.GONE
             binding.emptyText.text =
                 if (allContracts.isEmpty()) getString(R.string.empty_contracts) else "Aucun résultat pour ce filtre"
         } else {
@@ -110,6 +123,7 @@ class ContractsFragment : Fragment() {
 
     private fun showError(msg: String = "Erreur de chargement") {
         binding.emptyView.visibility = View.VISIBLE
+        binding.emptyTitle.text = getString(R.string.list_error_title)
         binding.emptyText.text = msg
         binding.retryButton.visibility = View.VISIBLE
     }

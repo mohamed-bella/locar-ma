@@ -18,6 +18,7 @@ object FilterPills {
         container: LinearLayout,
         options: List<Option>,
         selectedValue: String?,
+        counts: Map<String?, Int>? = null,
         onSelect: (String?) -> Unit,
     ) {
         container.removeAllViews()
@@ -27,7 +28,7 @@ object FilterPills {
 
         options.forEachIndexed { index, opt ->
             val pill = TextView(context).apply {
-                text = opt.label
+                text = counts?.let { "${opt.label}  ${it[opt.value] ?: 0}" } ?: opt.label
                 textSize = 13f
                 gravity = Gravity.CENTER
                 setBackgroundResource(R.drawable.pill_bg)

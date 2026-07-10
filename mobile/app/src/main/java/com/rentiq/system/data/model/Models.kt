@@ -142,6 +142,9 @@ data class ReservationInsert(
     @SerializedName("date_end") val dateEnd: String,
     @SerializedName("total_amount") val totalAmount: Double,
     @SerializedName("daily_rate_snap") val dailyRate: Double,
+    @SerializedName("pickup_location") val pickupLocation: String?,
+    @SerializedName("dropoff_location") val dropoffLocation: String?,
+    val notes: String?,
     val status: String = "confirmed",
 )
 
@@ -210,6 +213,23 @@ data class VehicleIssueInsert(
     val cost: Double?,
     val garage: String?,
     @SerializedName("opened_at") val openedAt: String,
+)
+
+data class VehicleExpense(
+    val id: String,
+    @SerializedName("vehicle_id") val vehicleId: String?,
+    val name: String?,
+    val amount: Double?,
+    @SerializedName("spent_at") val spentAt: String?,
+    val vehicles: Vehicle?,
+)
+
+data class VehicleExpenseInsert(
+    @SerializedName("agency_id") val agencyId: String,
+    @SerializedName("vehicle_id") val vehicleId: String,
+    val name: String,
+    val amount: Double,
+    @SerializedName("spent_at") val spentAt: String,
 )
 
 // WhatsApp notification queue row (bot subscribes via Realtime)

@@ -122,55 +122,69 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:orientation="horizontal">
+                        android:orientation="vertical">
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/addReservationButton"
-                            android:layout_width="0dp"
-                            android:layout_height="50dp"
-                            android:layout_marginEnd="4dp"
-                            android:layout_weight="1"
+                            android:layout_width="match_parent"
+                            android:layout_height="52dp"
                             android:backgroundTint="@color/blue_action"
-                            android:minHeight="50dp"
-                            android:paddingHorizontal="6dp"
+                            android:minHeight="52dp"
+                            android:paddingHorizontal="16dp"
                             android:text="@string/quick_reservation"
                             android:textAllCaps="false"
                             android:textColor="@color/white"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/addServiceButton"
-                            android:layout_width="0dp"
-                            android:layout_height="50dp"
-                            android:layout_marginHorizontal="4dp"
-                            android:layout_weight="1"
-                            android:backgroundTint="@color/green"
-                            android:minHeight="50dp"
-                            android:paddingHorizontal="6dp"
-                            android:text="@string/log_service"
-                            android:textAllCaps="false"
-                            android:textColor="@color/white"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/editVehicleButton"
-                            android:layout_width="0dp"
-                            android:layout_height="50dp"
-                            android:layout_marginStart="4dp"
-                            android:layout_weight="1"
-                            android:backgroundTint="@color/navy"
-                            android:minHeight="50dp"
-                            android:paddingHorizontal="6dp"
-                            android:text="Modifier"
-                            android:textAllCaps="false"
-                            android:textColor="@color/white"
-                            android:textSize="14sp"
+                            android:textSize="15sp"
                             android:textStyle="bold"
-                            app:icon="@drawable/ic_edit"
+                            app:icon="@drawable/ic_calendar"
                             app:iconGravity="textStart"
+                            app:iconPadding="8dp"
                             app:iconTint="@color/white" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/addServiceButton"
+                                android:layout_width="0dp"
+                                android:layout_height="48dp"
+                                android:layout_marginEnd="5dp"
+                                android:layout_weight="1"
+                                android:backgroundTint="@color/green"
+                                android:minHeight="48dp"
+                                android:paddingHorizontal="10dp"
+                                android:text="@string/log_service"
+                                android:textAllCaps="false"
+                                android:textColor="@color/white"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                app:icon="@drawable/ic_suivi"
+                                app:iconGravity="textStart"
+                                app:iconPadding="6dp"
+                                app:iconTint="@color/white" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/editVehicleButton"
+                                android:layout_width="0dp"
+                                android:layout_height="48dp"
+                                android:layout_marginStart="5dp"
+                                android:layout_weight="1"
+                                android:backgroundTint="@color/navy"
+                                android:minHeight="48dp"
+                                android:paddingHorizontal="10dp"
+                                android:text="Modifier"
+                                android:textAllCaps="false"
+                                android:textColor="@color/white"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                app:icon="@drawable/ic_edit"
+                                app:iconGravity="textStart"
+                                app:iconPadding="6dp"
+                                app:iconTint="@color/white" />
+                        </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -396,6 +410,88 @@
                                 android:textSize="13sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    app:cardBackgroundColor="@color/card_bg"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="2dp"
+                    app:strokeColor="@color/divider"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:letterSpacing="0.08"
+                                    android:text="DEPENSES"
+                                    android:textColor="@color/muted"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/expensesTotal"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:textColor="@color/navy"
+                                    android:textSize="16sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/addExpenseButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="38dp"
+                                android:backgroundTint="@color/blue_action"
+                                android:minHeight="38dp"
+                                android:minWidth="0dp"
+                                android:paddingHorizontal="12dp"
+                                android:text="Ajouter"
+                                android:textAllCaps="false"
+                                android:textColor="@color/white"
+                                android:textSize="12sp"
+                                app:icon="@drawable/ic_plus"
+                                app:iconGravity="textStart"
+                                app:iconTint="@color/white" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/expensesEmpty"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="Aucune depense enregistree"
+                            android:textColor="@color/muted"
+                            android:textSize="13sp" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/expenseList"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:nestedScrollingEnabled="false" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 

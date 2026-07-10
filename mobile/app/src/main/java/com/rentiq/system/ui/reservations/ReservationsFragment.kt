@@ -14,6 +14,7 @@ import com.rentiq.system.R
 import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.data.model.Reservation
 import com.rentiq.system.databinding.FragmentListBinding
+import com.rentiq.system.util.AuthSession
 import com.rentiq.system.util.FilterPills
 import com.rentiq.system.util.Notify
 import com.rentiq.system.util.SessionManager
@@ -22,7 +23,15 @@ import kotlinx.coroutines.launch
 class ReservationsFragment : Fragment() {
     private var _binding: FragmentListBinding? = null
     private val binding get() = _binding!!
-    private val adapter = ReservationsAdapter { reservation -> confirmCancel(reservation) }
+    private val adapter = ReservationsAdapter(
+        onCancel = { reservation -> confirmCancel(reservation) },
+        onClick = { reservation ->
+            startActivity(
+                Intent(requireContext(), ReservationDetailActivity::class.java)
+                    .putExtra("reservation_id", reservation.id)
+            )
+        },
+    )
     private var allReservations: List<Reservation> = emptyList()
     private var statusFilter: String? = null
 
@@ -49,6 +58,7 @@ class ReservationsFragment : Fragment() {
         binding.addButton.setOnClickListener {
             startActivity(Intent(requireContext(), NewReservationActivity::class.java))
         }
+        binding.emptyIcon.setImageResource(R.drawable.ic_calendar)
         setupFilters()
         load()
     }
@@ -68,12 +78,14 @@ class ReservationsFragment : Fragment() {
                 val res = SupabaseClient.rest.getReservations()
                 binding.swipeRefresh.isRefreshing = false
                 binding.progressBar.visibility = View.GONE
-                if (res.isSuccessful) {
+                if (AuthSession.isAuthError(res.code())) {
+                    AuthSession.returnToLogin(requireContext())
+                } else if (res.isSuccessful) {
                     allReservations = res.body() ?: emptyList()
                     binding.filterBar.visibility = if (allReservations.isEmpty()) View.GONE else View.VISIBLE
                     applyFilter()
                 } else {
-                    showError("Erreur ${res.code()}")
+                    showError(AuthSession.messageFor(res.code()))
                 }
             } catch (e: Exception) {
                 binding.swipeRefresh.isRefreshing = false
@@ -84,17 +96,24 @@ class ReservationsFragment : Fragment() {
     }
 
     private fun setupFilters() {
-        FilterPills.build(requireContext(), binding.filterChips, filterOptions, statusFilter) { value ->
+        val counts = mutableMapOf<String?, Int>(null to allReservations.size)
+        filterOptions.forEach { opt ->
+            if (opt.value != null) counts[opt.value] = allReservations.count { it.status == opt.value }
+        }
+        FilterPills.build(requireContext(), binding.filterChips, filterOptions, statusFilter, counts) { value ->
             statusFilter = value
             applyFilter()
         }
     }
 
     private fun applyFilter() {
+        setupFilters()
         val filtered = statusFilter?.let { s -> allReservations.filter { it.status == s } } ?: allReservations
         adapter.submitList(filtered)
         if (filtered.isEmpty()) {
             binding.emptyView.visibility = View.VISIBLE
+            binding.emptyTitle.text = getString(R.string.reservations_empty_title)
+            binding.retryButton.visibility = View.GONE
             binding.emptyText.text =
                 if (allReservations.isEmpty()) getString(R.string.empty_reservations) else "Aucun résultat pour ce filtre"
         } else {
@@ -104,6 +123,7 @@ class ReservationsFragment : Fragment() {
 
     private fun showError(msg: String) {
         binding.emptyView.visibility = View.VISIBLE
+        binding.emptyTitle.text = getString(R.string.list_error_title)
         binding.emptyText.text = msg
         binding.retryButton.visibility = View.VISIBLE
     }

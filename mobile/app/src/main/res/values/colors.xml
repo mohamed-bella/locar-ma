@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="navy">#003B95</color>
-    <color name="navy_dark">#00224F</color>
-    <color name="navy_light">#EAF3FF</color>
-    <color name="blue_action">#0071C2</color>
+    <!-- Brand palette — cool red. Names kept (navy/blue_action) so every screen
+         themed off them re-tints without touching each layout. -->
+    <color name="navy">#C1121F</color>        <!-- primary brand red -->
+    <color name="navy_dark">#7A0B12</color>   <!-- deep red — gradient/status bar -->
+    <color name="navy_light">#FCE1E4</color>  <!-- light rose tint on dark bg -->
+    <color name="blue_action">#E5384B</color> <!-- action/CTA rose-red -->
     <color name="booking_yellow">#FEBB02</color>
     <color name="ink">#1A1F36</color>
     <color name="muted">#64748B</color>
@@ -11,10 +13,10 @@
     <color name="bg">#F5F7FB</color>
     <color name="card_bg">#FFFFFF</color>
     <color name="white">#ffffff</color>
-    <color name="red">#D4111E</color>
+    <color name="red">#B00611</color>        <!-- alert red — distinct from brand -->
     <color name="green">#008234</color>
     <color name="amber">#B7791F</color>
-    <color name="status_bar">#00224F</color>
+    <color name="status_bar">#7A0B12</color>
 
     <!-- Contract PDF palette — matches web src/components/pdf/ContractPDF.tsx -->
     <color name="pdf_navy">#1e3a5f</color>

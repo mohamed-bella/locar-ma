@@ -17,6 +17,7 @@ import com.rentiq.system.ui.main.MainActivity
 import com.rentiq.system.ui.reports.ReportsActivity
 import com.rentiq.system.ui.reservations.NewReservationActivity
 import com.rentiq.system.ui.suivi.SuiviActivity
+import com.rentiq.system.util.AuthSession
 import com.rentiq.system.util.SessionManager
 import com.rentiq.system.widget.DashboardWidgetProvider
 import kotlinx.coroutines.async
@@ -62,9 +63,26 @@ class DashboardFragment : Fragment() {
                 val reservationsCall = async { SupabaseClient.rest.getReservations() }
                 val agencyId = SessionManager(requireContext()).agencyId
                 val agencyCall = agencyId?.let { async { SupabaseClient.rest.getAgency("eq.$it") } }
-                val vehicles = vehiclesCall.await().body() ?: emptyList()
-                val reservations = reservationsCall.await().body() ?: emptyList()
-                val agencyName = agencyCall?.await()?.body()?.name ?: "Agence"
+                val vehiclesRes = vehiclesCall.await()
+                val reservationsRes = reservationsCall.await()
+                if (AuthSession.isAuthError(vehiclesRes.code()) || AuthSession.isAuthError(reservationsRes.code())) {
+                    AuthSession.returnToLogin(requireContext())
+                    return@launch
+                }
+                val agencyRes = agencyCall?.await()
+                if (agencyRes != null && AuthSession.isAuthError(agencyRes.code())) {
+                    AuthSession.returnToLogin(requireContext())
+                    return@launch
+                }
+                if (!vehiclesRes.isSuccessful || !reservationsRes.isSuccessful) {
+                    binding.subtitle.text = AuthSession.messageFor(
+                        if (!vehiclesRes.isSuccessful) vehiclesRes.code() else reservationsRes.code()
+                    )
+                    return@launch
+                }
+                val vehicles = vehiclesRes.body() ?: emptyList()
+                val reservations = reservationsRes.body() ?: emptyList()
+                val agencyName = agencyRes?.body()?.name ?: "Agence"
                 render(agencyName, vehicles, reservations)
             } catch (e: Exception) {
                 binding.subtitle.text = e.message ?: "Erreur de chargement"
@@ -85,7 +103,7 @@ class DashboardFragment : Fragment() {
         // Aggregate revenue per vehicle id (so we can attach name + photo, not plate).
         val perVehicle = linkedMapOf<String, Double>()
 
-        reservations.filter { it.status !in setOf("cancelled", "blocked", "pending") }.forEach { r ->
+        reservations.filter { it.status != "cancelled" && it.status != "blocked" && it.status != "pending" }.forEach { r ->
             val start = r.dateStart?.take(10)?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
             val end = r.dateEnd?.take(10)?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
             val amount = r.totalAmount ?: 0.0
@@ -95,7 +113,7 @@ class DashboardFragment : Fragment() {
                 if (start.month == today.month && start.year == today.year) revMonth += amount
                 if (start == today) pickups++
             }
-            if (end == today && r.status in setOf("confirmed", "active")) returns++
+            if (end == today && (r.status == "confirmed" || r.status == "active")) returns++
             val vid = r.vehicleId ?: r.vehicles?.id
             if (vid != null) perVehicle[vid] = (perVehicle[vid] ?: 0.0) + amount
         }

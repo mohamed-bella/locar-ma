@@ -13,6 +13,7 @@ import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.databinding.FragmentListBinding
 import com.rentiq.system.ui.fleet.LogServiceActivity
 import com.rentiq.system.ui.fleet.VehicleDetailActivity
+import com.rentiq.system.util.AuthSession
 import kotlinx.coroutines.launch
 
 class SuiviFragment : Fragment() {
@@ -46,6 +47,7 @@ class SuiviFragment : Fragment() {
         binding.addButton.setOnClickListener {
             startActivity(Intent(requireContext(), LogServiceActivity::class.java))
         }
+        binding.emptyIcon.setImageResource(R.drawable.ic_suivi)
         load()
     }
 
@@ -64,15 +66,19 @@ class SuiviFragment : Fragment() {
                 val res = SupabaseClient.rest.getVehicles()
                 binding.swipeRefresh.isRefreshing = false
                 binding.progressBar.visibility = View.GONE
-                if (res.isSuccessful) {
+                if (AuthSession.isAuthError(res.code())) {
+                    AuthSession.returnToLogin(requireContext())
+                } else if (res.isSuccessful) {
                     val vehicles = (res.body() ?: emptyList()).sortedBy { score(it) }
                     adapter.submitList(vehicles)
                     if (vehicles.isEmpty()) {
                         binding.emptyView.visibility = View.VISIBLE
+                        binding.emptyTitle.text = getString(R.string.suivi_empty_title)
+                        binding.retryButton.visibility = View.GONE
                         binding.emptyText.text = getString(R.string.empty_fleet)
                     }
                 } else {
-                    showError("Erreur ${res.code()}")
+                    showError(AuthSession.messageFor(res.code()))
                 }
             } catch (e: Exception) {
                 binding.swipeRefresh.isRefreshing = false
@@ -96,6 +102,7 @@ class SuiviFragment : Fragment() {
 
     private fun showError(msg: String) {
         binding.emptyView.visibility = View.VISIBLE
+        binding.emptyTitle.text = getString(R.string.list_error_title)
         binding.emptyText.text = msg
         binding.retryButton.visibility = View.VISIBLE
     }

@@ -12,6 +12,7 @@ import com.rentiq.system.R
 import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.data.model.Vehicle
 import com.rentiq.system.databinding.FragmentListBinding
+import com.rentiq.system.util.AuthSession
 import com.rentiq.system.util.FilterPills
 import kotlinx.coroutines.launch
 
@@ -50,6 +51,7 @@ class FleetFragment : Fragment() {
         binding.addButton.setOnClickListener {
             startActivity(Intent(requireContext(), VehicleFormActivity::class.java))
         }
+        binding.emptyIcon.setImageResource(R.drawable.ic_car)
         setupFilters()
         load()
     }
@@ -69,12 +71,14 @@ class FleetFragment : Fragment() {
                 binding.swipeRefresh.isRefreshing = false
                 binding.progressBar.visibility = View.GONE
 
-                if (res.isSuccessful) {
+                if (AuthSession.isAuthError(res.code())) {
+                    AuthSession.returnToLogin(requireContext())
+                } else if (res.isSuccessful) {
                     allVehicles = res.body() ?: emptyList()
                     binding.filterBar.visibility = if (allVehicles.isEmpty()) View.GONE else View.VISIBLE
                     applyFilter()
                 } else {
-                    showError()
+                    showError(AuthSession.messageFor(res.code()))
                 }
             } catch (e: Exception) {
                 binding.swipeRefresh.isRefreshing = false
@@ -85,19 +89,27 @@ class FleetFragment : Fragment() {
     }
 
     private fun setupFilters() {
-        FilterPills.build(requireContext(), binding.filterChips, filterOptions, statusFilter) { value ->
+        val counts = mutableMapOf<String?, Int>(null to allVehicles.size)
+        filterOptions.forEach { opt ->
+            val s = opt.value ?: return@forEach
+            counts[s] = allVehicles.count { it.status == s || (s == "rented" && it.status == "active") }
+        }
+        FilterPills.build(requireContext(), binding.filterChips, filterOptions, statusFilter, counts) { value ->
             statusFilter = value
             applyFilter()
         }
     }
 
     private fun applyFilter() {
+        setupFilters()
         val filtered = statusFilter?.let { s ->
             allVehicles.filter { it.status == s || (s == "rented" && it.status == "active") }
         } ?: allVehicles
         adapter.submitList(filtered)
         if (filtered.isEmpty()) {
             binding.emptyView.visibility = View.VISIBLE
+            binding.emptyTitle.text = getString(R.string.fleet_empty_title)
+            binding.retryButton.visibility = View.GONE
             binding.emptyText.text =
                 if (allVehicles.isEmpty()) getString(R.string.empty_fleet) else "Aucun résultat pour ce filtre"
         } else {
@@ -105,9 +117,10 @@ class FleetFragment : Fragment() {
         }
     }
 
-    private fun showError() {
+    private fun showError(msg: String = "Erreur de chargement") {
         binding.emptyView.visibility = View.VISIBLE
-        binding.emptyText.text = "Erreur de chargement"
+        binding.emptyTitle.text = getString(R.string.list_error_title)
+        binding.emptyText.text = msg
         binding.retryButton.visibility = View.VISIBLE
     }
 

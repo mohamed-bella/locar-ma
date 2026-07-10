@@ -25,6 +25,8 @@ import com.rentiq.system.ui.dashboard.DashboardFragment
 import com.rentiq.system.ui.fleet.FleetFragment
 import com.rentiq.system.ui.reservations.ReservationsFragment
 import com.rentiq.system.ui.settings.SettingsFragment
+import com.rentiq.system.ui.suivi.SuiviFragment
+import com.rentiq.system.util.AuthSession
 import com.rentiq.system.util.NotificationHelper
 import com.rentiq.system.util.SessionManager
 import kotlinx.coroutines.launch
@@ -46,7 +48,7 @@ class MainActivity : AppCompatActivity() {
         Destination(R.id.nav_fleet) { FleetFragment() },
         Destination(R.id.nav_reservations) { ReservationsFragment() },
         Destination(R.id.nav_contracts) { ContractsFragment() },
-        Destination(R.id.nav_settings) { SettingsFragment() },
+        Destination(R.id.nav_suivi) { SuiviFragment() },
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,9 +80,8 @@ class MainActivity : AppCompatActivity() {
                     session.userId = body.user?.id ?: session.userId
                     SupabaseClient.accessToken = body.accessToken
                     setupUi()
-                } else if (res.code() == 401 || res.code() == 403) {
-                    session.clear()
-                    goToLogin()
+                } else if (res.code() in 400..499) {
+                    AuthSession.returnToLogin(this@MainActivity, showMessage = true)
                 } else {
                     setupUi()
                 }
@@ -127,16 +128,10 @@ class MainActivity : AppCompatActivity() {
         if (session.agencyId != null) return
         lifecycleScope.launch {
             try {
-                val res = SupabaseClient.rest.getMembers()
-                if (res.code() == 401) {
-                    session.clear()
-                    goToLogin()
-                    return@launch
-                }
-                val agencyId = res.body()?.firstOrNull()?.agencyId
-                if (agencyId != null) {
-                    session.agencyId = agencyId
+                val agencyId = AuthSession.ensureAgencyId(this@MainActivity)
+                if (!agencyId.isNullOrBlank()) {
                     loadAgencyBrand()
+                    maybeStartRealtimeService()
                 }
             } catch (_: Exception) {
                 // List screens still show their own retry state if network is unavailable.
@@ -152,7 +147,10 @@ class MainActivity : AppCompatActivity() {
                 if (res.isSuccessful && res.body() != null) {
                     val agency = res.body()!!
                     binding.agencyName.text = agency.name ?: getString(R.string.app_name)
-                    if (!agency.logoUrl.isNullOrBlank()) binding.agencyLogo.load(agency.logoUrl)
+                    if (!agency.logoUrl.isNullOrBlank()) {
+                        binding.agencyLogo.imageTintList = null
+                        binding.agencyLogo.load(agency.logoUrl)
+                    }
                 }
             } catch (_: Exception) {
                 // Branding is decorative; lists remain responsible for their own errors.
@@ -161,7 +159,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menu.add(0, 1, 0, R.string.logout)
+        menu.add(0, 2, 0, R.string.settings_title)
+        menu.add(0, 1, 1, R.string.logout)
         return true
     }
 
@@ -170,6 +169,13 @@ class MainActivity : AppCompatActivity() {
             session.clear()
             SupabaseClient.accessToken = null
             goToLogin()
+            return true
+        }
+        if (item.itemId == 2) {
+            currentMenuId = null
+            supportFragmentManager.commit {
+                replace(R.id.fragmentContainer, SettingsFragment())
+            }
             return true
         }
         return super.onOptionsItemSelected(item)

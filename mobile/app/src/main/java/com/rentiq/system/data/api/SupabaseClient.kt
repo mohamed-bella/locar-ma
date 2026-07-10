@@ -21,6 +21,8 @@ object SupabaseClient {
     @Volatile
     private var appContext: Context? = null
 
+    private val refreshLock = Any()
+
     fun bindSession(context: Context) {
         appContext = context.applicationContext
         accessToken = SessionManager(context.applicationContext).accessToken
@@ -36,10 +38,14 @@ object SupabaseClient {
     }
 
     private fun baseHeaders(includeUserToken: Boolean) = Interceptor { chain ->
-        val req = chain.request().newBuilder()
+        val original = chain.request()
+        val req = original.newBuilder()
             .header("apikey", ANON_KEY)
             .header("Content-Type", "application/json")
-            .header("Prefer", "return=representation")
+
+        if (original.header("Prefer").isNullOrBlank()) {
+            req.header("Prefer", "return=representation")
+        }
 
         val bearer = if (includeUserToken) currentAccessToken() else ANON_KEY
         if (!bearer.isNullOrBlank()) req.header("Authorization", "Bearer $bearer")
@@ -77,11 +83,11 @@ object SupabaseClient {
         return count
     }
 
-    private fun refreshStoredSession(): String? {
-        val context = appContext ?: return null
+    private fun refreshStoredSession(): String? = synchronized(refreshLock) {
+        val context = appContext ?: return@synchronized null
         val session = SessionManager(context)
-        val refreshToken = session.refreshToken ?: return null
-        return try {
+        val refreshToken = session.refreshToken ?: return@synchronized null
+        try {
             val res = runBlocking { auth.refresh(RefreshRequest(refreshToken)) }
             val body = res.body()
             if (res.isSuccessful && body != null) {
@@ -91,6 +97,10 @@ object SupabaseClient {
                 accessToken = body.accessToken
                 body.accessToken
             } else {
+                if (res.code() in 400..499) {
+                    session.clear()
+                    accessToken = null
+                }
                 null
             }
         } catch (_: Exception) {

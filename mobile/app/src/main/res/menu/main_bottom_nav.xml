@@ -17,7 +17,7 @@
         android:icon="@drawable/ic_contract"
         android:title="@string/tab_contracts" />
     <item
-        android:id="@+id/nav_settings"
-        android:icon="@drawable/ic_settings"
-        android:title="@string/tab_settings" />
+        android:id="@+id/nav_suivi"
+        android:icon="@drawable/ic_suivi"
+        android:title="@string/tab_suivi" />
 </menu>

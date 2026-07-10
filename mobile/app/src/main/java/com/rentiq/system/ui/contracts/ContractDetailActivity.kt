@@ -4,10 +4,12 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.rentiq.system.BuildConfig
 import com.rentiq.system.R
 import com.rentiq.system.data.api.SupabaseClient
@@ -22,6 +24,8 @@ import java.net.URLEncoder
 class ContractDetailActivity : AppCompatActivity() {
     private lateinit var b: ActivityContractDetailBinding
     private var contract: Contract? = null
+    private val fuelLevels = listOf("empty", "quarter", "half", "three_quarters", "full")
+    private val fuelLabels = listOf("Vide", "1/4", "1/2", "3/4", "Plein")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,11 +33,14 @@ class ContractDetailActivity : AppCompatActivity() {
         setContentView(b.root)
 
         b.toolbar.setNavigationOnClickListener { finish() }
+        b.closeFuelIn.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, fuelLabels)
+            .also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
 
         b.clearSignature.setOnClickListener { b.signatureView.clear() }
         b.signButton.setOnClickListener { signContract() }
         b.copyLink.setOnClickListener { copySignLink() }
         b.viewPdfButton.setOnClickListener { previewContract() }
+        b.closeContractButton.setOnClickListener { confirmCloseContract() }
 
         loadContract()
     }
@@ -109,6 +116,16 @@ class ContractDetailActivity : AppCompatActivity() {
         b.mileageIn.text = "Retour: ${c.mileageIn ?: "—"} km"
         b.fuelOut.text = "Carb. départ: ${fuelLabel(c.fuelOut)}"
         b.fuelIn.text = "Carb. retour: ${fuelLabel(c.fuelIn)}"
+        b.closeMileageIn.setText(c.mileageIn?.toString().orEmpty())
+        val fuelInIndex = fuelLevels.indexOf(c.fuelIn)
+        val fuelOutIndex = fuelLevels.indexOf(c.fuelOut)
+        b.closeFuelIn.setSelection(
+            when {
+                fuelInIndex >= 0 -> fuelInIndex
+                fuelOutIndex >= 0 -> fuelOutIndex
+                else -> fuelLevels.lastIndex
+            }
+        )
 
         // Check/caution
         if (c.checkNumber != null || c.checkBank != null) {
@@ -133,6 +150,15 @@ class ContractDetailActivity : AppCompatActivity() {
         b.status.setTextColor(ContextCompat.getColor(this, color))
 
         renderSignatureFlow(c, signed, closed)
+        renderCloseFlow(c, closed)
+    }
+
+    private fun renderCloseFlow(c: Contract, closed: Boolean) {
+        b.closeSection.visibility = if (closed) View.GONE else View.VISIBLE
+        val outKm = c.mileageOut
+        if (!closed && b.closeMileageIn.text.isNullOrBlank() && outKm != null) {
+            b.closeMileageIn.hint = "Min ${outKm} km"
+        }
     }
 
     // Guided, one-step-at-a-time signature flow. Only the relevant actions for the
@@ -229,6 +255,83 @@ class ContractDetailActivity : AppCompatActivity() {
         "three_quarters" -> "3/4"
         "full" -> "Plein"
         else -> v ?: "—"
+    }
+
+    private fun confirmCloseContract() {
+        val c = contract ?: return
+        val mileageIn = b.closeMileageIn.text.toString().toIntOrNull()
+        if (mileageIn == null) {
+            Toast.makeText(this, "Kilometrage retour obligatoire", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val mileageOut = c.mileageOut
+        if (mileageOut != null && mileageIn < mileageOut) {
+            Toast.makeText(this, "Km retour inferieur au km depart", Toast.LENGTH_SHORT).show()
+            return
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Cloturer ce contrat ?")
+            .setMessage("La reservation sera fermee et la voiture sera remise disponible avec le nouveau kilometrage.")
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton("Cloturer") { _, _ -> closeContract(mileageIn) }
+            .show()
+    }
+
+    private fun closeContract(mileageIn: Int) {
+        val c = contract ?: return
+        val fuelIn = fuelLevels.getOrElse(b.closeFuelIn.selectedItemPosition) { "full" }
+        b.progress.visibility = View.VISIBLE
+        b.closeContractButton.isEnabled = false
+
+        lifecycleScope.launch {
+            try {
+                val contractRes = SupabaseClient.rest.updateContract(
+                    "eq.${c.id}",
+                    mapOf(
+                        "mileage_in" to mileageIn,
+                        "fuel_in" to fuelIn,
+                        "closed_at" to java.time.Instant.now().toString(),
+                    ),
+                )
+                if (!contractRes.isSuccessful) {
+                    Toast.makeText(this@ContractDetailActivity, "Erreur contrat ${contractRes.code()}", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+
+                c.reservationId?.let {
+                    SupabaseClient.rest.updateReservationStatus("eq.$it", mapOf("status" to "closed"))
+                }
+                c.reservations?.vehicles?.id?.let { vehicleId ->
+                    SupabaseClient.rest.updateVehicle(
+                        "eq.$vehicleId",
+                        mapOf(
+                            "mileage_current" to mileageIn,
+                            "status" to "available",
+                        ),
+                    )
+                }
+
+                Notify.enqueue(
+                    SessionManager(this@ContractDetailActivity).agencyId,
+                    "contract_closed",
+                    mapOf(
+                        "contract_id" to c.id,
+                        "client" to c.reservations?.clients?.fullName,
+                        "vehicle" to c.reservations?.vehicles?.displayName,
+                        "plate" to c.reservations?.vehicles?.plate,
+                        "mileage_in" to mileageIn,
+                        "fuel_in" to fuelLabel(fuelIn),
+                    ),
+                )
+                Toast.makeText(this@ContractDetailActivity, "Contrat cloture", Toast.LENGTH_SHORT).show()
+                loadContract()
+            } catch (e: Exception) {
+                Toast.makeText(this@ContractDetailActivity, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                b.progress.visibility = View.GONE
+                b.closeContractButton.isEnabled = true
+            }
+        }
     }
 
     private fun signContract() {

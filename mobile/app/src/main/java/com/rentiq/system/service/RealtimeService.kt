@@ -6,8 +6,19 @@ import android.os.IBinder
 import com.rentiq.system.BuildConfig
 import com.rentiq.system.util.NotificationHelper
 import com.rentiq.system.util.SessionManager
-import kotlinx.coroutines.*
-import okhttp3.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.WebSocket
+import okhttp3.WebSocketListener
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
@@ -20,7 +31,10 @@ class RealtimeService : Service() {
         const val KEY_ENABLED = "notif_enabled"
         const val KEY_RESERVATIONS = "notif_reservations"
         const val KEY_SIGNATURES = "notif_signatures"
+        const val KEY_CONTRACTS = "notif_contracts"
         const val KEY_VEHICLES = "notif_vehicles"
+        const val KEY_SUIVI = "notif_suivi"
+        const val KEY_ISSUES = "notif_issues"
     }
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -31,7 +45,7 @@ class RealtimeService : Service() {
     private val client = OkHttpClient.Builder()
         .pingInterval(20, TimeUnit.SECONDS)
         .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(0, TimeUnit.SECONDS) // infinite — WebSocket
+        .readTimeout(0, TimeUnit.SECONDS)
         .build()
 
     override fun onCreate() {
@@ -46,11 +60,17 @@ class RealtimeService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
+        if (!getSharedPreferences(PREF_FILE, MODE_PRIVATE).getBoolean(KEY_ENABLED, true)) {
+            disconnect()
+            stopSelf()
+            return START_NOT_STICKY
+        }
         connect()
         return START_STICKY
     }
 
     private fun connect() {
+        if (ws != null) return
         val session = SessionManager(this)
         val agencyId = session.agencyId ?: return
         val token = session.accessToken ?: return
@@ -58,7 +78,7 @@ class RealtimeService : Service() {
         val wsUrl = BuildConfig.SUPABASE_URL
             .replace("https://", "wss://")
             .replace("http://", "ws://") +
-                "/realtime/v1/websocket?apikey=${BuildConfig.SUPABASE_ANON_KEY}&vsn=1.0.0"
+            "/realtime/v1/websocket?apikey=${BuildConfig.SUPABASE_ANON_KEY}&vsn=1.0.0"
 
         val request = Request.Builder()
             .url(wsUrl)
@@ -70,6 +90,8 @@ class RealtimeService : Service() {
                 joinTable(webSocket, "res_$agencyId", "reservations", "INSERT", "agency_id=eq.$agencyId", token)
                 joinTable(webSocket, "con_$agencyId", "contracts", "UPDATE", "agency_id=eq.$agencyId", token)
                 joinTable(webSocket, "veh_$agencyId", "vehicles", "INSERT", "agency_id=eq.$agencyId", token)
+                joinTable(webSocket, "svc_$agencyId", "service_records", "INSERT", "agency_id=eq.$agencyId", token)
+                joinTable(webSocket, "iss_$agencyId", "vehicle_issues", "INSERT", "agency_id=eq.$agencyId", token)
                 startHeartbeat(webSocket)
             }
 
@@ -79,6 +101,7 @@ class RealtimeService : Service() {
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 heartbeatJob?.cancel()
+                ws = null
                 scope.launch {
                     delay(30_000)
                     connect()
@@ -87,6 +110,7 @@ class RealtimeService : Service() {
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
                 heartbeatJob?.cancel()
+                ws = null
             }
         })
     }
@@ -115,35 +139,58 @@ class RealtimeService : Service() {
             val type = data.optString("type")
             val table = data.optString("table")
             val record = data.optJSONObject("record") ?: return
+            val oldRecord = data.optJSONObject("old_record")
             val prefs = getSharedPreferences(PREF_FILE, MODE_PRIVATE)
 
             when {
-                table == "reservations" && type == "INSERT" -> {
-                    if (!prefs.getBoolean(KEY_RESERVATIONS, true)) return
-                    NotificationHelper.notify(this, "Nouvelle réservation 📅", "Une nouvelle réservation a été créée")
+                table == "reservations" && type == "INSERT" && prefs.getBoolean(KEY_RESERVATIONS, true) -> {
+                    NotificationHelper.notify(this, "Nouvelle reservation", "Une nouvelle reservation a ete creee")
                 }
                 table == "contracts" && type == "UPDATE" -> {
-                    val signedAt = record.optString("signed_at", "")
-                    if (signedAt.isBlank()) return
-                    val oldRecord = data.optJSONObject("old_record")
-                    if (oldRecord?.optString("signed_at", "")?.isNotBlank() == true) return
-                    if (!prefs.getBoolean(KEY_SIGNATURES, true)) return
-                    val shortId = record.optString("short_id", "")
-                    NotificationHelper.notify(this, "Contrat signé ✅", "Contrat ${shortId.ifBlank { "" }} signé par le client")
+                    handleContractUpdate(record, oldRecord, prefs)
                 }
-                table == "vehicles" && type == "INSERT" -> {
-                    if (!prefs.getBoolean(KEY_VEHICLES, true)) return
+                table == "vehicles" && type == "INSERT" && prefs.getBoolean(KEY_VEHICLES, true) -> {
                     val plate = record.optString("plate", "")
-                    NotificationHelper.notify(this, "Nouveau véhicule 🚗", "Véhicule ${plate.ifBlank { "" }} ajouté à la flotte")
+                    NotificationHelper.notify(this, "Nouveau vehicule", "Vehicule ${plate.ifBlank { "" }} ajoute a la flotte")
+                }
+                table == "service_records" && type == "INSERT" && prefs.getBoolean(KEY_SUIVI, true) -> {
+                    val serviceType = record.optString("type", "")
+                    val odometer = record.optString("odometer_km", "")
+                    NotificationHelper.notify(this, "Suivi enregistre", "${serviceType.ifBlank { "Service" }} ${odometer.ifBlank { "" }}")
+                }
+                table == "vehicle_issues" && type == "INSERT" && prefs.getBoolean(KEY_ISSUES, true) -> {
+                    val title = record.optString("title", "")
+                    val severity = record.optString("severity", "")
+                    NotificationHelper.notify(this, "Probleme vehicule", "${title.ifBlank { "Nouveau signalement" }} ${severity.ifBlank { "" }}")
                 }
             }
         } catch (_: Exception) {
+            // Realtime messages should never crash the foreground service.
+        }
+    }
+
+    private fun handleContractUpdate(
+        record: JSONObject,
+        oldRecord: JSONObject?,
+        prefs: android.content.SharedPreferences,
+    ) {
+        val shortId = record.optString("short_id", "")
+        val signedAt = record.optString("signed_at", "")
+        val justSigned = signedAt.isNotBlank() && oldRecord?.optString("signed_at", "")?.isNotBlank() != true
+        if (justSigned && prefs.getBoolean(KEY_SIGNATURES, true)) {
+            NotificationHelper.notify(this, "Contrat signe", "Contrat ${shortId.ifBlank { "" }} signe par le client")
+        }
+
+        val closedAt = record.optString("closed_at", "")
+        val justClosed = closedAt.isNotBlank() && oldRecord?.optString("closed_at", "")?.isNotBlank() != true
+        if (justClosed && prefs.getBoolean(KEY_CONTRACTS, true)) {
+            NotificationHelper.notify(this, "Contrat cloture", "La location ${shortId.ifBlank { "" }} est terminee")
         }
     }
 
     private fun disconnect() {
         heartbeatJob?.cancel()
-        ws?.close(1000, "Service arrêté")
+        ws?.close(1000, "Service stopped")
         ws = null
     }
 

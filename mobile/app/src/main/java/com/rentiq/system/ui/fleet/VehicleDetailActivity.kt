@@ -1,9 +1,14 @@
 package com.rentiq.system.ui.fleet
 
+import android.app.DatePickerDialog
+import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
+import android.text.InputType
 import android.view.View
+import android.widget.EditText
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -16,18 +21,23 @@ import com.rentiq.system.R
 import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.data.model.ServiceRecord
 import com.rentiq.system.data.model.Vehicle
+import com.rentiq.system.data.model.VehicleExpense
+import com.rentiq.system.data.model.VehicleExpenseInsert
 import com.rentiq.system.data.model.VehicleIssue
 import com.rentiq.system.databinding.ActivityVehicleDetailBinding
 import com.rentiq.system.ui.reservations.NewReservationActivity
+import com.rentiq.system.util.SessionManager
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
 
 class VehicleDetailActivity : AppCompatActivity() {
     private lateinit var b: ActivityVehicleDetailBinding
     private val historyAdapter = ServiceRecordAdapter()
     private val issueAdapter = VehicleIssueAdapter { issue -> confirmResolveIssue(issue) }
+    private val expenseAdapter = VehicleExpenseAdapter { expense -> confirmDeleteExpense(expense) }
     private var currentVehicle: Vehicle? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,6 +50,8 @@ class VehicleDetailActivity : AppCompatActivity() {
         b.serviceHistory.adapter = historyAdapter
         b.issueList.layoutManager = LinearLayoutManager(this)
         b.issueList.adapter = issueAdapter
+        b.expenseList.layoutManager = LinearLayoutManager(this)
+        b.expenseList.adapter = expenseAdapter
         b.addReservationButton.setOnClickListener {
             currentVehicle?.let {
                 startActivity(
@@ -74,6 +86,9 @@ class VehicleDetailActivity : AppCompatActivity() {
                 )
             }
         }
+        b.addExpenseButton.setOnClickListener {
+            currentVehicle?.let { showAddExpenseDialog(it) }
+        }
         loadVehicle()
     }
 
@@ -96,6 +111,7 @@ class VehicleDetailActivity : AppCompatActivity() {
                         bind(it)
                         loadHistory(it.id)
                         loadIssues(it.id)
+                        loadExpenses(it.id)
                     }
                 } else {
                     Toast.makeText(this@VehicleDetailActivity, "Erreur ${res.code()}", Toast.LENGTH_SHORT).show()
@@ -103,6 +119,148 @@ class VehicleDetailActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 b.progress.visibility = View.GONE
                 Toast.makeText(this@VehicleDetailActivity, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun loadExpenses(vehicleId: String) {
+        lifecycleScope.launch {
+            try {
+                val res = SupabaseClient.rest.getVehicleExpenses("eq.$vehicleId")
+                if (res.isSuccessful) {
+                    val expenses = res.body().orEmpty()
+                    expenseAdapter.submitList(expenses)
+                    b.expensesEmpty.visibility = if (expenses.isEmpty()) View.VISIBLE else View.GONE
+                    val total = expenses.sumOf { it.amount ?: 0.0 }
+                    b.expensesTotal.text = "Total: ${total.toInt()} DH"
+                } else {
+                    b.expensesTotal.text = "Total: -"
+                }
+            } catch (_: Exception) {
+                b.expensesTotal.text = "Total: -"
+            }
+        }
+    }
+
+    private fun showAddExpenseDialog(vehicle: Vehicle) {
+        val pad = (14 * resources.displayMetrics.density).toInt()
+        val form = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(pad, pad / 2, pad, 0)
+        }
+        val name = EditText(this).apply {
+            hint = "Nom de la depense"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            )
+            setSingleLine(true)
+        }
+        val amount = EditText(this).apply {
+            hint = "Montant DH"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            )
+            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setSingleLine(true)
+        }
+        val spentAt = EditText(this).apply {
+            hint = "Date"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            )
+            setText(LocalDate.now().toString())
+            inputType = InputType.TYPE_NULL
+            isFocusable = false
+            setOnClickListener { pickDate(this) }
+        }
+        form.addView(name)
+        form.addView(amount)
+        form.addView(spentAt)
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle("Ajouter une depense")
+            .setMessage(vehicle.displayName)
+            .setView(form)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.save, null)
+            .show()
+
+        dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener {
+            saveExpense(vehicle, name.text.toString(), amount.text.toString(), spentAt.text.toString()) {
+                dialog.dismiss()
+            }
+        }
+    }
+
+    private fun saveExpense(vehicle: Vehicle, name: String, amountText: String, spentAt: String, onSaved: () -> Unit) {
+        val agencyId = SessionManager(this).agencyId
+        val amount = amountText.toDoubleOrNull()
+        if (agencyId.isNullOrBlank()) {
+            Toast.makeText(this, "Agence non trouvee", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (name.trim().isBlank()) {
+            Toast.makeText(this, "Nom obligatoire", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (amount == null || amount < 0.0) {
+            Toast.makeText(this, "Montant invalide", Toast.LENGTH_SHORT).show()
+            return
+        }
+        b.progress.visibility = View.VISIBLE
+        lifecycleScope.launch {
+            try {
+                val res = SupabaseClient.rest.createVehicleExpense(
+                    VehicleExpenseInsert(
+                        agencyId = agencyId,
+                        vehicleId = vehicle.id,
+                        name = name.trim(),
+                        amount = amount,
+                        spentAt = spentAt.ifBlank { LocalDate.now().toString() },
+                    ),
+                )
+                if (res.isSuccessful) {
+                    Toast.makeText(this@VehicleDetailActivity, "Depense ajoutee", Toast.LENGTH_SHORT).show()
+                    loadExpenses(vehicle.id)
+                    onSaved()
+                } else {
+                    Toast.makeText(this@VehicleDetailActivity, "Erreur ${res.code()}", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this@VehicleDetailActivity, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                b.progress.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun confirmDeleteExpense(expense: VehicleExpense) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Supprimer la depense ?")
+            .setMessage("${expense.name ?: "Depense"} - ${(expense.amount ?: 0.0).toInt()} DH")
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.delete) { _, _ -> deleteExpense(expense) }
+            .show()
+    }
+
+    private fun deleteExpense(expense: VehicleExpense) {
+        b.progress.visibility = View.VISIBLE
+        lifecycleScope.launch {
+            try {
+                val res = SupabaseClient.rest.deleteVehicleExpense("eq.${expense.id}")
+                if (res.isSuccessful) {
+                    Toast.makeText(this@VehicleDetailActivity, "Depense supprimee", Toast.LENGTH_SHORT).show()
+                    currentVehicle?.let { loadExpenses(it.id) }
+                } else {
+                    Toast.makeText(this@VehicleDetailActivity, "Erreur ${res.code()}", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this@VehicleDetailActivity, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                b.progress.visibility = View.GONE
             }
         }
     }
@@ -227,6 +385,20 @@ class VehicleDetailActivity : AppCompatActivity() {
         b.addServiceButton.visibility = View.VISIBLE
         b.editVehicleButton.visibility = View.VISIBLE
         b.addIssueButton.visibility = View.VISIBLE
+        b.addExpenseButton.visibility = View.VISIBLE
+    }
+
+    private fun pickDate(target: EditText) {
+        val seed = runCatching { LocalDate.parse(target.text.toString().take(10)) }.getOrNull()
+        val cal = Calendar.getInstance()
+        seed?.let {
+            cal.set(Calendar.YEAR, it.year)
+            cal.set(Calendar.MONTH, it.monthValue - 1)
+            cal.set(Calendar.DAY_OF_MONTH, it.dayOfMonth)
+        }
+        DatePickerDialog(this, { _, y, m, d ->
+            target.setText(LocalDate.of(y, m + 1, d).toString())
+        }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
     }
 
     private fun bindSuiviDate(tv: android.widget.TextView, dateStr: String?) {

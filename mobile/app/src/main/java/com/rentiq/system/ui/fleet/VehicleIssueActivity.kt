@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.data.model.VehicleIssueInsert
 import com.rentiq.system.databinding.ActivityVehicleIssueBinding
+import com.rentiq.system.util.Notify
 import com.rentiq.system.util.SessionManager
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -99,6 +100,20 @@ class VehicleIssueActivity : AppCompatActivity() {
                     ),
                 )
                 if (res.isSuccessful) {
+                    Notify.enqueue(
+                        agencyId,
+                        "vehicle_issue_created",
+                        mapOf(
+                            "vehicle_id" to vehicleId,
+                            "vehicle" to b.vehicleLabel.text.toString(),
+                            "title" to title,
+                            "kind" to selected(kinds, b.kind.selectedItemPosition),
+                            "category" to selected(categories, b.category.selectedItemPosition),
+                            "severity" to selected(severities, b.severity.selectedItemPosition),
+                            "blocks_rental" to b.blocksRental.isChecked,
+                            "opened_at" to b.openedAt.text.toString(),
+                        ),
+                    )
                     Toast.makeText(this@VehicleIssueActivity, "Probleme enregistre", Toast.LENGTH_SHORT).show()
                     finish()
                 } else {
