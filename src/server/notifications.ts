@@ -3,8 +3,11 @@ import { presignDownload, docsBucket } from '~/lib/r2.server'
 
 export type NotificationType =
   | 'reservation_created'
+  | 'reservation_cancelled'
   | 'contract_created'
+  | 'contract_signed'
   | 'vehicle_added'
+  | 'service_record_created'
   | 'contract_pdf_ready'
 
 // Enqueue a WhatsApp notification. Best-effort — never throws.

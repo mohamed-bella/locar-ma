@@ -4,6 +4,7 @@ import { addMonths } from 'date-fns'
 import { requireAgencyContext } from './context'
 import { advanceVehicleMileage } from './mileage'
 import { publicUrl } from '~/lib/r2.server'
+import { enqueueNotification } from './notifications'
 import { agencyToday } from '~/lib/tz'
 import {
   DEFAULT_PLANS,
@@ -167,6 +168,15 @@ export const logService = createServerFn({ method: 'POST' })
         .update({ oil_change_last_km: data.odometer_km, oil_change_last_date: data.performed_at })
         .eq('id', data.vehicle_id)
     }
+    await enqueueNotification(agencyId, 'service_record_created', {
+      vehicle_id: data.vehicle_id,
+      type: data.type,
+      performed_at: data.performed_at,
+      odometer_km: data.odometer_km,
+      cost: data.cost,
+      garage: data.garage,
+      notes: data.notes,
+    })
     return { ok: true }
   })
 

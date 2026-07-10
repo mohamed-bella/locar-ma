@@ -1,62 +1,157 @@
 package com.rentiq.system.ui.main
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
-import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.google.android.material.tabs.TabLayoutMediator
+import coil.load
 import com.rentiq.system.R
+import com.rentiq.system.data.api.RefreshRequest
 import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.databinding.ActivityMainBinding
+import com.rentiq.system.service.RealtimeService
 import com.rentiq.system.ui.auth.LoginActivity
 import com.rentiq.system.ui.contracts.ContractsFragment
+import com.rentiq.system.ui.dashboard.DashboardFragment
 import com.rentiq.system.ui.fleet.FleetFragment
 import com.rentiq.system.ui.reservations.ReservationsFragment
+import com.rentiq.system.ui.settings.SettingsFragment
+import com.rentiq.system.util.NotificationHelper
 import com.rentiq.system.util.SessionManager
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
+    private lateinit var session: SessionManager
+    private var currentMenuId: Int? = null
 
-    private val tabs = listOf(
-        R.string.tab_fleet to { FleetFragment() },
-        R.string.tab_reservations to { ReservationsFragment() },
-        R.string.tab_contracts to { ContractsFragment() },
-        R.string.tab_suivi to { com.rentiq.system.ui.suivi.SuiviFragment() },
+    private val requestNotifPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        // Regardless of outcome — start service if prefs say enabled (silent if denied)
+        startRealtimeServiceIfEnabled()
+    }
+
+    private val destinations = listOf(
+        Destination(R.id.nav_dashboard) { DashboardFragment() },
+        Destination(R.id.nav_fleet) { FleetFragment() },
+        Destination(R.id.nav_reservations) { ReservationsFragment() },
+        Destination(R.id.nav_contracts) { ContractsFragment() },
+        Destination(R.id.nav_settings) { SettingsFragment() },
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        session = SessionManager(this)
+        SupabaseClient.bindSession(applicationContext)
+        val token = session.accessToken
+        if (token.isNullOrBlank()) {
+            goToLogin()
+            return
+        }
+        SupabaseClient.accessToken = token
+        refreshThenStart()
+    }
+
+    private fun refreshThenStart() {
+        val refreshToken = session.refreshToken
+        if (refreshToken.isNullOrBlank()) {
+            setupUi()
+            return
+        }
+        lifecycleScope.launch {
+            try {
+                val res = SupabaseClient.auth.refresh(RefreshRequest(refreshToken))
+                if (res.isSuccessful && res.body() != null) {
+                    val body = res.body()!!
+                    session.accessToken = body.accessToken
+                    session.refreshToken = body.refreshToken
+                    session.userId = body.user?.id ?: session.userId
+                    SupabaseClient.accessToken = body.accessToken
+                    setupUi()
+                } else if (res.code() == 401 || res.code() == 403) {
+                    session.clear()
+                    goToLogin()
+                } else {
+                    setupUi()
+                }
+            } catch (_: Exception) {
+                setupUi()
+            }
+        }
+    }
+
+    private fun setupUi() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         setSupportActionBar(binding.toolbar)
+        supportActionBar?.title = ""
 
-        binding.viewPager.adapter = object : FragmentStateAdapter(this) {
-            override fun getItemCount() = tabs.size
-            override fun createFragment(pos: Int): Fragment = tabs[pos].second()
+        binding.bottomNavigation.setOnItemSelectedListener { item ->
+            val destination = destinations.firstOrNull { it.menuId == item.itemId }
+                ?: return@setOnItemSelectedListener false
+            showDestination(destination)
+            true
         }
-
-        TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, pos ->
-            tab.text = getString(tabs[pos].first)
-        }.attach()
+        binding.bottomNavigation.selectedItemId = R.id.nav_dashboard
 
         ensureAgencyId()
+        loadAgencyBrand()
+        maybeStartRealtimeService()
+    }
+
+    private fun showDestination(destination: Destination) {
+        if (currentMenuId == destination.menuId) return
+        currentMenuId = destination.menuId
+        supportFragmentManager.commit {
+            replace(R.id.fragmentContainer, destination.factory())
+        }
+        loadAgencyBrand()
     }
 
     private fun ensureAgencyId() {
-        val session = SessionManager(this)
         if (session.agencyId != null) return
         lifecycleScope.launch {
             try {
                 val res = SupabaseClient.rest.getMembers()
+                if (res.code() == 401) {
+                    session.clear()
+                    goToLogin()
+                    return@launch
+                }
                 val agencyId = res.body()?.firstOrNull()?.agencyId
-                if (agencyId != null) session.agencyId = agencyId
-            } catch (_: Exception) {}
+                if (agencyId != null) {
+                    session.agencyId = agencyId
+                    loadAgencyBrand()
+                }
+            } catch (_: Exception) {
+                // List screens still show their own retry state if network is unavailable.
+            }
+        }
+    }
+
+    private fun loadAgencyBrand() {
+        val agencyId = session.agencyId ?: return
+        lifecycleScope.launch {
+            try {
+                val res = SupabaseClient.rest.getAgency("eq.$agencyId")
+                if (res.isSuccessful && res.body() != null) {
+                    val agency = res.body()!!
+                    binding.agencyName.text = agency.name ?: getString(R.string.app_name)
+                    if (!agency.logoUrl.isNullOrBlank()) binding.agencyLogo.load(agency.logoUrl)
+                }
+            } catch (_: Exception) {
+                // Branding is decorative; lists remain responsible for their own errors.
+            }
         }
     }
 
@@ -67,13 +162,50 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == 1) {
-            SessionManager(this).clear()
+            session.clear()
             SupabaseClient.accessToken = null
-            startActivity(Intent(this, LoginActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            })
+            goToLogin()
             return true
         }
         return super.onOptionsItemSelected(item)
     }
+
+    private fun maybeStartRealtimeService() {
+        val prefs = getSharedPreferences(RealtimeService.PREF_FILE, MODE_PRIVATE)
+        if (!prefs.getBoolean(RealtimeService.KEY_ENABLED, true)) return
+        NotificationHelper.createChannels(this)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                        == PackageManager.PERMISSION_GRANTED -> startRealtimeServiceIfEnabled()
+                else -> requestNotifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        } else {
+            startRealtimeServiceIfEnabled()
+        }
+    }
+
+    private fun startRealtimeServiceIfEnabled() {
+        val prefs = getSharedPreferences(RealtimeService.PREF_FILE, MODE_PRIVATE)
+        if (!prefs.getBoolean(RealtimeService.KEY_ENABLED, true)) return
+        val intent = Intent(this, RealtimeService::class.java).apply { action = RealtimeService.ACTION_START }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
+    }
+
+    private fun goToLogin() {
+        startActivity(Intent(this, LoginActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        })
+        finish()
+    }
+
+    private data class Destination(
+        val menuId: Int,
+        val factory: () -> Fragment,
+    )
 }

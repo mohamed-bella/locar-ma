@@ -1,10 +1,8 @@
 package com.rentiq.system.ui.contracts
 
 import android.content.Intent
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
-import android.util.Base64
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -19,6 +17,7 @@ import com.rentiq.system.util.Notify
 import com.rentiq.system.util.QrGen
 import com.rentiq.system.util.SessionManager
 import kotlinx.coroutines.launch
+import java.net.URLEncoder
 
 class ContractDetailActivity : AppCompatActivity() {
     private lateinit var b: ActivityContractDetailBinding
@@ -34,13 +33,15 @@ class ContractDetailActivity : AppCompatActivity() {
         b.clearSignature.setOnClickListener { b.signatureView.clear() }
         b.signButton.setOnClickListener { signContract() }
         b.sendToClient.setOnClickListener { sendToClient() }
+        b.sendWhatsApp.setOnClickListener { sendViaWhatsapp() }
+        b.previewContract.setOnClickListener { previewContract() }
         b.downloadPdf.setOnClickListener { downloadPdf() }
         b.copyLink.setOnClickListener { copySignLink() }
 
         loadContract()
     }
 
-    private val signUrl: String? get() = contract?.signToken?.let { "https://app.rentiq-system.com/sign/$it" }
+    private val signUrl: String? get() = contract?.signToken?.let { "${BuildConfig.WEBAPP_BASE_URL}/sign/$it" }
 
     private fun loadContract() {
         val contractId = intent.getStringExtra("contract_id") ?: run { finish(); return }
@@ -138,7 +139,9 @@ class ContractDetailActivity : AppCompatActivity() {
             b.signatureSection.visibility = View.GONE
         }
 
-        b.downloadPdf.visibility = if (c.pdfKey != null) View.VISIBLE else View.GONE
+        // In-app PDF: always available now (rendered locally, no web redirect).
+        b.downloadPdf.visibility = View.VISIBLE
+        b.downloadPdf.text = "Aperçu / Télécharger PDF"
 
         // Show the QR + link if a sign token already exists and not yet signed.
         if (!signed && c.signToken != null) showSignLink() else b.signLinkSection.visibility = View.GONE
@@ -211,12 +214,29 @@ class ContractDetailActivity : AppCompatActivity() {
 
     private fun sendToClient() {
         val c = contract ?: return
-        val token = c.signToken
-        if (token != null) {
-            shareSignLink(token, c.shortId)
+        ensureSignToken(c) { token -> shareSignLink(token, c.shortId) }
+    }
+
+    private fun sendViaWhatsapp() {
+        val c = contract ?: return
+        ensureSignToken(c) { token ->
+            val phone = c.reservations?.clients?.phone?.replace(Regex("\\D"), "").orEmpty()
+            val message = buildClientMessage(c, "${BuildConfig.WEBAPP_BASE_URL}/sign/$token")
+            if (phone.isBlank()) {
+                shareText(message)
+                return@ensureSignToken
+            }
+            val encoded = URLEncoder.encode(message, "UTF-8")
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$phone?text=$encoded")))
+        }
+    }
+
+    private fun ensureSignToken(c: Contract, onReady: (String) -> Unit) {
+        c.signToken?.let {
+            onReady(it)
             return
         }
-        // Generate a sign token via PATCH (set sign_token + expiry)
+
         b.progress.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
@@ -231,7 +251,7 @@ class ContractDetailActivity : AppCompatActivity() {
                 if (res.isSuccessful) {
                     contract = contract?.copy(signToken = newToken)
                     showSignLink()
-                    shareSignLink(newToken, c.shortId)
+                    onReady(newToken)
                 } else {
                     Toast.makeText(this@ContractDetailActivity, "Erreur ${res.code()}", Toast.LENGTH_SHORT).show()
                 }
@@ -243,18 +263,38 @@ class ContractDetailActivity : AppCompatActivity() {
     }
 
     private fun shareSignLink(token: String, shortId: String?) {
-        val url = "https://app.rentiq-system.com/sign/$token"
+        val url = "${BuildConfig.WEBAPP_BASE_URL}/sign/$token"
+        shareText("Signez votre contrat de location ici:\n$url", "Contrat #${shortId ?: ""}")
+    }
+
+    private fun shareText(text: String, subject: String = "Contrat de location") {
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, "Contrat #${shortId ?: ""}")
-            putExtra(Intent.EXTRA_TEXT, "Signez votre contrat de location ici:\n$url")
+            putExtra(Intent.EXTRA_SUBJECT, subject)
+            putExtra(Intent.EXTRA_TEXT, text)
         }
         startActivity(Intent.createChooser(shareIntent, "Envoyer au client"))
     }
 
-    private fun downloadPdf() {
-        val key = contract?.pdfKey ?: return
-        val url = "${BuildConfig.R2_PUBLIC_URL}/$key"
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    private fun buildClientMessage(c: Contract, url: String): String {
+        val client = c.reservations?.clients?.fullName.orEmpty()
+        val vehicle = listOfNotNull(c.reservations?.vehicles?.brand, c.reservations?.vehicles?.model)
+            .joinToString(" ")
+            .ifBlank { c.reservations?.vehicles?.plate.orEmpty() }
+        return "Bonjour $client, merci de signer votre contrat de location $vehicle ici:\n$url"
     }
+
+    // Open the SAME server-rendered PDF the web app produces, shown in-app with
+    // PdfRenderer (no web redirect, no re-login). Identical design, signature baked in.
+    private fun previewContract() {
+        val c = contract ?: return
+        val title = "Contrat_${c.shortId ?: c.id.take(8)}"
+        startActivity(
+            Intent(this, ContractPdfActivity::class.java)
+                .putExtra("contract_id", c.id)
+                .putExtra("contract_title", title),
+        )
+    }
+
+    private fun downloadPdf() = previewContract()
 }

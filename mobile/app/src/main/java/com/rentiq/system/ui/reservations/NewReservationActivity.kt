@@ -12,6 +12,7 @@ import com.rentiq.system.data.model.Client
 import com.rentiq.system.data.model.ReservationInsert
 import com.rentiq.system.data.model.Vehicle
 import com.rentiq.system.databinding.ActivityNewReservationBinding
+import com.rentiq.system.util.Notify
 import com.rentiq.system.util.SessionManager
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -139,7 +140,7 @@ class NewReservationActivity : AppCompatActivity() {
                 if (res.isSuccessful) {
                     Toast.makeText(this@NewReservationActivity, "Réservation créée", Toast.LENGTH_SHORT).show()
                     val created = res.body()?.firstOrNull()
-                    com.rentiq.system.util.Notify.enqueue(agencyId, "reservation_created", mapOf(
+                    val notificationQueued = Notify.enqueue(agencyId, "reservation_created", mapOf(
                         "reservation_id" to created?.id,
                         "vehicle" to vehicle.displayName,
                         "plate" to vehicle.plate,
@@ -149,6 +150,9 @@ class NewReservationActivity : AppCompatActivity() {
                         "date_end" to endDate.toString(),
                         "total_amount" to total,
                     ))
+                    if (!notificationQueued) {
+                        Toast.makeText(this@NewReservationActivity, "Notification WhatsApp non envoyee", Toast.LENGTH_LONG).show()
+                    }
                     finish()
                 } else {
                     b.saveButton.isEnabled = true

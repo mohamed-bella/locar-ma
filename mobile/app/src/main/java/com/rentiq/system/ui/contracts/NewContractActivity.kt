@@ -2,6 +2,7 @@ package com.rentiq.system.ui.contracts
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
@@ -12,9 +13,10 @@ import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.data.model.ContractInsert
 import com.rentiq.system.data.model.Reservation
 import com.rentiq.system.databinding.ActivityNewContractBinding
+import com.rentiq.system.util.Notify
 import com.rentiq.system.util.SessionManager
 import kotlinx.coroutines.launch
-import java.util.*
+import java.util.Calendar
 
 class NewContractActivity : AppCompatActivity() {
     private lateinit var b: ActivityNewContractBinding
@@ -29,7 +31,6 @@ class NewContractActivity : AppCompatActivity() {
         setContentView(b.root)
 
         b.toolbar.setNavigationOnClickListener { finish() }
-
         b.fuelOut.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, fuelLabels)
             .also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
         b.fuelOut.setSelection(4)
@@ -56,9 +57,11 @@ class NewContractActivity : AppCompatActivity() {
                         this@NewContractActivity,
                         android.R.layout.simple_spinner_item,
                         reservations.map { r ->
-                            "${r.clients?.fullName ?: "?"} — ${r.vehicles?.plate ?: "?"} (${r.dateStart})"
+                            "${r.clients?.fullName ?: "?"} - ${r.vehicles?.plate ?: "?"} (${r.dateStart})"
                         }
                     ).also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+                } else {
+                    Toast.makeText(this@NewContractActivity, "Erreur ${res.code()}", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 b.progress.visibility = View.GONE
@@ -95,9 +98,10 @@ class NewContractActivity : AppCompatActivity() {
 
         val mileage = b.mileageOut.text.toString().toIntOrNull()
         val fuel = fuelLevels[b.fuelOut.selectedItemPosition]
-
         val form = mutableMapOf<String, String>()
-        fun addIfNotEmpty(key: String, value: String) { if (value.isNotBlank()) form[key] = value }
+        fun addIfNotEmpty(key: String, value: String) {
+            if (value.isNotBlank()) form[key] = value
+        }
         addIfNotEmpty("client_permit_number", b.permitNumber.text.toString())
         addIfNotEmpty("client_permit_date", b.permitDate.text.toString())
         addIfNotEmpty("client_permit_place", b.permitPlace.text.toString())
@@ -115,35 +119,41 @@ class NewContractActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val body = ContractInsert(
-                    agencyId = agencyId,
-                    reservationId = reservation.id,
-                    mileageOut = mileage,
-                    fuelOut = fuel,
-                    form = form.ifEmpty { null },
+                val res = SupabaseClient.rest.createContract(
+                    ContractInsert(
+                        agencyId = agencyId,
+                        reservationId = reservation.id,
+                        mileageOut = mileage,
+                        fuelOut = fuel,
+                        form = form.ifEmpty { null },
+                    )
                 )
-                val res = SupabaseClient.rest.createContract(body)
                 b.progress.visibility = View.GONE
                 if (res.isSuccessful) {
                     val created = res.body()?.firstOrNull()
+                    val checkAmount = updateCheckFields(created?.id)
                     if (created != null) {
-                        // Also save check info if provided
-                        val checkNum = b.checkNumber.text.toString()
-                        val checkBank = b.checkBank.text.toString()
-                        val checkAmt = b.checkAmount.text.toString().toDoubleOrNull()
-                        if (checkNum.isNotBlank() || checkBank.isNotBlank()) {
-                            val update = mutableMapOf<String, Any?>()
-                            if (checkNum.isNotBlank()) update["check_number"] = checkNum
-                            if (checkBank.isNotBlank()) update["check_bank"] = checkBank
-                            if (checkAmt != null) update["check_amount"] = checkAmt
-                            SupabaseClient.rest.updateContract("eq.${created.id}", update)
-                        }
+                        Notify.enqueue(
+                            agencyId,
+                            "contract_created",
+                            mapOf(
+                                "contract_id" to created.id,
+                                "vehicle" to reservation.vehicles?.displayName,
+                                "plate" to reservation.vehicles?.plate,
+                                "client" to reservation.clients?.fullName,
+                                "client_phone" to reservation.clients?.phone,
+                                "date_start" to reservation.dateStart,
+                                "date_end" to reservation.dateEnd,
+                                "check_amount" to checkAmount,
+                            )
+                        )
+                        Toast.makeText(this@NewContractActivity, "Contrat créé", Toast.LENGTH_SHORT).show()
+                        startActivity(Intent(this@NewContractActivity, ContractDetailActivity::class.java).putExtra("contract_id", created.id))
                     }
-                    Toast.makeText(this@NewContractActivity, "Contrat créé", Toast.LENGTH_SHORT).show()
                     finish()
                 } else {
                     b.saveButton.isEnabled = true
-                    Toast.makeText(this@NewContractActivity, "Erreur: ${res.code()}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@NewContractActivity, "Erreur ${res.code()}", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 b.progress.visibility = View.GONE
@@ -151,5 +161,19 @@ class NewContractActivity : AppCompatActivity() {
                 Toast.makeText(this@NewContractActivity, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private suspend fun updateCheckFields(contractId: String?): Double? {
+        if (contractId == null) return null
+        val checkNum = b.checkNumber.text.toString()
+        val checkBank = b.checkBank.text.toString()
+        val checkAmt = b.checkAmount.text.toString().toDoubleOrNull()
+        if (checkNum.isBlank() && checkBank.isBlank() && checkAmt == null) return checkAmt
+        val update = mutableMapOf<String, Any?>()
+        if (checkNum.isNotBlank()) update["check_number"] = checkNum
+        if (checkBank.isNotBlank()) update["check_bank"] = checkBank
+        if (checkAmt != null) update["check_amount"] = checkAmt
+        SupabaseClient.rest.updateContract("eq.$contractId", update)
+        return checkAmt
     }
 }

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_dashboard"
+        android:icon="@drawable/ic_dashboard"
+        android:title="@string/tab_dashboard" />
+    <item
+        android:id="@+id/nav_fleet"
+        android:icon="@drawable/ic_car"
+        android:title="@string/tab_fleet" />
+    <item
+        android:id="@+id/nav_reservations"
+        android:icon="@drawable/ic_calendar"
+        android:title="@string/tab_reservations" />
+    <item
+        android:id="@+id/nav_contracts"
+        android:icon="@drawable/ic_contract"
+        android:title="@string/tab_contracts" />
+    <item
+        android:id="@+id/nav_settings"
+        android:icon="@drawable/ic_settings"
+        android:title="@string/tab_settings" />
+</menu>

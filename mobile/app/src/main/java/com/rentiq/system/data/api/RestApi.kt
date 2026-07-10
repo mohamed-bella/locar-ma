@@ -21,6 +21,9 @@ interface RestApi {
         @Header("Accept") accept: String = "application/vnd.pgrst.object+json",
     ): Response<Vehicle>
 
+    @POST("rest/v1/vehicles")
+    suspend fun createVehicle(@Body body: VehicleInsert): Response<List<Vehicle>>
+
     @PATCH("rest/v1/vehicles")
     suspend fun updateVehicle(
         @Query("id") id: String,
@@ -44,16 +47,60 @@ interface RestApi {
     @POST("rest/v1/service_records")
     suspend fun createServiceRecord(@Body body: ServiceRecordInsert): Response<List<ServiceRecord>>
 
+    @GET("rest/v1/vehicle_issues")
+    suspend fun getVehicleIssues(
+        @Query("vehicle_id") vehicleId: String,
+        @Query("select") select: String = "*",
+        @Query("order") order: String = "opened_at.desc",
+    ): Response<List<VehicleIssue>>
+
+    @POST("rest/v1/vehicle_issues")
+    suspend fun createVehicleIssue(@Body body: VehicleIssueInsert): Response<List<VehicleIssue>>
+
+    @PATCH("rest/v1/vehicle_issues")
+    suspend fun updateVehicleIssue(
+        @Query("id") id: String,
+        @Body body: @JvmSuppressWildcards Map<String, Any?>,
+    ): Response<List<VehicleIssue>>
+
     // ── WhatsApp notification queue (bot polls / subscribes) ──────────────────
     @POST("rest/v1/notification_queue")
     suspend fun createNotification(@Body body: NotificationInsert): Response<Unit>
 
+    @POST("rest/v1/rpc/enqueue_mobile_notification")
+    suspend fun enqueueMobileNotification(
+        @Body body: @JvmSuppressWildcards Map<String, Any?>,
+    ): Response<Unit>
+
     // ── Clients ───────────────────────────────────────────────────────────────
     @GET("rest/v1/clients")
     suspend fun getClients(
-        @Query("select") select: String = "*",
+        @Query("select") select: String = "id,full_name,phone,cin_passport,email,nationality,address,status,blacklist_reason,blacklist_date",
         @Query("order") order: String = "full_name.asc",
     ): Response<List<Client>>
+
+    @GET("rest/v1/clients")
+    suspend fun getClient(
+        @Query("id") id: String,
+        @Query("select") select: String = "id,full_name,phone,cin_passport,email,nationality,address,status,blacklist_reason,blacklist_date",
+        @Header("Accept") accept: String = "application/vnd.pgrst.object+json",
+    ): Response<Client>
+
+    @POST("rest/v1/clients")
+    suspend fun createClient(@Body body: ClientInsert): Response<List<Client>>
+
+    @PATCH("rest/v1/clients")
+    suspend fun updateClient(
+        @Query("id") id: String,
+        @Body body: @JvmSuppressWildcards Map<String, Any?>,
+    ): Response<List<Client>>
+
+    @GET("rest/v1/reservations")
+    suspend fun getClientReservations(
+        @Query("client_id") clientId: String,
+        @Query("select") select: String = "id,date_start,date_end,status,total_amount,vehicles(id,plate,brand,model)",
+        @Query("order") order: String = "date_start.desc",
+    ): Response<List<Reservation>>
 
     // ── Reservations ──────────────────────────────────────────────────────────
     @GET("rest/v1/reservations")
@@ -102,4 +149,17 @@ interface RestApi {
     suspend fun getMembers(
         @Query("select") select: String = "id,agency_id,user_id,role",
     ): Response<List<Member>>
+
+    @GET("rest/v1/agencies")
+    suspend fun getAgency(
+        @Query("id") id: String,
+        @Query("select") select: String = "id,name,slug,city,logo_url,stamp_url,whatsapp_number,whatsapp_enabled,legal_name,address,ice,rc,patente,rib,company_phone",
+        @Header("Accept") accept: String = "application/vnd.pgrst.object+json",
+    ): Response<AgencyProfile>
+
+    @PATCH("rest/v1/agencies")
+    suspend fun updateAgency(
+        @Query("id") id: String,
+        @Body body: @JvmSuppressWildcards Map<String, Any?>,
+    ): Response<List<AgencyProfile>>
 }

@@ -5,7 +5,9 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.rentiq.system.R
 import com.rentiq.system.data.api.LoginRequest
+import com.rentiq.system.data.api.RefreshRequest
 import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.databinding.ActivityLoginBinding
 import com.rentiq.system.ui.main.MainActivity
@@ -19,17 +21,49 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         session = SessionManager(this)
+        SupabaseClient.bindSession(applicationContext)
 
-        // Already logged in → skip to main
         if (session.isLoggedIn) {
             SupabaseClient.accessToken = session.accessToken
-            goToMain()
+            restoreSession()
             return
         }
 
+        showLogin()
+    }
+
+    private fun restoreSession() {
+        lifecycleScope.launch {
+            val refreshToken = session.refreshToken
+            if (refreshToken.isNullOrBlank()) {
+                session.clear()
+                showLogin()
+                return@launch
+            }
+
+            try {
+                val res = SupabaseClient.auth.refresh(RefreshRequest(refreshToken))
+                if (res.isSuccessful && res.body() != null) {
+                    val body = res.body()!!
+                    session.accessToken = body.accessToken
+                    session.refreshToken = body.refreshToken
+                    session.userId = body.user?.id ?: session.userId
+                    SupabaseClient.accessToken = body.accessToken
+                    goToMain()
+                } else {
+                    session.clear()
+                    showLogin()
+                }
+            } catch (_: Exception) {
+                session.clear()
+                showLogin()
+            }
+        }
+    }
+
+    private fun showLogin() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         binding.loginButton.setOnClickListener { attemptLogin() }
     }
 
@@ -52,12 +86,8 @@ class LoginActivity : AppCompatActivity() {
                     session.userId = body.user?.id
                     SupabaseClient.accessToken = body.accessToken
 
-                    // Resolve the user's agency
                     val members = SupabaseClient.rest.getMembers()
-                    android.util.Log.d("Login", "Members response: ${members.code()} body=${members.body()}")
-                    val agencyId = members.body()?.firstOrNull()?.agencyId
-                    android.util.Log.d("Login", "Resolved agencyId=$agencyId")
-                    session.agencyId = agencyId
+                    session.agencyId = members.body()?.firstOrNull()?.agencyId
 
                     goToMain()
                 } else {
@@ -70,7 +100,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun showError(msg: String? = null) {
-        binding.errorText.text = msg ?: getString(com.rentiq.system.R.string.login_error)
+        binding.errorText.text = msg ?: getString(R.string.login_error)
         binding.errorText.visibility = View.VISIBLE
         binding.loginButton.isEnabled = true
         binding.loginProgress.visibility = View.GONE

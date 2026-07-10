@@ -6,6 +6,7 @@ import { requireAgencyContext } from './context'
 import { getSupabaseAdminClient } from '~/lib/supabase.server'
 import { putObject, docsBucket } from '~/lib/r2.server'
 import { DEFAULT_CONTRACT_TERMS } from '~/lib/terms'
+import { enqueueNotification } from './notifications'
 
 const TOKEN_TTL_DAYS = 7
 
@@ -149,6 +150,23 @@ export const submitSignature = createServerFn({ method: 'POST' })
       })
       .eq('id', c.id)
     if (error) throw new Error(error.message)
+
+    const { data: signed } = await admin
+      .from('contracts')
+      .select('reservations(date_start, date_end, vehicles(plate, brand, model), clients(full_name, phone))')
+      .eq('id', c.id)
+      .maybeSingle()
+    const res = (signed as any)?.reservations
+    await enqueueNotification(c.agency_id, 'contract_signed', {
+      contract_id: c.id,
+      vehicle: [res?.vehicles?.brand, res?.vehicles?.model].filter(Boolean).join(' ') || res?.vehicles?.plate,
+      plate: res?.vehicles?.plate,
+      client: res?.clients?.full_name,
+      client_phone: res?.clients?.phone,
+      date_start: res?.date_start,
+      date_end: res?.date_end,
+      signed_by: data.signer_name,
+    })
 
     // Regenerate the contract PDF so the signature is baked into the document.
     try {

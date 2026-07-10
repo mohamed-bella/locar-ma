@@ -18,6 +18,7 @@ data class Vehicle(
     @SerializedName("oil_change_last_km") val oilChangeLastKm: Int?,
     @SerializedName("oil_change_interval_km") val oilChangeIntervalKm: Int?,
     @SerializedName("oil_change_last_date") val oilChangeLastDate: String?,
+    @SerializedName("next_service_note") val nextServiceNote: String?,
     @SerializedName("image_keys") val imageKeys: List<String>?,
     val notes: String?,
 ) {
@@ -29,9 +30,45 @@ data class Client(
     @SerializedName("full_name") val fullName: String?,
     @SerializedName("cin_passport") val cin: String?,
     val phone: String?,
+    val email: String?,
     val address: String?,
     val nationality: String?,
+    val status: String?,
+    @SerializedName("blacklist_reason") val blacklistReason: String?,
+    @SerializedName("blacklist_date") val blacklistDate: String?,
     val blacklisted: Boolean?,
+)
+
+data class ClientInsert(
+    @SerializedName("agency_id") val agencyId: String,
+    @SerializedName("full_name") val fullName: String,
+    val phone: String?,
+    @SerializedName("cin_passport") val cin: String?,
+    val email: String?,
+    val nationality: String?,
+    val address: String?,
+    val status: String = "active",
+)
+
+data class VehicleInsert(
+    @SerializedName("agency_id") val agencyId: String,
+    val plate: String,
+    val brand: String?,
+    val model: String?,
+    val year: Int?,
+    val category: String?,
+    @SerializedName("daily_rate") val dailyRate: Double,
+    val status: String = "available",
+    @SerializedName("mileage_current") val mileageCurrent: Int = 0,
+    @SerializedName("insurance_expiry") val insuranceExpiry: String?,
+    @SerializedName("vignette_expiry") val vignetteExpiry: String?,
+    @SerializedName("visite_tech_expiry") val visiteTechExpiry: String?,
+    @SerializedName("oil_change_last_km") val oilChangeLastKm: Int?,
+    @SerializedName("oil_change_interval_km") val oilChangeIntervalKm: Int?,
+    @SerializedName("oil_change_last_date") val oilChangeLastDate: String?,
+    @SerializedName("next_service_note") val nextServiceNote: String?,
+    val notes: String?,
+    @SerializedName("image_keys") val imageKeys: List<String>? = null,
 )
 
 data class Reservation(
@@ -64,6 +101,7 @@ data class Contract(
     @SerializedName("signed_at") val signedAt: String?,
     @SerializedName("sign_token") val signToken: String?,
     @SerializedName("pdf_key") val pdfKey: String?,
+    @SerializedName("signature_url") val signatureUrl: String?,
     @SerializedName("created_at") val createdAt: String?,
     val extras: Any?,
     val form: Map<String, String>?,
@@ -75,6 +113,24 @@ data class Member(
     @SerializedName("agency_id") val agencyId: String,
     @SerializedName("user_id") val userId: String,
     val role: String?,
+)
+
+data class AgencyProfile(
+    val id: String,
+    val name: String?,
+    val slug: String?,
+    val city: String?,
+    @SerializedName("logo_url") val logoUrl: String?,
+    @SerializedName("stamp_url") val stampUrl: String?,
+    @SerializedName("whatsapp_number") val whatsappNumber: String?,
+    @SerializedName("whatsapp_enabled") val whatsappEnabled: Boolean?,
+    @SerializedName("legal_name") val legalName: String?,
+    val address: String?,
+    val ice: String?,
+    val rc: String?,
+    val patente: String?,
+    val rib: String?,
+    @SerializedName("company_phone") val companyPhone: String?,
 )
 
 // POST bodies
@@ -123,6 +179,37 @@ data class ServiceRecordInsert(
     val notes: String?,
     @SerializedName("next_due_km") val nextDueKm: Int?,
     @SerializedName("next_due_date") val nextDueDate: String?,
+)
+
+data class VehicleIssue(
+    val id: String,
+    @SerializedName("vehicle_id") val vehicleId: String?,
+    val kind: String?,
+    val category: String?,
+    val severity: String?,
+    val status: String?,
+    @SerializedName("blocks_rental") val blocksRental: Boolean?,
+    val title: String?,
+    val description: String?,
+    val cost: Double?,
+    val garage: String?,
+    @SerializedName("opened_at") val openedAt: String?,
+    @SerializedName("resolved_at") val resolvedAt: String?,
+)
+
+data class VehicleIssueInsert(
+    @SerializedName("agency_id") val agencyId: String,
+    @SerializedName("vehicle_id") val vehicleId: String,
+    val kind: String,
+    val category: String?,
+    val severity: String,
+    val status: String = "open",
+    @SerializedName("blocks_rental") val blocksRental: Boolean,
+    val title: String,
+    val description: String?,
+    val cost: Double?,
+    val garage: String?,
+    @SerializedName("opened_at") val openedAt: String,
 )
 
 // WhatsApp notification queue row (bot subscribes via Realtime)

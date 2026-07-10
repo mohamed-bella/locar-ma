@@ -7,7 +7,7 @@ import { agencyToday } from '~/lib/tz'
 import { resolvePlan, type PlanRow } from '~/lib/maintenance'
 import { syncVehicleStatus } from './vehicleStatus'
 import { notifyNewReservation, scheduleNotify } from '~/lib/email.server'
-import { enqueueReservationNotification } from './notifications'
+import { enqueueReservationNotification, enqueueNotification } from './notifications'
 
 export type Reservation = {
   id: string
@@ -390,7 +390,7 @@ export const setReservationStatus = createServerFn({ method: 'POST' })
     z.object({ id: z.string().uuid(), status: z.enum(RESERVATION_STATUSES) }).parse(d),
   )
   .handler(async ({ data }) => {
-    const { supabase } = await requireAgencyContext()
+    const { supabase, agencyId } = await requireAgencyContext()
     const { data: row, error } = await supabase
       .from('reservations')
       .update({ status: data.status })
@@ -399,21 +399,48 @@ export const setReservationStatus = createServerFn({ method: 'POST' })
       .maybeSingle()
     if (error) rethrow(error as any)
     await syncVehicleStatus(supabase, (row as any)?.vehicle_id)
+    if (data.status === 'cancelled') {
+      const { data: r } = await supabase
+        .from('reservations')
+        .select('id, date_start, date_end, vehicles(plate, brand, model), clients(full_name, phone)')
+        .eq('id', data.id)
+        .maybeSingle()
+      const res = r as any
+      await enqueueNotification(agencyId, 'reservation_cancelled', {
+        reservation_id: res?.id ?? data.id,
+        vehicle: [res?.vehicles?.brand, res?.vehicles?.model].filter(Boolean).join(' ') || res?.vehicles?.plate,
+        plate: res?.vehicles?.plate,
+        client: res?.clients?.full_name,
+        client_phone: res?.clients?.phone,
+        date_start: res?.date_start,
+        date_end: res?.date_end,
+      })
+    }
     return { ok: true }
   })
 
 export const deleteReservation = createServerFn({ method: 'POST' })
   .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
-    const { supabase } = await requireAgencyContext()
+    const { supabase, agencyId } = await requireAgencyContext()
     const { data: prev } = await supabase
       .from('reservations')
-      .select('vehicle_id')
+      .select('vehicle_id, id, date_start, date_end, vehicles(plate, brand, model), clients(full_name, phone)')
       .eq('id', data.id)
       .maybeSingle()
-    const { error } = await supabase.from('reservations').delete().eq('id', data.id)
+    const { error } = await supabase.from('reservations').update({ status: 'cancelled' }).eq('id', data.id)
     if (error) throw new Error(error.message)
     await syncVehicleStatus(supabase, (prev as any)?.vehicle_id)
+    const res = prev as any
+    await enqueueNotification(agencyId, 'reservation_cancelled', {
+      reservation_id: res?.id ?? data.id,
+      vehicle: [res?.vehicles?.brand, res?.vehicles?.model].filter(Boolean).join(' ') || res?.vehicles?.plate,
+      plate: res?.vehicles?.plate,
+      client: res?.clients?.full_name,
+      client_phone: res?.clients?.phone,
+      date_start: res?.date_start,
+      date_end: res?.date_end,
+    })
     return { ok: true }
   })
 

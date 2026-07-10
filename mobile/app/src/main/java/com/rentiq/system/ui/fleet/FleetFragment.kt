@@ -34,6 +34,10 @@ class FleetFragment : Fragment() {
         binding.swipeRefresh.setColorSchemeResources(R.color.navy)
         binding.swipeRefresh.setOnRefreshListener { load() }
         binding.retryButton.setOnClickListener { load() }
+        binding.addButton.visibility = View.VISIBLE
+        binding.addButton.setOnClickListener {
+            startActivity(Intent(requireContext(), VehicleFormActivity::class.java))
+        }
         load()
     }
 

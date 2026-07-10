@@ -1,9 +1,13 @@
 package com.rentiq.system.data.api
 
+import android.content.Context
 import com.rentiq.system.BuildConfig
+import com.rentiq.system.util.SessionManager
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
+import kotlinx.coroutines.runBlocking
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -14,29 +18,93 @@ object SupabaseClient {
     @Volatile
     var accessToken: String? = null
 
-    private val authInterceptor = Interceptor { chain ->
+    @Volatile
+    private var appContext: Context? = null
+
+    fun bindSession(context: Context) {
+        appContext = context.applicationContext
+        accessToken = SessionManager(context.applicationContext).accessToken
+    }
+
+    private fun currentAccessToken(): String? {
+        val memoryToken = accessToken
+        if (!memoryToken.isNullOrBlank()) return memoryToken
+
+        val storedToken = appContext?.let { SessionManager(it).accessToken }
+        if (!storedToken.isNullOrBlank()) accessToken = storedToken
+        return storedToken
+    }
+
+    private fun baseHeaders(includeUserToken: Boolean) = Interceptor { chain ->
         val req = chain.request().newBuilder()
-            .addHeader("apikey", ANON_KEY)
-            .addHeader("Content-Type", "application/json")
-            .addHeader("Prefer", "return=representation")
-        accessToken?.let { req.addHeader("Authorization", "Bearer $it") }
+            .header("apikey", ANON_KEY)
+            .header("Content-Type", "application/json")
+            .header("Prefer", "return=representation")
+
+        val bearer = if (includeUserToken) currentAccessToken() else ANON_KEY
+        if (!bearer.isNullOrBlank()) req.header("Authorization", "Bearer $bearer")
         chain.proceed(req.build())
     }
 
-    private val client: OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(authInterceptor)
-        .addInterceptor(HttpLoggingInterceptor().apply {
-            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
-                    else HttpLoggingInterceptor.Level.NONE
-        })
-        .build()
+    private fun httpClient(includeUserToken: Boolean): OkHttpClient {
+        val builder = OkHttpClient.Builder()
+            .addInterceptor(baseHeaders(includeUserToken))
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+                        else HttpLoggingInterceptor.Level.NONE
+            })
 
-    private val retrofit: Retrofit = Retrofit.Builder()
+        if (includeUserToken) {
+            builder.authenticator { _, response ->
+                if (responseCount(response) >= 2) return@authenticator null
+                val refreshedToken = refreshStoredSession() ?: return@authenticator null
+                response.request.newBuilder()
+                    .header("Authorization", "Bearer $refreshedToken")
+                    .build()
+            }
+        }
+
+        return builder.build()
+    }
+
+    private fun responseCount(response: Response): Int {
+        var count = 1
+        var prior = response.priorResponse
+        while (prior != null) {
+            count++
+            prior = prior.priorResponse
+        }
+        return count
+    }
+
+    private fun refreshStoredSession(): String? {
+        val context = appContext ?: return null
+        val session = SessionManager(context)
+        val refreshToken = session.refreshToken ?: return null
+        return try {
+            val res = runBlocking { auth.refresh(RefreshRequest(refreshToken)) }
+            val body = res.body()
+            if (res.isSuccessful && body != null) {
+                session.accessToken = body.accessToken
+                session.refreshToken = body.refreshToken
+                session.userId = body.user?.id ?: session.userId
+                accessToken = body.accessToken
+                body.accessToken
+            } else {
+                null
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun retrofit(includeUserToken: Boolean): Retrofit = Retrofit.Builder()
         .baseUrl("$BASE_URL/")
-        .client(client)
+        .client(httpClient(includeUserToken))
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
-    val auth: AuthApi = retrofit.create(AuthApi::class.java)
-    val rest: RestApi = retrofit.create(RestApi::class.java)
+    // Auth endpoints must not receive an expired user JWT while refreshing.
+    val auth: AuthApi = retrofit(includeUserToken = false).create(AuthApi::class.java)
+    val rest: RestApi = retrofit(includeUserToken = true).create(RestApi::class.java)
 }

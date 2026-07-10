@@ -1,15 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="navy">#1d5b8d</color>
-    <color name="navy_dark">#14476d</color>
-    <color name="navy_light">#e8f0f7</color>
-    <color name="ink">#1a1a1a</color>
-    <color name="muted">#666666</color>
-    <color name="divider">#cccccc</color>
-    <color name="bg">#f4f4f4</color>
+    <color name="navy">#003B95</color>
+    <color name="navy_dark">#00224F</color>
+    <color name="navy_light">#EAF3FF</color>
+    <color name="blue_action">#0071C2</color>
+    <color name="booking_yellow">#FEBB02</color>
+    <color name="ink">#1A1F36</color>
+    <color name="muted">#64748B</color>
+    <color name="divider">#E2E8F0</color>
+    <color name="bg">#F5F7FB</color>
+    <color name="card_bg">#FFFFFF</color>
     <color name="white">#ffffff</color>
-    <color name="red">#b91c1c</color>
-    <color name="green">#15803d</color>
-    <color name="amber">#92400e</color>
-    <color name="status_bar">#14476d</color>
+    <color name="red">#D4111E</color>
+    <color name="green">#008234</color>
+    <color name="amber">#B7791F</color>
+    <color name="status_bar">#00224F</color>
+
+    <!-- Contract PDF palette — matches web src/components/pdf/ContractPDF.tsx -->
+    <color name="pdf_navy">#1e3a5f</color>
+    <color name="pdf_navy_soft">#2c4a70</color>
+    <color name="pdf_ink">#152238</color>
+    <color name="pdf_muted">#5b6b82</color>
+    <color name="pdf_line">#c3d0e0</color>
+    <color name="pdf_box_bg">#f4f7fb</color>
+    <color name="pdf_head_ar">#dbe6f4</color>
 </resources>

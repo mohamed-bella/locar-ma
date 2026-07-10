@@ -1,23 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Pre-AI era: dark toolbar, no elevation blobs, square corners, dense -->
     <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="colorPrimary">@color/navy</item>
         <item name="colorPrimaryDark">@color/status_bar</item>
-        <item name="colorAccent">@color/navy</item>
+        <item name="colorAccent">@color/blue_action</item>
         <item name="android:colorBackground">@color/bg</item>
         <item name="android:textColorPrimary">@color/ink</item>
         <item name="android:textColorSecondary">@color/muted</item>
         <item name="android:statusBarColor">@color/status_bar</item>
         <item name="android:windowLightStatusBar">false</item>
-        <!-- Kill Material roundness -->
-        <item name="shapeAppearanceSmallComponent">@style/ShapeSquare</item>
-        <item name="shapeAppearanceMediumComponent">@style/ShapeSquare</item>
-        <item name="shapeAppearanceLargeComponent">@style/ShapeSquare</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeSoftSmall</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeSoftMedium</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeSoftLarge</item>
+        <item name="materialButtonStyle">@style/AppButton</item>
     </style>
 
-    <style name="ShapeSquare" parent="ShapeAppearance.MaterialComponents">
-        <item name="cornerSize">2dp</item>
+    <style name="ShapeSoftSmall" parent="ShapeAppearance.MaterialComponents">
+        <item name="cornerSize">8dp</item>
+    </style>
+
+    <style name="ShapeSoftMedium" parent="ShapeAppearance.MaterialComponents">
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <style name="ShapeSoftLarge" parent="ShapeAppearance.MaterialComponents">
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <style name="AppButton" parent="Widget.MaterialComponents.Button">
+        <item name="cornerRadius">10dp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:textAllCaps">false</item>
     </style>
 
     <style name="ToolbarStyle" parent="Widget.MaterialComponents.Toolbar">
@@ -26,13 +39,4 @@
         <item name="subtitleTextColor">#aadfff</item>
     </style>
 
-    <style name="TabStyle" parent="Widget.MaterialComponents.TabLayout">
-        <item name="tabBackground">@color/navy</item>
-        <item name="tabTextColor">#99c8e8</item>
-        <item name="tabSelectedTextColor">@color/white</item>
-        <item name="tabIndicatorColor">@color/white</item>
-        <item name="tabIndicatorHeight">3dp</item>
-        <item name="tabMode">fixed</item>
-        <item name="tabGravity">fill</item>
-    </style>
 </resources>
