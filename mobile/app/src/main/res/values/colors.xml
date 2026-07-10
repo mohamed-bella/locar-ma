@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="brand">#1d5b8d</color>
-    <color name="brand_dark">#164a73</color>
-    <color name="ink">#0f172a</color>
-    <color name="muted">#64748b</color>
+    <color name="navy">#1d5b8d</color>
+    <color name="navy_dark">#14476d</color>
+    <color name="navy_light">#e8f0f7</color>
+    <color name="ink">#1a1a1a</color>
+    <color name="muted">#666666</color>
+    <color name="divider">#cccccc</color>
+    <color name="bg">#f4f4f4</color>
     <color name="white">#ffffff</color>
-    <color name="status_bar">#1d5b8d</color>
-    <color name="track">#e2e8f0</color>
+    <color name="red">#b91c1c</color>
+    <color name="green">#15803d</color>
+    <color name="amber">#92400e</color>
+    <color name="status_bar">#14476d</color>
 </resources>

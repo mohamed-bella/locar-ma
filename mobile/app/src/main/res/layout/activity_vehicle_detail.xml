@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/navy"
+        app:titleTextColor="@color/white"
+        app:navigationIcon="?attr/homeAsUpIndicator" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Vehicle image -->
+            <ImageView
+                android:id="@+id/vehicleImage"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:scaleType="centerCrop"
+                android:background="@color/navy_light"
+                android:contentDescription="photo" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Name + plate -->
+                <TextView
+                    android:id="@+id/vehicleName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/ink"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/plate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@color/navy_light"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="3dp"
+                    android:textColor="@color/navy"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:layout_marginTop="4dp" />
+
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="@color/divider" android:layout_marginVertical="12dp" />
+
+                <!-- Status -->
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="STATUT" android:textColor="@color/muted" android:textSize="11sp"
+                    android:textStyle="bold" android:letterSpacing="0.08" />
+                <TextView
+                    android:id="@+id/status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="2dp" />
+
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="@color/divider" android:layout_marginVertical="12dp" />
+
+                <!-- Details grid -->
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="DÉTAILS" android:textColor="@color/muted" android:textSize="11sp"
+                    android:textStyle="bold" android:letterSpacing="0.08" />
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginTop="6dp">
+                    <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                        android:text="Année" android:textColor="@color/muted" android:textSize="12sp" />
+                    <TextView android:id="@+id/year" android:layout_width="0dp" android:layout_weight="1"
+                        android:layout_height="wrap_content" android:textColor="@color/ink" android:textSize="13sp" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginTop="4dp">
+                    <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                        android:text="Catégorie" android:textColor="@color/muted" android:textSize="12sp" />
+                    <TextView android:id="@+id/category" android:layout_width="0dp" android:layout_weight="1"
+                        android:layout_height="wrap_content" android:textColor="@color/ink" android:textSize="13sp" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginTop="4dp">
+                    <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                        android:text="Kilométrage" android:textColor="@color/muted" android:textSize="12sp" />
+                    <TextView android:id="@+id/mileage" android:layout_width="0dp" android:layout_weight="1"
+                        android:layout_height="wrap_content" android:textColor="@color/ink" android:textSize="13sp" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginTop="4dp">
+                    <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                        android:text="Tarif/jour" android:textColor="@color/muted" android:textSize="12sp" />
+                    <TextView android:id="@+id/rate" android:layout_width="0dp" android:layout_weight="1"
+                        android:layout_height="wrap_content" android:textColor="@color/ink" android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="@color/divider" android:layout_marginVertical="12dp" />
+
+                <!-- Suivi: insurance, vignette, visite tech -->
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="SUIVI" android:textColor="@color/muted" android:textSize="11sp"
+                    android:textStyle="bold" android:letterSpacing="0.08" />
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginTop="6dp">
+                    <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                        android:text="Assurance" android:textColor="@color/muted" android:textSize="12sp" />
+                    <TextView android:id="@+id/insurance" android:layout_width="0dp" android:layout_weight="1"
+                        android:layout_height="wrap_content" android:textSize="13sp" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginTop="4dp">
+                    <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                        android:text="Vignette" android:textColor="@color/muted" android:textSize="12sp" />
+                    <TextView android:id="@+id/vignette" android:layout_width="0dp" android:layout_weight="1"
+                        android:layout_height="wrap_content" android:textSize="13sp" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginTop="4dp">
+                    <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                        android:text="Visite technique" android:textColor="@color/muted" android:textSize="12sp" />
+                    <TextView android:id="@+id/visiteTech" android:layout_width="0dp" android:layout_weight="1"
+                        android:layout_height="wrap_content" android:textSize="13sp" />
+                </LinearLayout>
+
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="@color/divider" android:layout_marginVertical="12dp" />
+
+                <!-- Notes -->
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="NOTES" android:textColor="@color/muted" android:textSize="11sp"
+                    android:textStyle="bold" android:letterSpacing="0.08" />
+                <TextView
+                    android:id="@+id/notes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/ink"
+                    android:textSize="13sp"
+                    android:layout_marginTop="4dp" />
+
+                <ProgressBar
+                    android:id="@+id/progress"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="16dp"
+                    android:indeterminateTint="@color/navy"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

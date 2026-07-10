@@ -1,9 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Rentiq" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/brand</item>
-        <item name="colorPrimaryDark">@color/brand_dark</item>
+    <!-- Pre-AI era: dark toolbar, no elevation blobs, square corners, dense -->
+    <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/navy</item>
+        <item name="colorPrimaryDark">@color/status_bar</item>
+        <item name="colorAccent">@color/navy</item>
+        <item name="android:colorBackground">@color/bg</item>
+        <item name="android:textColorPrimary">@color/ink</item>
+        <item name="android:textColorSecondary">@color/muted</item>
         <item name="android:statusBarColor">@color/status_bar</item>
         <item name="android:windowLightStatusBar">false</item>
+        <!-- Kill Material roundness -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeSquare</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeSquare</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeSquare</item>
+    </style>
+
+    <style name="ShapeSquare" parent="ShapeAppearance.MaterialComponents">
+        <item name="cornerSize">2dp</item>
+    </style>
+
+    <style name="ToolbarStyle" parent="Widget.MaterialComponents.Toolbar">
+        <item name="android:background">@color/navy</item>
+        <item name="titleTextColor">@color/white</item>
+        <item name="subtitleTextColor">#aadfff</item>
+    </style>
+
+    <style name="TabStyle" parent="Widget.MaterialComponents.TabLayout">
+        <item name="tabBackground">@color/navy</item>
+        <item name="tabTextColor">#99c8e8</item>
+        <item name="tabSelectedTextColor">@color/white</item>
+        <item name="tabIndicatorColor">@color/white</item>
+        <item name="tabIndicatorHeight">3dp</item>
+        <item name="tabMode">fixed</item>
+        <item name="tabGravity">fill</item>
     </style>
 </resources>

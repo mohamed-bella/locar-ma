@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/navy"
+        app:title="@string/new_contract"
+        app:titleTextColor="@color/white"
+        app:navigationIcon="?attr/homeAsUpIndicator" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Reservation picker -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="RÉSERVATION" android:textColor="@color/muted" android:textSize="11sp"
+                android:textStyle="bold" android:letterSpacing="0.08" />
+            <Spinner
+                android:id="@+id/reservationSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/input_bg" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="@color/divider" android:layout_marginVertical="12dp" />
+
+            <!-- Mileage + Fuel -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="VÉHICULE DÉPART" android:textColor="@color/muted" android:textSize="11sp"
+                android:textStyle="bold" android:letterSpacing="0.08" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginTop="4dp">
+                <EditText android:id="@+id/mileageOut" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="44dp" android:background="@drawable/input_bg"
+                    android:inputType="number" android:paddingHorizontal="10dp" android:hint="Km départ"
+                    android:textSize="14sp" android:layout_marginEnd="4dp" />
+                <Spinner android:id="@+id/fuelOut" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="44dp" android:background="@drawable/input_bg"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="@color/divider" android:layout_marginVertical="12dp" />
+
+            <!-- Client permit info -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="PERMIS CLIENT" android:textColor="@color/muted" android:textSize="11sp"
+                android:textStyle="bold" android:letterSpacing="0.08" />
+            <EditText android:id="@+id/permitNumber" android:layout_width="match_parent"
+                android:layout_height="44dp" android:layout_marginTop="4dp" android:background="@drawable/input_bg"
+                android:paddingHorizontal="10dp" android:hint="N° permis" android:textSize="14sp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginTop="6dp">
+                <EditText android:id="@+id/permitDate" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="44dp" android:background="@drawable/input_bg"
+                    android:paddingHorizontal="10dp" android:hint="Date permis" android:textSize="14sp"
+                    android:focusable="false" android:clickable="true" android:layout_marginEnd="4dp" />
+                <EditText android:id="@+id/permitPlace" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="44dp" android:background="@drawable/input_bg"
+                    android:paddingHorizontal="10dp" android:hint="Lieu" android:textSize="14sp"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
+            <EditText android:id="@+id/clientPhone2" android:layout_width="match_parent"
+                android:layout_height="44dp" android:layout_marginTop="6dp" android:background="@drawable/input_bg"
+                android:paddingHorizontal="10dp" android:hint="Téléphone 2" android:inputType="phone"
+                android:textSize="14sp" />
+            <EditText android:id="@+id/clientProfession" android:layout_width="match_parent"
+                android:layout_height="44dp" android:layout_marginTop="6dp" android:background="@drawable/input_bg"
+                android:paddingHorizontal="10dp" android:hint="Profession" android:textSize="14sp" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="@color/divider" android:layout_marginVertical="12dp" />
+
+            <!-- 2nd driver -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="2ÈME CONDUCTEUR (optionnel)" android:textColor="@color/muted" android:textSize="11sp"
+                android:textStyle="bold" android:letterSpacing="0.08" />
+            <EditText android:id="@+id/d2Name" android:layout_width="match_parent"
+                android:layout_height="44dp" android:layout_marginTop="4dp" android:background="@drawable/input_bg"
+                android:paddingHorizontal="10dp" android:hint="Nom complet" android:textSize="14sp" />
+            <EditText android:id="@+id/d2Cin" android:layout_width="match_parent"
+                android:layout_height="44dp" android:layout_marginTop="6dp" android:background="@drawable/input_bg"
+                android:paddingHorizontal="10dp" android:hint="CIN" android:textSize="14sp" />
+            <EditText android:id="@+id/d2Permit" android:layout_width="match_parent"
+                android:layout_height="44dp" android:layout_marginTop="6dp" android:background="@drawable/input_bg"
+                android:paddingHorizontal="10dp" android:hint="N° permis" android:textSize="14sp" />
+            <EditText android:id="@+id/d2Phone" android:layout_width="match_parent"
+                android:layout_height="44dp" android:layout_marginTop="6dp" android:background="@drawable/input_bg"
+                android:paddingHorizontal="10dp" android:hint="Téléphone" android:inputType="phone"
+                android:textSize="14sp" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="@color/divider" android:layout_marginVertical="12dp" />
+
+            <!-- Caution / check -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="CAUTION / CHÈQUE" android:textColor="@color/muted" android:textSize="11sp"
+                android:textStyle="bold" android:letterSpacing="0.08" />
+            <EditText android:id="@+id/checkNumber" android:layout_width="match_parent"
+                android:layout_height="44dp" android:layout_marginTop="4dp" android:background="@drawable/input_bg"
+                android:paddingHorizontal="10dp" android:hint="N° chèque" android:textSize="14sp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginTop="6dp">
+                <EditText android:id="@+id/checkBank" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="44dp" android:background="@drawable/input_bg"
+                    android:paddingHorizontal="10dp" android:hint="Banque" android:textSize="14sp"
+                    android:layout_marginEnd="4dp" />
+                <EditText android:id="@+id/checkAmount" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="44dp" android:background="@drawable/input_bg"
+                    android:inputType="numberDecimal" android:paddingHorizontal="10dp" android:hint="Montant"
+                    android:textSize="14sp" android:layout_marginStart="4dp" />
+            </LinearLayout>
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="@color/divider" android:layout_marginVertical="12dp" />
+
+            <!-- Times -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="HORAIRES" android:textColor="@color/muted" android:textSize="11sp"
+                android:textStyle="bold" android:letterSpacing="0.08" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginTop="4dp">
+                <EditText android:id="@+id/heureDepart" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="44dp" android:background="@drawable/input_bg"
+                    android:paddingHorizontal="10dp" android:hint="Heure départ" android:textSize="14sp"
+                    android:focusable="false" android:clickable="true" android:layout_marginEnd="4dp" />
+                <EditText android:id="@+id/heureRetour" android:layout_width="0dp" android:layout_weight="1"
+                    android:layout_height="44dp" android:background="@drawable/input_bg"
+                    android:paddingHorizontal="10dp" android:hint="Heure retour" android:textSize="14sp"
+                    android:focusable="false" android:clickable="true" android:layout_marginStart="4dp" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/saveButton"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="24dp"
+                android:backgroundTint="@color/navy"
+                android:text="Créer le contrat"
+                android:textColor="@color/white"
+                android:textAllCaps="true" />
+
+            <ProgressBar
+                android:id="@+id/progress"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:indeterminateTint="@color/navy"
+                android:visibility="gone" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

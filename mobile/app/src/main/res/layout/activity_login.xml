@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pre-AI login: centered card, no blobs, no illustrations, just fields -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="32dp">
+
+    <!-- Logo area -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="RENTIQ"
+        android:textColor="@color/navy"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.15" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Gestion de flotte"
+        android:textColor="@color/muted"
+        android:textSize="13sp" />
+
+    <!-- Form card -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:background="@color/white"
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:elevation="1dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/login_title"
+            android:textColor="@color/ink"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="10dp"
+            android:background="@color/divider" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/login_email"
+            android:textColor="@color/ink"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/emailInput"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/input_bg"
+            android:inputType="textEmailAddress"
+            android:paddingHorizontal="10dp"
+            android:textColor="@color/ink"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="@string/login_password"
+            android:textColor="@color/ink"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/passwordInput"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/input_bg"
+            android:inputType="textPassword"
+            android:paddingHorizontal="10dp"
+            android:textColor="@color/ink"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/errorText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/red"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/loginButton"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="18dp"
+            android:backgroundTint="@color/navy"
+            android:text="@string/login_button"
+            android:textColor="@color/white"
+            android:textAllCaps="true"
+            android:textSize="13sp"
+            android:letterSpacing="0.05" />
+
+        <ProgressBar
+            android:id="@+id/loginProgress"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:layout_marginTop="12dp"
+            android:indeterminateTint="@color/navy"
+            android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>

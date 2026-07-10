@@ -3,13 +3,6 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <!-- Storage write only needed for downloads on API < 29 -->
-    <uses-permission
-        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" />
-
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -17,14 +10,12 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:usesCleartextTraffic="false"
-        android:theme="@style/Theme.Rentiq">
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="false">
 
         <activity
-            android:name=".MainActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout|uiMode"
+            android:name=".ui.auth.LoginActivity"
             android:exported="true"
-            android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -32,15 +23,24 @@
             </intent-filter>
         </activity>
 
-        <!-- FileProvider for camera capture (CIN photos, etc.) -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
+        <activity
+            android:name=".ui.main.MainActivity"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.fleet.VehicleDetailActivity"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.contracts.ContractDetailActivity"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.reservations.NewReservationActivity"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.contracts.NewContractActivity"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 </manifest>

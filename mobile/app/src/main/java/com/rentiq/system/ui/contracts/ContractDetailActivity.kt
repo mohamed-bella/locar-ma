@@ -1,0 +1,260 @@
+package com.rentiq.system.ui.contracts
+
+import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
+import android.os.Bundle
+import android.util.Base64
+import android.view.View
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import com.rentiq.system.BuildConfig
+import com.rentiq.system.R
+import com.rentiq.system.data.api.SupabaseClient
+import com.rentiq.system.data.model.Contract
+import com.rentiq.system.databinding.ActivityContractDetailBinding
+import com.rentiq.system.util.Notify
+import com.rentiq.system.util.QrGen
+import com.rentiq.system.util.SessionManager
+import kotlinx.coroutines.launch
+
+class ContractDetailActivity : AppCompatActivity() {
+    private lateinit var b: ActivityContractDetailBinding
+    private var contract: Contract? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        b = ActivityContractDetailBinding.inflate(layoutInflater)
+        setContentView(b.root)
+
+        b.toolbar.setNavigationOnClickListener { finish() }
+
+        b.clearSignature.setOnClickListener { b.signatureView.clear() }
+        b.signButton.setOnClickListener { signContract() }
+        b.sendToClient.setOnClickListener { sendToClient() }
+        b.downloadPdf.setOnClickListener { downloadPdf() }
+        b.copyLink.setOnClickListener { copySignLink() }
+
+        loadContract()
+    }
+
+    private val signUrl: String? get() = contract?.signToken?.let { "https://app.rentiq-system.com/sign/$it" }
+
+    private fun loadContract() {
+        val contractId = intent.getStringExtra("contract_id") ?: run { finish(); return }
+        b.progress.visibility = View.VISIBLE
+
+        lifecycleScope.launch {
+            try {
+                val res = SupabaseClient.rest.getContract("eq.$contractId")
+                b.progress.visibility = View.GONE
+                if (res.isSuccessful) {
+                    contract = res.body()
+                    contract?.let { bind(it) }
+                } else {
+                    Toast.makeText(this@ContractDetailActivity, "Erreur ${res.code()}", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                b.progress.visibility = View.GONE
+                Toast.makeText(this@ContractDetailActivity, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun bind(c: Contract) {
+        b.shortId.text = "Contrat #${c.shortId ?: c.id.take(8)}"
+        b.clientName.text = c.reservations?.clients?.fullName ?: "—"
+        b.clientCin.text = c.reservations?.clients?.cin?.let { "CIN: $it" } ?: ""
+        b.clientPhone.text = c.reservations?.clients?.phone?.let { "Tél: $it" } ?: ""
+
+        // Form fields
+        val f = c.form ?: emptyMap()
+        val formParts = mutableListOf<String>()
+        f["client_permit_number"]?.let { formParts.add("Permis: $it") }
+        f["client_permit_date"]?.let { formParts.add("Date permis: $it") }
+        f["client_permit_place"]?.let { formParts.add("Lieu: $it") }
+        f["client_phone2"]?.let { formParts.add("Tél 2: $it") }
+        f["client_profession"]?.let { formParts.add("Profession: $it") }
+        b.clientExtra.text = formParts.joinToString("\n")
+        b.clientExtra.visibility = if (formParts.isEmpty()) View.GONE else View.VISIBLE
+
+        // 2nd driver
+        val d2Parts = mutableListOf<String>()
+        f["d2_nom"]?.let { d2Parts.add(it) }
+        f["d2_cin"]?.let { d2Parts.add("CIN: $it") }
+        f["d2_permit_number"]?.let { d2Parts.add("Permis: $it") }
+        f["d2_phone"]?.let { d2Parts.add("Tél: $it") }
+        if (d2Parts.isNotEmpty()) {
+            b.driver2Section.visibility = View.VISIBLE
+            b.driver2Info.text = d2Parts.joinToString("\n")
+        } else {
+            b.driver2Section.visibility = View.GONE
+        }
+
+        val v = c.reservations?.vehicles
+        b.vehicleName.text = listOfNotNull(v?.brand, v?.model).joinToString(" ")
+        b.vehiclePlate.text = v?.plate ?: ""
+
+        b.dates.text = listOfNotNull(c.reservations?.dateStart, c.reservations?.dateEnd).joinToString(" → ")
+        b.totalAmount.text = c.reservations?.totalAmount?.let { "${it.toInt()} DH" } ?: ""
+
+        // Times
+        val times = mutableListOf<String>()
+        f["heure_depart"]?.let { times.add("Départ: $it") }
+        f["heure_retour"]?.let { times.add("Retour: $it") }
+        b.times.text = times.joinToString("  ·  ")
+        b.times.visibility = if (times.isEmpty()) View.GONE else View.VISIBLE
+
+        b.mileageOut.text = "Départ: ${c.mileageOut ?: "—"} km"
+        b.mileageIn.text = "Retour: ${c.mileageIn ?: "—"} km"
+        b.fuelOut.text = "Carb. départ: ${fuelLabel(c.fuelOut)}"
+        b.fuelIn.text = "Carb. retour: ${fuelLabel(c.fuelIn)}"
+
+        // Check/caution
+        if (c.checkNumber != null || c.checkBank != null) {
+            b.checkSection.visibility = View.VISIBLE
+            val checkParts = mutableListOf<String>()
+            c.checkNumber?.let { checkParts.add("N° $it") }
+            c.checkBank?.let { checkParts.add("Banque: $it") }
+            c.checkAmount?.let { checkParts.add("${it.toInt()} DH") }
+            b.checkInfo.text = checkParts.joinToString("  ·  ")
+        } else {
+            b.checkSection.visibility = View.GONE
+        }
+
+        val signed = c.signedAt != null
+        val closed = c.closedAt != null
+        val (label, color) = when {
+            closed -> "Clôturé" to R.color.muted
+            signed -> "Signé" to R.color.green
+            else -> "En cours" to R.color.navy
+        }
+        b.status.text = label
+        b.status.setTextColor(ContextCompat.getColor(this, color))
+
+        if (signed) {
+            b.signatureSection.visibility = View.GONE
+        }
+
+        b.downloadPdf.visibility = if (c.pdfKey != null) View.VISIBLE else View.GONE
+
+        // Show the QR + link if a sign token already exists and not yet signed.
+        if (!signed && c.signToken != null) showSignLink() else b.signLinkSection.visibility = View.GONE
+    }
+
+    private fun showSignLink() {
+        val url = signUrl ?: return
+        b.signLinkSection.visibility = View.VISIBLE
+        b.signLink.text = url
+        QrGen.encode(url)?.let { b.qrCode.setImageBitmap(it) }
+    }
+
+    private fun copySignLink() {
+        val url = signUrl ?: return
+        val cb = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        cb.setPrimaryClip(android.content.ClipData.newPlainText("sign_link", url))
+        Toast.makeText(this, "Lien copié", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun fuelLabel(v: String?): String = when (v) {
+        "empty" -> "Vide"
+        "quarter" -> "1/4"
+        "half" -> "1/2"
+        "three_quarters" -> "3/4"
+        "full" -> "Plein"
+        else -> v ?: "—"
+    }
+
+    private fun signContract() {
+        val c = contract ?: return
+        if (b.signatureView.isEmpty()) {
+            Toast.makeText(this, "Veuillez signer d'abord", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        b.progress.visibility = View.VISIBLE
+        b.signButton.isEnabled = false
+
+        lifecycleScope.launch {
+            try {
+                val body = mapOf<String, Any?>(
+                    "signed_at" to java.time.Instant.now().toString(),
+                )
+                val res = SupabaseClient.rest.updateContract("eq.${c.id}", body)
+                b.progress.visibility = View.GONE
+                if (res.isSuccessful) {
+                    Toast.makeText(this@ContractDetailActivity, "Contrat signé", Toast.LENGTH_SHORT).show()
+                    Notify.enqueue(
+                        SessionManager(this@ContractDetailActivity).agencyId,
+                        "contract_signed",
+                        mapOf(
+                            "contract_id" to c.id,
+                            "client" to c.reservations?.clients?.fullName,
+                            "plate" to c.reservations?.vehicles?.plate,
+                            "signed_by" to "agence",
+                        ),
+                    )
+                    loadContract()
+                } else {
+                    b.signButton.isEnabled = true
+                    Toast.makeText(this@ContractDetailActivity, "Erreur", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                b.progress.visibility = View.GONE
+                b.signButton.isEnabled = true
+                Toast.makeText(this@ContractDetailActivity, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun sendToClient() {
+        val c = contract ?: return
+        val token = c.signToken
+        if (token != null) {
+            shareSignLink(token, c.shortId)
+            return
+        }
+        // Generate a sign token via PATCH (set sign_token + expiry)
+        b.progress.visibility = View.VISIBLE
+        lifecycleScope.launch {
+            try {
+                val newToken = java.util.UUID.randomUUID().toString().replace("-", "").take(32)
+                val expires = java.time.Instant.now().plusSeconds(7 * 24 * 3600).toString()
+                val body = mapOf<String, Any?>(
+                    "sign_token" to newToken,
+                    "sign_token_expires" to expires,
+                )
+                val res = SupabaseClient.rest.updateContract("eq.${c.id}", body)
+                b.progress.visibility = View.GONE
+                if (res.isSuccessful) {
+                    contract = contract?.copy(signToken = newToken)
+                    showSignLink()
+                    shareSignLink(newToken, c.shortId)
+                } else {
+                    Toast.makeText(this@ContractDetailActivity, "Erreur ${res.code()}", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                b.progress.visibility = View.GONE
+                Toast.makeText(this@ContractDetailActivity, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun shareSignLink(token: String, shortId: String?) {
+        val url = "https://app.rentiq-system.com/sign/$token"
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "Contrat #${shortId ?: ""}")
+            putExtra(Intent.EXTRA_TEXT, "Signez votre contrat de location ici:\n$url")
+        }
+        startActivity(Intent.createChooser(shareIntent, "Envoyer au client"))
+    }
+
+    private fun downloadPdf() {
+        val key = contract?.pdfKey ?: return
+        val url = "${BuildConfig.R2_PUBLIC_URL}/$key"
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    }
+}

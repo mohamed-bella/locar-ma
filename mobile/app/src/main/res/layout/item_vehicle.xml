@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@color/white"
+    android:layout_marginBottom="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="10dp">
+
+        <!-- Vehicle image -->
+        <ImageView
+            android:id="@+id/vehicleImage"
+            android:layout_width="80dp"
+            android:layout_height="60dp"
+            android:scaleType="centerCrop"
+            android:background="@color/navy_light"
+            android:contentDescription="photo" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="10dp">
+
+            <!-- Plate badge -->
+            <TextView
+                android:id="@+id/plate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@color/navy_light"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:textColor="@color/navy"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:fontFamily="monospace" />
+
+            <TextView
+                android:id="@+id/name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/ink"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:singleLine="true"
+                android:layout_marginTop="2dp" />
+
+            <TextView
+                android:id="@+id/meta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/muted"
+                android:textSize="11sp"
+                android:layout_marginTop="1dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="end">
+
+            <TextView
+                android:id="@+id/status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textAllCaps="true" />
+
+            <TextView
+                android:id="@+id/rate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/ink"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/divider" />
+</LinearLayout>

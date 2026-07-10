@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/navy"
+        app:title="@string/contract_detail"
+        app:titleTextColor="@color/white"
+        app:navigationIcon="?attr/homeAsUpIndicator" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Contract ID + status -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView
+                    android:id="@+id/shortId"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/ink"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace" />
+                <TextView
+                    android:id="@+id/status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textAllCaps="true" />
+            </LinearLayout>
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="@color/divider" android:layout_marginVertical="10dp" />
+
+            <!-- Client section -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="CLIENT" android:textColor="@color/muted" android:textSize="11sp"
+                android:textStyle="bold" android:letterSpacing="0.08" />
+            <TextView android:id="@+id/clientName" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:textColor="@color/ink" android:textSize="15sp"
+                android:layout_marginTop="2dp" />
+            <TextView android:id="@+id/clientCin" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:textColor="@color/muted" android:textSize="13sp" />
+            <TextView android:id="@+id/clientPhone" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:textColor="@color/muted" android:textSize="13sp" />
+            <TextView android:id="@+id/clientExtra" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:textColor="@color/ink" android:textSize="13sp"
+                android:layout_marginTop="4dp" android:visibility="gone" />
+
+            <!-- 2nd driver -->
+            <LinearLayout android:id="@+id/driver2Section" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="vertical"
+                android:layout_marginTop="8dp" android:visibility="gone">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="2ÈME CONDUCTEUR" android:textColor="@color/muted" android:textSize="11sp"
+                    android:textStyle="bold" android:letterSpacing="0.08" />
+                <TextView android:id="@+id/driver2Info" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:textColor="@color/ink" android:textSize="13sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="@color/divider" android:layout_marginVertical="10dp" />
+
+            <!-- Vehicle section -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="VÉHICULE" android:textColor="@color/muted" android:textSize="11sp"
+                android:textStyle="bold" android:letterSpacing="0.08" />
+            <TextView android:id="@+id/vehicleName" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:textColor="@color/ink" android:textSize="15sp"
+                android:layout_marginTop="2dp" />
+            <TextView android:id="@+id/vehiclePlate" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:textColor="@color/muted" android:textSize="13sp"
+                android:fontFamily="monospace" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="@color/divider" android:layout_marginVertical="10dp" />
+
+            <!-- Dates + amount + times -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="PÉRIODE" android:textColor="@color/muted" android:textSize="11sp"
+                android:textStyle="bold" android:letterSpacing="0.08" />
+            <TextView android:id="@+id/dates" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:textColor="@color/ink" android:textSize="15sp"
+                android:layout_marginTop="2dp" />
+            <TextView android:id="@+id/times" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:textColor="@color/muted" android:textSize="13sp"
+                android:visibility="gone" />
+            <TextView android:id="@+id/totalAmount" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:textColor="@color/ink" android:textSize="15sp"
+                android:textStyle="bold" android:layout_marginTop="4dp" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="@color/divider" android:layout_marginVertical="10dp" />
+
+            <!-- Mileage / fuel -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="KILOMÉTRAGE / CARBURANT" android:textColor="@color/muted" android:textSize="11sp"
+                android:textStyle="bold" android:letterSpacing="0.08" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginTop="4dp">
+                <TextView android:id="@+id/mileageOut" android:layout_width="0dp"
+                    android:layout_height="wrap_content" android:layout_weight="1"
+                    android:textColor="@color/ink" android:textSize="14sp" />
+                <TextView android:id="@+id/mileageIn" android:layout_width="0dp"
+                    android:layout_height="wrap_content" android:layout_weight="1"
+                    android:textColor="@color/ink" android:textSize="14sp" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginTop="2dp">
+                <TextView android:id="@+id/fuelOut" android:layout_width="0dp"
+                    android:layout_height="wrap_content" android:layout_weight="1"
+                    android:textColor="@color/ink" android:textSize="14sp" />
+                <TextView android:id="@+id/fuelIn" android:layout_width="0dp"
+                    android:layout_height="wrap_content" android:layout_weight="1"
+                    android:textColor="@color/ink" android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Check/caution -->
+            <LinearLayout android:id="@+id/checkSection" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="vertical"
+                android:visibility="gone">
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="@color/divider" android:layout_marginVertical="10dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="CAUTION / CHÈQUE" android:textColor="@color/muted" android:textSize="11sp"
+                    android:textStyle="bold" android:letterSpacing="0.08" />
+                <TextView android:id="@+id/checkInfo" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:textColor="@color/ink" android:textSize="14sp"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="@color/divider" android:layout_marginVertical="10dp" />
+
+            <!-- Actions: Download PDF -->
+            <Button
+                android:id="@+id/downloadPdf"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:backgroundTint="@color/muted"
+                android:text="Télécharger PDF"
+                android:textColor="@color/white"
+                android:textAllCaps="true"
+                android:visibility="gone" />
+
+            <!-- Signature area -->
+            <LinearLayout android:id="@+id/signatureSection" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="vertical"
+                android:layout_marginTop="8dp">
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="SIGNATURE" android:textColor="@color/muted" android:textSize="11sp"
+                    android:textStyle="bold" android:letterSpacing="0.08" />
+
+                <com.rentiq.system.ui.signature.SignatureView
+                    android:id="@+id/signatureView"
+                    android:layout_width="match_parent"
+                    android:layout_height="180dp"
+                    android:layout_marginTop="4dp"
+                    android:background="@color/white" />
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:layout_marginTop="8dp">
+                    <Button
+                        android:id="@+id/clearSignature"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:backgroundTint="@color/muted"
+                        android:text="@string/clear_signature"
+                        android:textColor="@color/white"
+                        android:textAllCaps="true"
+                        android:textSize="12sp" />
+                    <Button
+                        android:id="@+id/signButton"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:backgroundTint="@color/green"
+                        android:text="@string/sign_contract"
+                        android:textColor="@color/white"
+                        android:textAllCaps="true"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="@color/divider" android:layout_marginVertical="10dp" />
+
+            <!-- Signature link + QR for the client (scan or open to sign remotely) -->
+            <LinearLayout android:id="@+id/signLinkSection" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="vertical"
+                android:gravity="center_horizontal" android:visibility="gone"
+                android:paddingVertical="8dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="LIEN DE SIGNATURE CLIENT" android:textColor="@color/muted"
+                    android:textSize="11sp" android:textStyle="bold" android:letterSpacing="0.08" />
+                <ImageView android:id="@+id/qrCode" android:layout_width="200dp"
+                    android:layout_height="200dp" android:layout_marginTop="8dp"
+                    android:background="@color/white" android:padding="8dp"
+                    android:contentDescription="QR code signature" />
+                <TextView android:id="@+id/signLink" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                    android:textColor="@color/navy" android:textSize="12sp"
+                    android:fontFamily="monospace" android:gravity="center" />
+                <Button android:id="@+id/copyLink" android:layout_width="wrap_content"
+                    android:layout_height="40dp" android:layout_marginTop="4dp"
+                    android:backgroundTint="@color/muted" android:text="Copier le lien"
+                    android:textColor="@color/white" android:textAllCaps="true" android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Send to client -->
+            <Button
+                android:id="@+id/sendToClient"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:backgroundTint="@color/navy"
+                android:text="@string/send_to_client"
+                android:textColor="@color/white"
+                android:textAllCaps="true" />
+
+            <ProgressBar
+                android:id="@+id/progress"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:indeterminateTint="@color/navy"
+                android:visibility="gone" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

@@ -1,4 +1,5 @@
-# Keep WebView JS interface (none used yet, but safe for future bridges).
--keepclassmembers class * {
-    @android.webkit.JavascriptInterface <methods>;
-}
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class com.rentiq.system.data.model.** { *; }
+-dontwarn okhttp3.**
+-dontwarn retrofit2.**
