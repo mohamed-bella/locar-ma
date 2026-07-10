@@ -47,10 +47,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:drawableStart="@drawable/ic_eye"
+                        android:drawablePadding="8dp"
+                        android:drawableTint="@color/navy"
+                        android:gravity="center_vertical"
                         android:letterSpacing="0.08"
                         android:text="PHOTOS"
-                        android:textColor="@color/muted"
-                        android:textSize="11sp"
+                        android:textColor="@color/navy"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <HorizontalScrollView
@@ -107,10 +111,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:drawableStart="@drawable/ic_car"
+                        android:drawablePadding="8dp"
+                        android:drawableTint="@color/navy"
+                        android:gravity="center_vertical"
                         android:letterSpacing="0.08"
                         android:text="IDENTITE"
-                        android:textColor="@color/muted"
-                        android:textSize="11sp"
+                        android:textColor="@color/navy"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <EditText
@@ -218,10 +226,14 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:drawableStart="@drawable/ic_suivi"
+                        android:drawablePadding="8dp"
+                        android:drawableTint="@color/navy"
+                        android:gravity="center_vertical"
                         android:letterSpacing="0.08"
                         android:text="EXPLOITATION"
-                        android:textColor="@color/muted"
-                        android:textSize="11sp"
+                        android:textColor="@color/navy"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <EditText

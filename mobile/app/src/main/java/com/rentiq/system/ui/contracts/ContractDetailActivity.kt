@@ -15,8 +15,10 @@ import com.rentiq.system.R
 import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.data.model.Contract
 import com.rentiq.system.databinding.ActivityContractDetailBinding
+import com.rentiq.system.util.ContractPdfApi
 import com.rentiq.system.util.Notify
 import com.rentiq.system.util.QrGen
+import com.rentiq.system.util.R2Uploader
 import com.rentiq.system.util.SessionManager
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
@@ -340,34 +342,64 @@ class ContractDetailActivity : AppCompatActivity() {
             Toast.makeText(this, "Veuillez signer d'abord", Toast.LENGTH_SHORT).show()
             return
         }
+        val agencyId = SessionManager(this).agencyId
+        if (agencyId.isNullOrBlank()) {
+            Toast.makeText(this, "Agence introuvable", Toast.LENGTH_SHORT).show()
+            return
+        }
 
         b.progress.visibility = View.VISIBLE
         b.signButton.isEnabled = false
 
+        // Encode the drawn signature to PNG bytes off the main thread.
+        val pngBytes = java.io.ByteArrayOutputStream().use { out ->
+            b.signatureView.getSignatureBitmap().compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+            out.toByteArray()
+        }
+
         lifecycleScope.launch {
             try {
+                // 1) Upload the signature to the PRIVATE docs bucket (same key layout
+                //    the web signing flow uses, so the server can bake it into the PDF).
+                val sigKey = "agencies/$agencyId/signatures/${c.id}.png"
+                val uploadedKey = R2Uploader.uploadToDocs(pngBytes, sigKey, "image/png")
+                if (uploadedKey == null) {
+                    b.progress.visibility = View.GONE
+                    b.signButton.isEnabled = true
+                    Toast.makeText(this@ContractDetailActivity, "Échec envoi signature", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+
+                // 2) Mark signed + store signature_key so the PDF renderer picks it up.
                 val body = mapOf<String, Any?>(
+                    "signature_key" to sigKey,
+                    "signer_name" to (c.reservations?.clients?.fullName ?: "Client"),
                     "signed_at" to java.time.Instant.now().toString(),
                 )
                 val res = SupabaseClient.rest.updateContract("eq.${c.id}", body)
-                b.progress.visibility = View.GONE
-                if (res.isSuccessful) {
-                    Toast.makeText(this@ContractDetailActivity, "Contrat signé", Toast.LENGTH_SHORT).show()
-                    Notify.enqueue(
-                        SessionManager(this@ContractDetailActivity).agencyId,
-                        "contract_signed",
-                        mapOf(
-                            "contract_id" to c.id,
-                            "client" to c.reservations?.clients?.fullName,
-                            "plate" to c.reservations?.vehicles?.plate,
-                            "signed_by" to "agence",
-                        ),
-                    )
-                    loadContract()
-                } else {
+                if (!res.isSuccessful) {
+                    b.progress.visibility = View.GONE
                     b.signButton.isEnabled = true
-                    Toast.makeText(this@ContractDetailActivity, "Erreur", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@ContractDetailActivity, "Erreur ${res.code()}", Toast.LENGTH_SHORT).show()
+                    return@launch
                 }
+
+                // 3) Force the server to regenerate the PDF with the signature baked in.
+                ContractPdfApi.fetch(this@ContractDetailActivity, c.id, force = true)
+
+                Notify.enqueue(
+                    agencyId,
+                    "contract_signed",
+                    mapOf(
+                        "contract_id" to c.id,
+                        "client" to c.reservations?.clients?.fullName,
+                        "plate" to c.reservations?.vehicles?.plate,
+                        "signed_by" to "agence",
+                    ),
+                )
+                b.progress.visibility = View.GONE
+                Toast.makeText(this@ContractDetailActivity, "Contrat signé", Toast.LENGTH_SHORT).show()
+                loadContract()
             } catch (e: Exception) {
                 b.progress.visibility = View.GONE
                 b.signButton.isEnabled = true

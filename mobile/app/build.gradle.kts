@@ -22,6 +22,7 @@ android {
         buildConfigField("String", "R2_ACCESS_KEY_ID", "\"4e0ef37771ce6e7fc653fb7f52b9017b\"")
         buildConfigField("String", "R2_SECRET_ACCESS_KEY", "\"ad59ea7ea47da8ab709f7d38ff34a88fb222b53cba003e52e5ff535a67180e55\"")
         buildConfigField("String", "R2_BUCKET", "\"locar\"")
+        buildConfigField("String", "R2_DOCS_BUCKET", "\"locar-docs\"")
     }
 
     buildTypes {

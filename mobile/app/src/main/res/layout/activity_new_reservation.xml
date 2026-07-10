@@ -62,16 +62,30 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:drawableStart="@drawable/ic_calendar"
+                        android:drawablePadding="8dp"
+                        android:drawableTint="@color/navy"
+                        android:gravity="center_vertical"
                         android:letterSpacing="0.08"
                         android:text="MISSION"
-                        android:textColor="@color/muted"
-                        android:textSize="11sp"
+                        android:textColor="@color/navy"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="6dp"
+                        android:background="@color/divider" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
+                        android:drawableStart="@drawable/ic_car"
+                        android:drawablePadding="6dp"
+                        android:drawableTint="@color/muted"
+                        android:gravity="center_vertical"
                         android:text="@string/vehicle"
                         android:textColor="@color/ink"
                         android:textSize="13sp"
@@ -89,6 +103,10 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
+                        android:drawableStart="@drawable/ic_person"
+                        android:drawablePadding="6dp"
+                        android:drawableTint="@color/muted"
+                        android:gravity="center_vertical"
                         android:text="@string/client"
                         android:textColor="@color/ink"
                         android:textSize="13sp"
@@ -116,6 +134,8 @@
                             android:layout_weight="1"
                             android:background="@drawable/input_bg"
                             android:clickable="true"
+                            android:drawableStart="@drawable/ic_calendar"
+                            android:drawablePadding="8dp"
                             android:focusable="false"
                             android:hint="Date depart"
                             android:paddingHorizontal="12dp"
@@ -129,6 +149,8 @@
                             android:layout_weight="1"
                             android:background="@drawable/input_bg"
                             android:clickable="true"
+                            android:drawableStart="@drawable/ic_calendar"
+                            android:drawablePadding="8dp"
                             android:focusable="false"
                             android:hint="Date retour"
                             android:paddingHorizontal="12dp"
@@ -167,11 +189,21 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:drawableStart="@drawable/ic_suivi"
+                        android:drawablePadding="8dp"
+                        android:drawableTint="@color/navy"
+                        android:gravity="center_vertical"
                         android:letterSpacing="0.08"
                         android:text="PRIX ET LIEUX"
-                        android:textColor="@color/muted"
-                        android:textSize="11sp"
+                        android:textColor="@color/navy"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="6dp"
+                        android:background="@color/divider" />
 
                     <EditText
                         android:id="@+id/totalAmount"
@@ -197,6 +229,8 @@
                             android:layout_marginEnd="5dp"
                             android:layout_weight="1"
                             android:background="@drawable/input_bg"
+                            android:drawableStart="@drawable/ic_home"
+                            android:drawablePadding="8dp"
                             android:hint="Depart"
                             android:inputType="textCapWords"
                             android:paddingHorizontal="12dp"
@@ -209,6 +243,8 @@
                             android:layout_marginStart="5dp"
                             android:layout_weight="1"
                             android:background="@drawable/input_bg"
+                            android:drawableStart="@drawable/ic_home"
+                            android:drawablePadding="8dp"
                             android:hint="Retour"
                             android:inputType="textCapWords"
                             android:paddingHorizontal="12dp"

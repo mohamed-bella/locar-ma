@@ -13,6 +13,7 @@ import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.data.model.Reservation
 import com.rentiq.system.data.model.Vehicle
 import com.rentiq.system.databinding.FragmentDashboardBinding
+import com.rentiq.system.ui.clients.ClientsActivity
 import com.rentiq.system.ui.main.MainActivity
 import com.rentiq.system.ui.reports.ReportsActivity
 import com.rentiq.system.ui.reservations.NewReservationActivity
@@ -47,6 +48,7 @@ class DashboardFragment : Fragment() {
         binding.ctaContracts.setOnClickListener { (activity as? MainActivity)?.navigateTo(R.id.nav_contracts) }
         binding.ctaCars.setOnClickListener { (activity as? MainActivity)?.navigateTo(R.id.nav_fleet) }
         binding.ctaFinance.setOnClickListener { startActivity(Intent(requireContext(), ReportsActivity::class.java)) }
+        binding.ctaClients.setOnClickListener { startActivity(Intent(requireContext(), ClientsActivity::class.java)) }
         load()
     }
 

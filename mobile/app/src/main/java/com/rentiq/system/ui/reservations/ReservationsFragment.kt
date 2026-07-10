@@ -39,7 +39,7 @@ class ReservationsFragment : Fragment() {
         FilterPills.Option("Toutes", null),
         FilterPills.Option("Confirmées", "confirmed"),
         FilterPills.Option("Actives", "active"),
-        FilterPills.Option("Terminées", "completed"),
+        FilterPills.Option("Terminées", "closed"),
         FilterPills.Option("Annulées", "cancelled"),
     )
 

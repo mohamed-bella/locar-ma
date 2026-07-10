@@ -62,8 +62,16 @@ object R2Uploader {
         }
     }
 
+    // Upload raw bytes to the PRIVATE docs bucket (contracts/signatures — PII).
+    // Returns the storage key on success. Used for on-place signature PNGs so the
+    // server can bake them into the PDF exactly like the web signing flow.
+    suspend fun uploadToDocs(bytes: ByteArray, key: String, contentType: String): String? =
+        withContext(Dispatchers.IO) {
+            try { put(bytes, key, contentType, BuildConfig.R2_DOCS_BUCKET) } catch (_: Exception) { null }
+        }
+
     // Raw PUT — returns key on success, null on failure.
-    private fun put(bytes: ByteArray, key: String, contentType: String): String? = try {
+    private fun put(bytes: ByteArray, key: String, contentType: String, bucket: String = BuildConfig.R2_BUCKET): String? = try {
         val utcDate = sdf("yyyyMMdd")
         val utcDateTime = sdf("yyyyMMdd'T'HHmmss'Z'")
         val now = Date()
@@ -71,7 +79,7 @@ object R2Uploader {
         val datetimeStr = utcDateTime.format(now)
 
         val host = "${BuildConfig.R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
-        val path = "/${BuildConfig.R2_BUCKET}/${encodePath(key)}"
+        val path = "/$bucket/${encodePath(key)}"
         val payloadHash = sha256(bytes)
         val signedHeaders = "content-type;host;x-amz-content-sha256;x-amz-date"
         val canonicalHeaders = "content-type:$contentType\nhost:$host\nx-amz-content-sha256:$payloadHash\nx-amz-date:$datetimeStr\n"
@@ -83,7 +91,7 @@ object R2Uploader {
         val auth = "AWS4-HMAC-SHA256 Credential=${BuildConfig.R2_ACCESS_KEY_ID}/$scope, SignedHeaders=$signedHeaders, Signature=$signature"
 
         val req = Request.Builder()
-            .url("$ENDPOINT/${BuildConfig.R2_BUCKET}/$key")
+            .url("$ENDPOINT/$bucket/$key")
             .put(bytes.toRequestBody(contentType.toMediaTypeOrNull()))
             .header("Content-Type", contentType)
             .header("x-amz-date", datetimeStr)
