@@ -10,7 +10,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.rentiq.system.R
 import com.rentiq.system.data.api.SupabaseClient
+import com.rentiq.system.data.model.Vehicle
 import com.rentiq.system.databinding.FragmentListBinding
+import com.rentiq.system.util.FilterPills
 import kotlinx.coroutines.launch
 
 class FleetFragment : Fragment() {
@@ -22,6 +24,16 @@ class FleetFragment : Fragment() {
                 .putExtra("vehicle_id", vehicle.id)
         )
     }
+    private var allVehicles: List<Vehicle> = emptyList()
+    private var statusFilter: String? = null
+
+    private val filterOptions = listOf(
+        FilterPills.Option("Toutes", null),
+        FilterPills.Option("Disponibles", "available"),
+        FilterPills.Option("Louées", "rented"),
+        FilterPills.Option("Réservées", "reserved"),
+        FilterPills.Option("Maintenance", "maintenance"),
+    )
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentListBinding.inflate(inflater, container, false)
@@ -38,6 +50,7 @@ class FleetFragment : Fragment() {
         binding.addButton.setOnClickListener {
             startActivity(Intent(requireContext(), VehicleFormActivity::class.java))
         }
+        setupFilters()
         load()
     }
 
@@ -57,12 +70,9 @@ class FleetFragment : Fragment() {
                 binding.progressBar.visibility = View.GONE
 
                 if (res.isSuccessful) {
-                    val list = res.body() ?: emptyList()
-                    adapter.submitList(list)
-                    if (list.isEmpty()) {
-                        binding.emptyView.visibility = View.VISIBLE
-                        binding.emptyText.text = getString(R.string.empty_fleet)
-                    }
+                    allVehicles = res.body() ?: emptyList()
+                    binding.filterBar.visibility = if (allVehicles.isEmpty()) View.GONE else View.VISIBLE
+                    applyFilter()
                 } else {
                     showError()
                 }
@@ -71,6 +81,27 @@ class FleetFragment : Fragment() {
                 binding.progressBar.visibility = View.GONE
                 showError()
             }
+        }
+    }
+
+    private fun setupFilters() {
+        FilterPills.build(requireContext(), binding.filterChips, filterOptions, statusFilter) { value ->
+            statusFilter = value
+            applyFilter()
+        }
+    }
+
+    private fun applyFilter() {
+        val filtered = statusFilter?.let { s ->
+            allVehicles.filter { it.status == s || (s == "rented" && it.status == "active") }
+        } ?: allVehicles
+        adapter.submitList(filtered)
+        if (filtered.isEmpty()) {
+            binding.emptyView.visibility = View.VISIBLE
+            binding.emptyText.text =
+                if (allVehicles.isEmpty()) getString(R.string.empty_fleet) else "Aucun résultat pour ce filtre"
+        } else {
+            binding.emptyView.visibility = View.GONE
         }
     }
 

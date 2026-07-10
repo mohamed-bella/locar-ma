@@ -269,148 +269,221 @@
                     android:textSize="14sp" />
             </com.google.android.material.card.MaterialCardView>
 
-            <Button
-                android:id="@+id/previewContract"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="14dp"
-                android:backgroundTint="@color/blue_action"
-                android:text="Prévisualiser le contrat"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:drawableStart="@drawable/ic_eye"
-                android:drawablePadding="10dp"
-                android:drawableTint="@color/white" />
-
-            <Button
-                android:id="@+id/downloadPdf"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="8dp"
-                android:backgroundTint="@color/muted"
-                android:text="Télécharger PDF"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:drawableStart="@drawable/ic_download"
-                android:drawablePadding="10dp"
-                android:drawableTint="@color/white"
-                android:visibility="gone" />
-
-            <LinearLayout
-                android:id="@+id/signatureSection"
+            <!-- ══ Guided signature flow — one clear step at a time ═══════ -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/signatureCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:orientation="vertical">
-
-                <com.rentiq.system.ui.signature.SignatureView
-                    android:id="@+id/signatureView"
-                    android:layout_width="match_parent"
-                    android:layout_height="180dp"
-                    android:background="@color/white" />
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="@color/card_bg"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="3dp"
+                app:strokeColor="@color/divider"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal">
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                    <Button
-                        android:id="@+id/clearSignature"
-                        android:layout_width="0dp"
-                        android:layout_height="44dp"
-                        android:layout_marginEnd="5dp"
-                        android:layout_weight="1"
-                        android:backgroundTint="@color/muted"
-                        android:text="@string/clear_signature"
-                        android:textAllCaps="false"
-                        android:textColor="@color/white"
-                        android:drawableStart="@drawable/ic_close"
-                        android:drawablePadding="6dp"
-                        android:drawableTint="@color/white" />
+                    <!-- Step headline + explanation -->
+                    <TextView
+                        android:id="@+id/signStepTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/ink"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
 
+                    <TextView
+                        android:id="@+id/signStepDesc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/muted"
+                        android:textSize="13sp" />
+
+                    <!-- Primary action (context-dependent) -->
                     <Button
-                        android:id="@+id/signButton"
-                        android:layout_width="0dp"
-                        android:layout_height="44dp"
-                        android:layout_marginStart="5dp"
-                        android:layout_weight="1"
+                        android:id="@+id/primaryAction"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:layout_marginTop="14dp"
                         android:backgroundTint="@color/green"
-                        android:text="@string/sign_contract"
+                        android:drawablePadding="10dp"
+                        android:drawableTint="@color/white"
                         android:textAllCaps="false"
                         android:textColor="@color/white"
-                        android:drawableStart="@drawable/ic_sign"
-                        android:drawablePadding="6dp"
-                        android:drawableTint="@color/white" />
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <!-- Secondary actions -->
+                    <LinearLayout
+                        android:id="@+id/secondaryActions"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/secondaryA"
+                            android:layout_width="0dp"
+                            android:layout_height="46dp"
+                            android:layout_marginEnd="5dp"
+                            android:layout_weight="1"
+                            android:backgroundTint="@color/navy"
+                            android:drawablePadding="6dp"
+                            android:drawableTint="@color/white"
+                            android:textAllCaps="false"
+                            android:textColor="@color/white"
+                            android:textSize="13sp" />
+
+                        <Button
+                            android:id="@+id/secondaryB"
+                            android:layout_width="0dp"
+                            android:layout_height="46dp"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:backgroundTint="@color/muted"
+                            android:drawablePadding="6dp"
+                            android:drawableTint="@color/white"
+                            android:textAllCaps="false"
+                            android:textColor="@color/white"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <!-- Collapsible: sign on place -->
+                    <LinearLayout
+                        android:id="@+id/signPadSection"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/signature_hint"
+                            android:textColor="@color/muted"
+                            android:textSize="12sp" />
+
+                        <com.rentiq.system.ui.signature.SignatureView
+                            android:id="@+id/signatureView"
+                            android:layout_width="match_parent"
+                            android:layout_height="180dp"
+                            android:layout_marginTop="6dp"
+                            android:background="@color/white" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/clearSignature"
+                                android:layout_width="0dp"
+                                android:layout_height="44dp"
+                                android:layout_marginEnd="5dp"
+                                android:layout_weight="1"
+                                android:backgroundTint="@color/muted"
+                                android:drawableStart="@drawable/ic_close"
+                                android:drawablePadding="6dp"
+                                android:drawableTint="@color/white"
+                                android:text="@string/clear_signature"
+                                android:textAllCaps="false"
+                                android:textColor="@color/white" />
+
+                            <Button
+                                android:id="@+id/signButton"
+                                android:layout_width="0dp"
+                                android:layout_height="44dp"
+                                android:layout_marginStart="5dp"
+                                android:layout_weight="1"
+                                android:backgroundTint="@color/green"
+                                android:drawableStart="@drawable/ic_sign"
+                                android:drawablePadding="6dp"
+                                android:drawableTint="@color/white"
+                                android:text="@string/sign_contract"
+                                android:textAllCaps="false"
+                                android:textColor="@color/white" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Collapsible: sign link + QR for the client -->
+                    <LinearLayout
+                        android:id="@+id/signLinkSection"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginBottom="12dp"
+                            android:background="@color/divider" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Le client scanne pour signer"
+                            android:textColor="@color/muted"
+                            android:textSize="12sp" />
+
+                        <ImageView
+                            android:id="@+id/qrCode"
+                            android:layout_width="180dp"
+                            android:layout_height="180dp"
+                            android:layout_marginTop="8dp"
+                            android:background="@color/white"
+                            android:contentDescription="QR code signature"
+                            android:padding="8dp" />
+
+                        <TextView
+                            android:id="@+id/signLink"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:fontFamily="monospace"
+                            android:gravity="center"
+                            android:textColor="@color/navy"
+                            android:textSize="11sp" />
+
+                        <Button
+                            android:id="@+id/copyLink"
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp"
+                            android:layout_marginTop="6dp"
+                            android:backgroundTint="@color/muted"
+                            android:drawableStart="@drawable/ic_share"
+                            android:drawablePadding="8dp"
+                            android:drawableTint="@color/white"
+                            android:text="@string/copy_link"
+                            android:textAllCaps="false"
+                            android:textColor="@color/white" />
+                    </LinearLayout>
                 </LinearLayout>
-            </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-            <LinearLayout
-                android:id="@+id/signLinkSection"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <ImageView
-                    android:id="@+id/qrCode"
-                    android:layout_width="200dp"
-                    android:layout_height="200dp"
-                    android:background="@color/white"
-                    android:contentDescription="QR code signature"
-                    android:padding="8dp" />
-
-                <TextView
-                    android:id="@+id/signLink"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:fontFamily="monospace"
-                    android:gravity="center"
-                    android:textColor="@color/navy"
-                    android:textSize="12sp" />
-
-                <Button
-                    android:id="@+id/copyLink"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:layout_marginTop="6dp"
-                    android:backgroundTint="@color/muted"
-                    android:text="@string/copy_link"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    android:drawableStart="@drawable/ic_share"
-                    android:drawablePadding="8dp"
-                    android:drawableTint="@color/white" />
-            </LinearLayout>
-
+            <!-- Always available: view / download the contract PDF -->
             <Button
-                android:id="@+id/sendWhatsApp"
+                android:id="@+id/viewPdfButton"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="14dp"
-                android:backgroundTint="@color/green"
-                android:text="Envoyer via WhatsApp"
+                android:layout_height="50dp"
+                android:layout_marginTop="12dp"
+                android:backgroundTint="@color/blue_action"
+                android:drawableStart="@drawable/ic_eye"
+                android:drawablePadding="10dp"
+                android:drawableTint="@color/white"
+                android:text="Aperçu du contrat (PDF)"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
-                android:drawableStart="@drawable/ic_whatsapp"
-                android:drawablePadding="10dp"
-                android:drawableTint="@color/white" />
-
-            <Button
-                android:id="@+id/sendToClient"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="8dp"
-                android:backgroundTint="@color/navy"
-                android:text="@string/send_to_client"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:drawableStart="@drawable/ic_send"
-                android:drawablePadding="10dp"
-                android:drawableTint="@color/white" />
+                android:textSize="15sp" />
 
             <ProgressBar
                 android:id="@+id/progress"

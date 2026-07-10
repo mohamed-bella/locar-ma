@@ -109,6 +109,11 @@ class MainActivity : AppCompatActivity() {
         maybeStartRealtimeService()
     }
 
+    // Let child fragments (e.g. dashboard CTA cards) switch the active tab.
+    fun navigateTo(menuId: Int) {
+        if (::binding.isInitialized) binding.bottomNavigation.selectedItemId = menuId
+    }
+
     private fun showDestination(destination: Destination) {
         if (currentMenuId == destination.menuId) return
         currentMenuId = destination.menuId

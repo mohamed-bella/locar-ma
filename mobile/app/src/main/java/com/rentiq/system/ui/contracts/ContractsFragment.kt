@@ -10,7 +10,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.rentiq.system.R
 import com.rentiq.system.data.api.SupabaseClient
+import com.rentiq.system.data.model.Contract
 import com.rentiq.system.databinding.FragmentListBinding
+import com.rentiq.system.util.FilterPills
 import kotlinx.coroutines.launch
 
 class ContractsFragment : Fragment() {
@@ -22,6 +24,15 @@ class ContractsFragment : Fragment() {
                 .putExtra("contract_id", contract.id)
         )
     }
+    private var allContracts: List<Contract> = emptyList()
+    private var stateFilter: String? = null
+
+    private val filterOptions = listOf(
+        FilterPills.Option("Tous", null),
+        FilterPills.Option("En cours", "pending"),
+        FilterPills.Option("Signés", "signed"),
+        FilterPills.Option("Clôturés", "closed"),
+    )
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentListBinding.inflate(inflater, container, false)
@@ -38,6 +49,7 @@ class ContractsFragment : Fragment() {
         binding.addButton.setOnClickListener {
             startActivity(Intent(requireContext(), NewContractActivity::class.java))
         }
+        setupFilters()
         load()
     }
 
@@ -56,12 +68,9 @@ class ContractsFragment : Fragment() {
                 binding.swipeRefresh.isRefreshing = false
                 binding.progressBar.visibility = View.GONE
                 if (res.isSuccessful) {
-                    val list = res.body() ?: emptyList()
-                    adapter.submitList(list)
-                    if (list.isEmpty()) {
-                        binding.emptyView.visibility = View.VISIBLE
-                        binding.emptyText.text = getString(R.string.empty_contracts)
-                    }
+                    allContracts = res.body() ?: emptyList()
+                    binding.filterBar.visibility = if (allContracts.isEmpty()) View.GONE else View.VISIBLE
+                    applyFilter()
                 } else {
                     android.util.Log.e("ContractsTab", "HTTP ${res.code()}: ${res.errorBody()?.string()}")
                     showError("Erreur ${res.code()}")
@@ -72,6 +81,30 @@ class ContractsFragment : Fragment() {
                 binding.progressBar.visibility = View.GONE
                 showError(e.message ?: "Erreur")
             }
+        }
+    }
+
+    private fun setupFilters() {
+        FilterPills.build(requireContext(), binding.filterChips, filterOptions, stateFilter) { value ->
+            stateFilter = value
+            applyFilter()
+        }
+    }
+
+    private fun applyFilter() {
+        val filtered = when (stateFilter) {
+            "closed" -> allContracts.filter { it.closedAt != null }
+            "signed" -> allContracts.filter { it.signedAt != null && it.closedAt == null }
+            "pending" -> allContracts.filter { it.signedAt == null && it.closedAt == null }
+            else -> allContracts
+        }
+        adapter.submitList(filtered)
+        if (filtered.isEmpty()) {
+            binding.emptyView.visibility = View.VISIBLE
+            binding.emptyText.text =
+                if (allContracts.isEmpty()) getString(R.string.empty_contracts) else "Aucun résultat pour ce filtre"
+        } else {
+            binding.emptyView.visibility = View.GONE
         }
     }
 

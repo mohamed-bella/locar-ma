@@ -32,11 +32,8 @@ class ContractDetailActivity : AppCompatActivity() {
 
         b.clearSignature.setOnClickListener { b.signatureView.clear() }
         b.signButton.setOnClickListener { signContract() }
-        b.sendToClient.setOnClickListener { sendToClient() }
-        b.sendWhatsApp.setOnClickListener { sendViaWhatsapp() }
-        b.previewContract.setOnClickListener { previewContract() }
-        b.downloadPdf.setOnClickListener { downloadPdf() }
         b.copyLink.setOnClickListener { copySignLink() }
+        b.viewPdfButton.setOnClickListener { previewContract() }
 
         loadContract()
     }
@@ -135,16 +132,80 @@ class ContractDetailActivity : AppCompatActivity() {
         b.status.text = label
         b.status.setTextColor(ContextCompat.getColor(this, color))
 
-        if (signed) {
-            b.signatureSection.visibility = View.GONE
+        renderSignatureFlow(c, signed, closed)
+    }
+
+    // Guided, one-step-at-a-time signature flow. Only the relevant actions for the
+    // current contract state are shown — no wall of buttons.
+    private fun renderSignatureFlow(c: Contract, signed: Boolean, closed: Boolean) {
+        // Reset collapsibles each render.
+        b.signPadSection.visibility = View.GONE
+        b.signLinkSection.visibility = View.GONE
+
+        when {
+            // ── Signed or closed: nothing to do but read the PDF ──────────────
+            signed || closed -> {
+                b.signStepTitle.text = if (closed) "Contrat clôturé" else "✓ Contrat signé"
+                b.signStepDesc.text = if (closed) {
+                    "Location terminée. Le contrat reste consultable."
+                } else {
+                    "Signé le ${c.signedAt?.take(10) ?: ""}. Vous pouvez télécharger le contrat."
+                }
+                b.primaryAction.text = "Télécharger le contrat (PDF)"
+                b.primaryAction.setBackgroundColor(ContextCompat.getColor(this, R.color.navy))
+                b.primaryAction.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_download, 0, 0, 0)
+                b.primaryAction.setOnClickListener { previewContract() }
+                b.secondaryActions.visibility = View.GONE
+                b.viewPdfButton.visibility = View.GONE // primary already opens the PDF
+            }
+
+            // ── Link already sent, awaiting the client's signature ────────────
+            c.signToken != null -> {
+                b.signStepTitle.text = "En attente de signature"
+                b.signStepDesc.text = "Le lien a été envoyé. Le client peut signer via le lien ou le QR ci-dessous."
+                b.primaryAction.text = "Renvoyer via WhatsApp"
+                b.primaryAction.setBackgroundColor(ContextCompat.getColor(this, R.color.green))
+                b.primaryAction.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_whatsapp, 0, 0, 0)
+                b.primaryAction.setOnClickListener { sendViaWhatsapp() }
+
+                b.secondaryActions.visibility = View.VISIBLE
+                b.secondaryA.text = "Partager le lien"
+                b.secondaryA.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_send, 0, 0, 0)
+                b.secondaryA.setOnClickListener { sendToClient() }
+                b.secondaryB.text = "Signer sur place"
+                b.secondaryB.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_sign, 0, 0, 0)
+                b.secondaryB.setBackgroundColor(ContextCompat.getColor(this, R.color.muted))
+                b.secondaryB.setOnClickListener { toggleSignPad() }
+
+                b.viewPdfButton.visibility = View.VISIBLE
+                showSignLink() // shows QR + link inline
+            }
+
+            // ── Fresh contract: choose how to get it signed ───────────────────
+            else -> {
+                b.signStepTitle.text = "Pas encore signé"
+                b.signStepDesc.text = "Envoyez le contrat au client pour signature à distance, ou faites-le signer ici."
+                b.primaryAction.text = "Envoyer au client (WhatsApp)"
+                b.primaryAction.setBackgroundColor(ContextCompat.getColor(this, R.color.green))
+                b.primaryAction.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_whatsapp, 0, 0, 0)
+                b.primaryAction.setOnClickListener { sendViaWhatsapp() }
+
+                b.secondaryActions.visibility = View.VISIBLE
+                b.secondaryA.text = "Signer sur place"
+                b.secondaryA.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_sign, 0, 0, 0)
+                b.secondaryA.setOnClickListener { toggleSignPad() }
+                b.secondaryB.text = "Partager le lien"
+                b.secondaryB.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_send, 0, 0, 0)
+                b.secondaryB.setOnClickListener { sendToClient() }
+
+                b.viewPdfButton.visibility = View.VISIBLE
+            }
         }
+    }
 
-        // In-app PDF: always available now (rendered locally, no web redirect).
-        b.downloadPdf.visibility = View.VISIBLE
-        b.downloadPdf.text = "Aperçu / Télécharger PDF"
-
-        // Show the QR + link if a sign token already exists and not yet signed.
-        if (!signed && c.signToken != null) showSignLink() else b.signLinkSection.visibility = View.GONE
+    private fun toggleSignPad() {
+        b.signPadSection.visibility =
+            if (b.signPadSection.visibility == View.VISIBLE) View.GONE else View.VISIBLE
     }
 
     private fun showSignLink() {
@@ -295,6 +356,4 @@ class ContractDetailActivity : AppCompatActivity() {
                 .putExtra("contract_title", title),
         )
     }
-
-    private fun downloadPdf() = previewContract()
 }

@@ -31,7 +31,7 @@ object ContractPdfApi {
             try {
                 // 1) Ask the server for a presigned URL to the rendered PDF.
                 val base = BuildConfig.WEBAPP_BASE_URL.trimEnd('/')
-                val endpoint = "$base/api/contracts/$contractId/pdf" + if (force) "?force=1" else ""
+                val endpoint = "$base/contract-pdf/$contractId" + if (force) "?force=1" else ""
                 val metaReq = Request.Builder()
                     .url(endpoint)
                     .header("Authorization", "Bearer $token")

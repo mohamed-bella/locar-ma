@@ -9,11 +9,15 @@ import { DETAIL_SELECT, mapDetail } from '~/server/contracts'
 // the exact same server-rendered contract PDF the web app produces and returns a
 // short-lived presigned download URL. Contracts hold PII → private bucket only.
 //
-//   GET  /api/contracts/:id/pdf            → reuse stored PDF if present, else generate
-//   GET  /api/contracts/:id/pdf?force=1    → always regenerate (e.g. after signing)
+// NOTE: this route is deliberately NOT under /api/* — vercel.json rewrites every
+// non-/api path to the TanStack SSR server (which runs server routes), while
+// /api/* is reserved for Vercel's own function and would 404 here.
+//
+//   GET  /contract-pdf/:id            → reuse stored PDF if present, else generate
+//   GET  /contract-pdf/:id?force=1    → always regenerate (e.g. after signing)
 //
 // Auth: Authorization: Bearer <supabase_access_token>
-export const Route = createFileRoute('/api/contracts/$id/pdf')({
+export const Route = createFileRoute('/contract-pdf/$id')({
   server: {
     handlers: {
       GET: async ({ request, params }) => {

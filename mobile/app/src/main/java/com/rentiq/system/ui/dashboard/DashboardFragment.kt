@@ -13,6 +13,8 @@ import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.data.model.Reservation
 import com.rentiq.system.data.model.Vehicle
 import com.rentiq.system.databinding.FragmentDashboardBinding
+import com.rentiq.system.ui.main.MainActivity
+import com.rentiq.system.ui.reports.ReportsActivity
 import com.rentiq.system.ui.reservations.NewReservationActivity
 import com.rentiq.system.ui.suivi.SuiviActivity
 import com.rentiq.system.util.SessionManager
@@ -39,6 +41,11 @@ class DashboardFragment : Fragment() {
         binding.openSuivi.setOnClickListener {
             startActivity(Intent(requireContext(), SuiviActivity::class.java))
         }
+        // CTA grid → switch bottom-nav tab (or open Finance reports).
+        binding.ctaReservations.setOnClickListener { (activity as? MainActivity)?.navigateTo(R.id.nav_reservations) }
+        binding.ctaContracts.setOnClickListener { (activity as? MainActivity)?.navigateTo(R.id.nav_contracts) }
+        binding.ctaCars.setOnClickListener { (activity as? MainActivity)?.navigateTo(R.id.nav_fleet) }
+        binding.ctaFinance.setOnClickListener { startActivity(Intent(requireContext(), ReportsActivity::class.java)) }
         load()
     }
 
