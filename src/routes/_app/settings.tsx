@@ -12,7 +12,7 @@ import {
   updateAgencyProfile,
   type AgencyProfile,
 } from '~/server/agency'
-import { getSheetStatus, getGoogleAuthUrl, syncNow, disconnectSheet, type SheetStatus } from '~/server/sheets'
+import { getSheetStatus, getGoogleAuthUrl, syncNow, disconnectSheet, backupContractsToDrive, type SheetStatus } from '~/server/sheets'
 import { AddBrandDialog } from '~/components/AddBrandDialog'
 import { Button, Card, CardHeader, CardBody, Badge, PageHeader, EmptyState, Modal, Field, Input, Select } from '~/components/ui'
 import { listAlertRules, createAlertRule, updateAlertRule, deleteAlertRule, type AlertRule } from '~/server/alertRules'
@@ -439,7 +439,7 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024
 
 function SheetSyncCard({ status, canEdit, onDone }: { status: SheetStatus; canEdit: boolean; onDone: () => void }) {
   const { t } = useI18n()
-  const [busy, setBusy] = useState<null | 'connect' | 'sync' | 'disconnect'>(null)
+  const [busy, setBusy] = useState<null | 'connect' | 'sync' | 'disconnect' | 'backup'>(null)
 
   // Surface the OAuth callback result (Google redirects back with ?sheet=...).
   useEffect(() => {
@@ -469,6 +469,20 @@ function SheetSyncCard({ status, canEdit, onDone }: { status: SheetStatus; canEd
     try {
       const { rows } = await syncNow()
       toast.success(`Synced ${rows} rows to Google Sheets`)
+      onDone()
+    } catch (e: any) {
+      toast.error(e?.message ?? t('common.actionFailed'))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function backup() {
+    setBusy('backup')
+    try {
+      const { uploaded, failed } = await backupContractsToDrive()
+      if (failed > 0) toast.warning(t('set.backupPartial', { n: uploaded, f: failed }))
+      else toast.success(t('set.backupDone', { n: uploaded }))
       onDone()
     } catch (e: any) {
       toast.error(e?.message ?? t('common.actionFailed'))
@@ -542,15 +556,40 @@ function SheetSyncCard({ status, canEdit, onDone }: { status: SheetStatus; canEd
                       <Button loading={busy === 'sync'} disabled={!!busy} onClick={sync}>
                         Sync now
                       </Button>
+                      <Button variant="secondary" loading={busy === 'backup'} disabled={!!busy} onClick={backup}>
+                        {t('set.backupContracts')}
+                      </Button>
                       <Button variant="secondary" loading={busy === 'disconnect'} disabled={!!busy} onClick={disconnect}>
                         {t('set.sheetDisable')}
                       </Button>
                     </div>
                   )}
                 </div>
+                {(status.contractsFolderUrl || status.contractsBackedUpAt) && (
+                  <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-muted)]">
+                    {status.contractsBackedUpAt && (
+                      <span>{t('set.lastBackup', { date: new Date(status.contractsBackedUpAt).toLocaleString() })}</span>
+                    )}
+                    {status.contractsFolderUrl && (
+                      <a
+                        href={status.contractsFolderUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 font-semibold text-[var(--color-brand)] hover:underline"
+                      >
+                        {t('set.openContractsFolder')}
+                      </a>
+                    )}
+                  </div>
+                )}
                 {status.lastSyncError && (
                   <p className="mt-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700 break-words">
                     Last sync error: {status.lastSyncError}
+                  </p>
+                )}
+                {status.contractsBackupError && (
+                  <p className="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700 break-words">
+                    Backup error: {status.contractsBackupError}
                   </p>
                 )}
               </div>

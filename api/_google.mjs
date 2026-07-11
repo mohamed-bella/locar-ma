@@ -6,6 +6,7 @@
 // app-build coupling. No googleapis dep — plain fetch + node:crypto.
 import { createHash, createHmac, createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
+import { S3Client, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3'
 
 // ── the six mirrored tabs + PII-excluded column mapping (single source) ──
 // row(r) reads a DB row already joined with related plate / names (see fetchTab).
@@ -165,6 +166,195 @@ export function emailFromIdToken(idToken) {
     return j.email || null
   } catch {
     return null
+  }
+}
+
+// ── Drive REST (contract-PDF backup) ──
+// Same OAuth token as Sheets (drive.file scope covers app-created folders/files).
+const DRIVE = 'https://www.googleapis.com/drive/v3'
+const DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3'
+
+async function dfetch(token, url, init) {
+  const res = await fetch(url, { ...init, headers: { authorization: `Bearer ${token}`, ...(init?.headers || {}) } })
+  if (!res.ok) throw new Error(`drive ${res.status} ${await res.text()}`)
+  return res.status === 204 ? null : res.json()
+}
+
+// Reuse the agency's backup folder if the token can still reach it (drive.file
+// only sees files this app created), else create a fresh one. Self-heals a
+// stale/foreign id like ensureSpreadsheet does.
+export async function ensureFolder(token, title, existingId) {
+  if (existingId) {
+    const res = await fetch(`${DRIVE}/files/${existingId}?fields=id,trashed`, {
+      headers: { authorization: `Bearer ${token}` },
+    })
+    if (res.ok) {
+      const j = await res.json()
+      if (!j.trashed) return j.id
+    }
+    // 404/403/trashed → not usable; fall through and make a new one.
+  }
+  const j = await dfetch(token, `${DRIVE}/files?fields=id`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: title, mimeType: 'application/vnd.google-apps.folder' }),
+  })
+  return j.id
+}
+
+// name → fileId for every file already in the folder, so re-runs update in
+// place (a regenerated contract PDF overwrites) instead of duplicating.
+export async function listFolderFiles(token, folderId) {
+  const map = {}
+  let pageToken
+  do {
+    const p = new URLSearchParams({
+      q: `'${folderId}' in parents and trashed = false`,
+      fields: 'nextPageToken, files(id, name)',
+      pageSize: '1000',
+      ...(pageToken ? { pageToken } : {}),
+    })
+    const j = await dfetch(token, `${DRIVE}/files?${p.toString()}`)
+    for (const f of j.files || []) map[f.name] = f.id
+    pageToken = j.nextPageToken
+  } while (pageToken)
+  return map
+}
+
+// Upload (create) or replace (media update) one PDF. Multipart create carries
+// metadata (name + parent); update patches only the bytes.
+export async function uploadPdf(token, folderId, name, bytes, existingFileId) {
+  if (existingFileId) {
+    await dfetch(token, `${DRIVE_UPLOAD}/files/${existingFileId}?uploadType=media`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/pdf' },
+      body: bytes,
+    })
+    return existingFileId
+  }
+  const boundary = `b${randomBytes(12).toString('hex')}`
+  const meta = JSON.stringify({ name, parents: [folderId] })
+  const head = `--${boundary}\r\ncontent-type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--${boundary}\r\ncontent-type: application/pdf\r\n\r\n`
+  const tail = `\r\n--${boundary}--`
+  const body = Buffer.concat([Buffer.from(head, 'utf8'), Buffer.from(bytes), Buffer.from(tail, 'utf8')])
+  const j = await dfetch(token, `${DRIVE_UPLOAD}/files?uploadType=multipart&fields=id`, {
+    method: 'POST',
+    headers: { 'content-type': `multipart/related; boundary=${boundary}` },
+    body,
+  })
+  return j.id
+}
+
+// â”€â”€ R2/private documents â†’ Google Drive contract backup â”€â”€
+let r2Client
+
+function r2() {
+  if (r2Client) return r2Client
+  r2Client = new S3Client({
+    region: 'auto',
+    endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
+    },
+  })
+  return r2Client
+}
+
+function docsBucket() {
+  return process.env.R2_DOCS_BUCKET || process.env.R2_BUCKET
+}
+
+async function listObjects(prefix, bucket = docsBucket()) {
+  if (!bucket) throw new Error('R2_DOCS_BUCKET/R2_BUCKET not set')
+  const out = []
+  let ContinuationToken
+  do {
+    const res = await r2().send(new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix, ContinuationToken }))
+    for (const o of res.Contents || []) {
+      if (!o.Key) continue
+      out.push({ key: o.Key, lastModified: o.LastModified?.toISOString() ?? null, size: o.Size ?? 0 })
+    }
+    ContinuationToken = res.IsTruncated ? res.NextContinuationToken : undefined
+  } while (ContinuationToken)
+  return out
+}
+
+async function getObjectBytes(key, bucket = docsBucket()) {
+  if (!bucket) throw new Error('R2_DOCS_BUCKET/R2_BUCKET not set')
+  const res = await r2().send(new GetObjectCommand({ Bucket: bucket, Key: key }))
+  const bytes = await res.Body.transformToByteArray()
+  return Buffer.from(bytes)
+}
+
+function safeName(s) {
+  return String(s || '')
+    .replace(/[\/\\]/g, '-')
+    .replace(/[^\p{L}\p{N}._-]+/gu, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+function backupFilename(contractId, meta, obj) {
+  const short = contractId.slice(0, 8)
+  const res = meta?.reservations
+  if (res) {
+    const date = String(res.date_start ?? meta.created_at ?? '').slice(0, 10) || 'sans-date'
+    const client = safeName(res.clients?.full_name ?? 'client')
+    const v = res.vehicles
+    const car = safeName([v?.brand, v?.model, v?.plate].filter(Boolean).join(' ') || 'voiture')
+    return `${date}_${client}_${car}_${short}.pdf`
+  }
+  const date = String(obj.lastModified ?? '').slice(0, 10) || 'sans-date'
+  return `${date}_supprime_${short}.pdf`
+}
+
+export async function backupContractsToDrive(supa, token, agencyId, existingFolderId) {
+  try {
+    const { data: agency } = await supa.from('agencies').select('name').eq('id', agencyId).maybeSingle()
+    const folderId = await ensureFolder(token, `Contrats - ${agency?.name ?? 'Agence'}`, existingFolderId)
+
+    const { data: contracts } = await supa
+      .from('contracts')
+      .select('id, created_at, reservations(date_start, clients(full_name), vehicles(brand, model, plate))')
+      .eq('agency_id', agencyId)
+    const meta = new Map()
+    for (const c of contracts || []) meta.set(c.id, c)
+
+    const objects = (await listObjects(`agencies/${agencyId}/contracts/`)).filter((o) => o.key.endsWith('.pdf'))
+    const existing = await listFolderFiles(token, folderId)
+
+    let uploaded = 0
+    let failed = 0
+    const errors = []
+    for (const obj of objects) {
+      const contractId = obj.key.split('/').pop().replace(/\.pdf$/, '')
+      const name = backupFilename(contractId, meta.get(contractId), obj)
+      try {
+        const bytes = await getObjectBytes(obj.key)
+        await uploadPdf(token, folderId, name, bytes, existing[name])
+        uploaded++
+      } catch (e) {
+        failed++
+        errors.push(`${name}: ${String(e?.message || e)}`)
+      }
+    }
+
+    const errorText = errors.length ? errors.slice(0, 5).join(' | ') : null
+    await supa
+      .from('agency_sheets')
+      .update({
+        drive_contracts_folder_id: folderId,
+        contracts_backed_up_at: new Date().toISOString(),
+        contracts_backup_error: errorText,
+      })
+      .eq('agency_id', agencyId)
+
+    return { uploaded, failed, folderUrl: `https://drive.google.com/drive/folders/${folderId}` }
+  } catch (e) {
+    const msg = String(e?.message || e)
+    await supa.from('agency_sheets').update({ contracts_backup_error: msg }).eq('agency_id', agencyId)
+    return { uploaded: 0, failed: 0, error: msg }
   }
 }
 

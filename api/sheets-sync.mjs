@@ -3,7 +3,7 @@
 //          (Vercel Cron sends this automatically when CRON_SECRET is set).
 //   POST → one agency: body { agencyId }. Auth: x-cron-secret header.
 //          Called by the app's "Sync now" server function.
-import { admin, decryptToken, accessFromRefresh, syncAgency } from './_google.mjs'
+import { admin, decryptToken, accessFromRefresh, syncAgency, backupContractsToDrive } from './_google.mjs'
 
 export const config = { maxDuration: 60 }
 
@@ -13,10 +13,11 @@ async function syncOne(supa, sheet) {
     const refresh = decryptToken(sheet.google_refresh_token_enc)
     const token = await accessFromRefresh(refresh)
     const rows = await syncAgency(supa, token, sheet.spreadsheet_id, sheet.agency_id)
+    const contracts = await backupContractsToDrive(supa, token, sheet.agency_id, sheet.drive_contracts_folder_id)
     await supa.from('agency_sheets')
       .update({ last_synced_at: new Date().toISOString(), last_sync_error: null })
       .eq('agency_id', sheet.agency_id)
-    return { id: sheet.agency_id, rows }
+    return { id: sheet.agency_id, rows, contracts }
   } catch (e) {
     await supa.from('agency_sheets')
       .update({ last_sync_error: String(e?.message || e) })
@@ -43,7 +44,7 @@ export default async function handler(req, res) {
   }
 
   const supa = admin()
-  const cols = 'agency_id, spreadsheet_id, google_refresh_token_enc, enabled'
+  const cols = 'agency_id, spreadsheet_id, google_refresh_token_enc, enabled, drive_contracts_folder_id'
 
   try {
     if (req.method === 'POST') {

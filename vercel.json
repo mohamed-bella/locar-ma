@@ -9,6 +9,12 @@
       "includeFiles": "{dist/server/**,public/fonts/**}"
     }
   },
+  "crons": [
+    {
+      "path": "/api/sheets-sync",
+      "schedule": "0 3 * * *"
+    }
+  ],
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/api/server" }
   ]

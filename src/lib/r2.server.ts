@@ -3,6 +3,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
+  ListObjectsV2Command,
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { serverEnv } from './env.server'
@@ -89,6 +90,35 @@ export async function putObject(
 export async function deleteObject(key: string, bucket?: string) {
   const env = serverEnv()
   await r2().send(new DeleteObjectCommand({ Bucket: bucket ?? env.R2_BUCKET, Key: key }))
+}
+
+export type R2Object = { key: string; lastModified: string | null; size: number }
+
+// Every object under a prefix (paginated). Used to back up ALL contract PDFs —
+// including ones whose DB row was deleted (the R2 object outlives the row).
+export async function listObjects(prefix: string, bucket?: string): Promise<R2Object[]> {
+  const env = serverEnv()
+  const out: R2Object[] = []
+  let ContinuationToken: string | undefined
+  do {
+    const res = await r2().send(
+      new ListObjectsV2Command({ Bucket: bucket ?? env.R2_BUCKET, Prefix: prefix, ContinuationToken }),
+    )
+    for (const o of res.Contents ?? []) {
+      if (!o.Key) continue
+      out.push({ key: o.Key, lastModified: o.LastModified?.toISOString() ?? null, size: o.Size ?? 0 })
+    }
+    ContinuationToken = res.IsTruncated ? res.NextContinuationToken : undefined
+  } while (ContinuationToken)
+  return out
+}
+
+// Download an object's bytes into memory (for re-uploading elsewhere, e.g. Drive).
+export async function getObjectBytes(key: string, bucket?: string): Promise<Buffer> {
+  const env = serverEnv()
+  const res = await r2().send(new GetObjectCommand({ Bucket: bucket ?? env.R2_BUCKET, Key: key }))
+  const bytes = await res.Body!.transformToByteArray()
+  return Buffer.from(bytes)
 }
 
 // Public URL via bucket's custom domain / r2.dev. Store the KEY in the DB,

@@ -137,6 +137,7 @@ interface RestApi {
     @GET("rest/v1/reservations")
     suspend fun getReservations(
         @Query("select") select: String = "*,vehicles(id,plate,brand,model),clients(id,full_name,phone)",
+        @Query("status") status: String = "not.in.(cancelled,blocked)",
         @Query("order") order: String = "date_start.desc",
     ): Response<List<Reservation>>
 

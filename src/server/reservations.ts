@@ -492,27 +492,42 @@ export const deleteReservation = createServerFn({ method: 'POST' })
 export const bulkDeleteReservations = createServerFn({ method: 'POST' })
   .validator((d: unknown) => z.object({ ids: z.array(z.string().uuid()).min(1).max(100) }).parse(d))
   .handler(async ({ data }) => {
-    const { supabase } = await requireAgencyContext()
-    const { data: linked } = await supabase
-      .from('contracts')
-      .select('reservation_id')
-      .in('reservation_id', data.ids)
-    const linkedIds = new Set((linked ?? []).map((c: any) => c.reservation_id))
-    const deletable = data.ids.filter((id) => !linkedIds.has(id))
-    if (deletable.length === 0) {
-      return { deleted: 0, skipped: data.ids.length }
-    }
-    const { data: rows } = await supabase
+    const { supabase, agencyId } = await requireAgencyContext()
+    const { data: rows, error: lookupError } = await supabase
       .from('reservations')
-      .select('vehicle_id')
-      .in('id', deletable)
+      .select('id, vehicle_id, status, date_start, date_end, vehicles(plate, brand, model), clients(full_name, phone)')
+      .in('id', data.ids)
+    if (lookupError) throw new Error(lookupError.message)
+
+    const found = rows ?? []
+    const ids = found.map((r: any) => r.id)
+    if (ids.length === 0) return { deleted: 0, skipped: data.ids.length }
+
     const vehicleIds = [...new Set((rows ?? []).map((r: any) => r.vehicle_id).filter(Boolean))]
-    const { error } = await supabase.from('reservations').delete().in('id', deletable)
+
+    // "Delete" is an archive/cancel action. It preserves contracts, PDFs and
+    // audit history while removing the reservation from the operational view.
+    const { error } = await supabase.from('reservations').update({ status: 'cancelled' }).in('id', ids)
     if (error) throw new Error(error.message)
+
     for (const vid of vehicleIds) {
       await syncVehicleStatus(supabase, vid)
     }
-    return { deleted: deletable.length, skipped: data.ids.length - deletable.length }
+
+    for (const r of found as any[]) {
+      if (r.status === 'cancelled' || r.status === 'blocked') continue
+      await enqueueNotification(agencyId, 'reservation_cancelled', {
+        reservation_id: r.id,
+        vehicle: [r.vehicles?.brand, r.vehicles?.model].filter(Boolean).join(' ') || r.vehicles?.plate,
+        plate: r.vehicles?.plate,
+        client: r.clients?.full_name,
+        client_phone: r.clients?.phone,
+        date_start: r.date_start,
+        date_end: r.date_end,
+      })
+    }
+
+    return { deleted: ids.length, skipped: data.ids.length - ids.length }
   })
 
 // Manual block (maintenance / hold). Stored as a reservation with status 'blocked'.

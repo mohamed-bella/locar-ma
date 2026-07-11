@@ -38,7 +38,6 @@ class ReservationsFragment : Fragment() {
         FilterPills.Option("Confirmées", "confirmed"),
         FilterPills.Option("Actives", "active"),
         FilterPills.Option("Terminées", "closed"),
-        FilterPills.Option("Annulées", "cancelled"),
     )
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
