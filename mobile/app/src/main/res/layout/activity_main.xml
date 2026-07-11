@@ -28,10 +28,9 @@
                 android:layout_height="46dp"
                 android:background="@drawable/agency_logo_shell"
                 android:contentDescription="@string/app_name"
-                android:padding="8dp"
+                android:padding="6dp"
                 android:scaleType="centerInside"
-                android:src="@drawable/ic_car"
-                app:tint="@color/white" />
+                android:src="@drawable/rentiq_logo" />
 
             <LinearLayout
                 android:layout_width="0dp"

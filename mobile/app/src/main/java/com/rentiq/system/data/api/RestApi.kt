@@ -179,7 +179,7 @@ interface RestApi {
     @GET("rest/v1/agencies")
     suspend fun getAgency(
         @Query("id") id: String,
-        @Query("select") select: String = "id,name,slug,city,logo_url,stamp_url,whatsapp_number,whatsapp_enabled,legal_name,address,ice,rc,patente,rib,company_phone",
+        @Query("select") select: String = "id,name,slug,city,logo_url,stamp_url,whatsapp_number,whatsapp_enabled,legal_name,address,ice,rc,patente,rib,company_phone,is_active,subscription_status",
         @Header("Accept") accept: String = "application/vnd.pgrst.object+json",
     ): Response<AgencyProfile>
 

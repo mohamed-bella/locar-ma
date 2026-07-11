@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080" role="img" aria-label="Rentiq, votre agence dans une seule interface">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#F8FAFC"/>
+      <stop offset="1" stop-color="#E9EDF2"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#071B3D" flood-opacity=".14"/>
+    </filter>
+  </defs>
+  <rect width="1080" height="1080" rx="0" fill="url(#bg)"/>
+  <rect x="64" y="64" width="952" height="952" rx="38" fill="#fff" filter="url(#shadow)"/>
+  <rect x="64" y="64" width="952" height="154" rx="38" fill="#0071C2"/>
+  <rect x="64" y="178" width="952" height="40" fill="#0071C2"/>
+  <circle cx="142" cy="141" r="44" fill="#fff"/>
+  <image href="../rentiq-logo.png" x="104" y="103" width="76" height="76" preserveAspectRatio="xMidYMid meet"/>
+  <text x="214" y="132" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#fff">RENTIQ</text>
+  <text x="214" y="171" font-family="Arial, sans-serif" font-size="24" fill="#DCEBFF">Système location de voitures</text>
+  <text x="900" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="800" fill="#fff">01</text>
+  <g transform="translate(760 278)">
+    <circle cx="100" cy="100" r="100" fill="#0071C2" opacity=".12"/>
+    <circle cx="100" cy="100" r="74" fill="#fff"/>
+    <rect x="50" y="52" width="100" height="96" rx="10" fill="none" stroke="#0071C2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M66 84h22M66 102h42M66 120h32" fill="none" stroke="#0071C2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="128" cy="80" r="10" fill="none" stroke="#0071C2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="112" y="330" font-family="Arial, sans-serif" font-size="26" font-weight="800" fill="#0071C2" letter-spacing="2">MOBILE + WEB + WHATSAPP</text>
+  <text x="112" y="420" font-family="Arial, sans-serif" font-size="58" font-weight="800" fill="#172033">Rentiq, votre agence</text>
+  <text x="112" y="488.44" font-family="Arial, sans-serif" font-size="58" font-weight="800" fill="#172033">dans une seule interface</text>
+  <text x="112" y="585" font-family="Arial, sans-serif" font-size="33" font-weight="400" fill="#5F6B7A">Réservations, contrats, flotte,</text>
+  <text x="112" y="623.94" font-family="Arial, sans-serif" font-size="33" font-weight="400" fill="#5F6B7A">clients, suivi, paiements et alertes</text>
+  <text x="112" y="662.88" font-family="Arial, sans-serif" font-size="33" font-weight="400" fill="#5F6B7A">réunis pour piloter la location sans</text>
+  <text x="112" y="701.8199999999999" font-family="Arial, sans-serif" font-size="33" font-weight="400" fill="#5F6B7A">perdre le fil.</text>
+  
+    <circle cx="128" cy="690" r="11" fill="#0071C2"/>
+    <text x="160" y="701" font-family="Arial, sans-serif" font-size="31" font-weight="700" fill="#172033">Vue opérationnelle en temps réel</text>
+    <circle cx="128" cy="754" r="11" fill="#0071C2"/>
+    <text x="160" y="765" font-family="Arial, sans-serif" font-size="31" font-weight="700" fill="#172033">Application Android pour le terrain</text>
+    <circle cx="128" cy="818" r="11" fill="#0071C2"/>
+    <text x="160" y="829" font-family="Arial, sans-serif" font-size="31" font-weight="700" fill="#172033">Web app pour la gestion complète</text>
+  <rect x="112" y="932" width="856" height="2" fill="#D3DAE3"/>
+  <text x="112" y="975" font-family="Arial, sans-serif" font-size="25" font-weight="700" fill="#5F6B7A">Mobile Android · Web App · Bot WhatsApp · PDF · Google</text>
+</svg>

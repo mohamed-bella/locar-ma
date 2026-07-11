@@ -3,7 +3,10 @@ package com.rentiq.system.ui.auth
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.getSystemService
+import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
 import com.rentiq.system.R
 import com.rentiq.system.data.api.LoginRequest
@@ -14,6 +17,10 @@ import com.rentiq.system.ui.main.MainActivity
 import com.rentiq.system.util.AuthSession
 import com.rentiq.system.util.SessionManager
 import kotlinx.coroutines.launch
+import java.io.IOException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
@@ -71,12 +78,18 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.loginButton.setOnClickListener { attemptLogin() }
+        binding.emailInput.doAfterTextChanged { clearError() }
+        binding.passwordInput.doAfterTextChanged { clearError() }
     }
 
     private fun attemptLogin() {
+        hideKeyboardAndClearFocus()
         val email = binding.emailInput.text.toString().trim()
         val pw = binding.passwordInput.text.toString()
-        if (email.isEmpty() || pw.isEmpty()) return
+        if (email.isEmpty() || pw.isEmpty()) {
+            showError(getString(R.string.login_missing_fields))
+            return
+        }
 
         binding.loginButton.isEnabled = false
         binding.loginProgress.visibility = View.VISIBLE
@@ -100,16 +113,44 @@ class LoginActivity : AppCompatActivity() {
 
                     goToMain()
                 } else {
-                    showError()
+                    showError(loginErrorForStatus(res.code()))
                 }
-            } catch (e: Exception) {
-                showError(e.message)
+            } catch (error: Exception) {
+                showError(loginErrorForException(error))
             }
         }
     }
 
-    private fun showError(msg: String? = null) {
-        binding.errorText.text = msg ?: getString(R.string.login_error)
+    private fun hideKeyboardAndClearFocus() {
+        val token = currentFocus?.windowToken ?: binding.root.windowToken
+        getSystemService<InputMethodManager>()?.hideSoftInputFromWindow(token, 0)
+        binding.emailInput.clearFocus()
+        binding.passwordInput.clearFocus()
+    }
+
+    private fun loginErrorForStatus(status: Int): String = when (status) {
+        400, 401, 403 -> getString(R.string.login_error)
+        429 -> getString(R.string.login_too_many_attempts)
+        in 500..599 -> getString(R.string.login_server_error)
+        else -> getString(R.string.login_generic_error)
+    }
+
+    private fun loginErrorForException(error: Exception): String = when (error) {
+        is UnknownHostException,
+        is ConnectException,
+        is SocketTimeoutException,
+        is IOException -> getString(R.string.login_network_error)
+        else -> getString(R.string.login_generic_error)
+    }
+
+    private fun clearError() {
+        if (::binding.isInitialized && binding.errorText.visibility == View.VISIBLE) {
+            binding.errorText.visibility = View.GONE
+        }
+    }
+
+    private fun showError(msg: String) {
+        binding.errorText.text = msg
         binding.errorText.visibility = View.VISIBLE
         binding.loginButton.isEnabled = true
         binding.loginProgress.visibility = View.GONE

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080" role="img" aria-label="Gestion complète de la flotte">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#F8FAFC"/>
+      <stop offset="1" stop-color="#E9EDF2"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#071B3D" flood-opacity=".14"/>
+    </filter>
+  </defs>
+  <rect width="1080" height="1080" rx="0" fill="url(#bg)"/>
+  <rect x="64" y="64" width="952" height="952" rx="38" fill="#fff" filter="url(#shadow)"/>
+  <rect x="64" y="64" width="952" height="154" rx="38" fill="#0071C2"/>
+  <rect x="64" y="178" width="952" height="40" fill="#0071C2"/>
+  <circle cx="142" cy="141" r="44" fill="#fff"/>
+  <image href="../rentiq-logo.png" x="104" y="103" width="76" height="76" preserveAspectRatio="xMidYMid meet"/>
+  <text x="214" y="132" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#fff">RENTIQ</text>
+  <text x="214" y="171" font-family="Arial, sans-serif" font-size="24" fill="#DCEBFF">Système location de voitures</text>
+  <text x="900" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="800" fill="#fff">07</text>
+  <g transform="translate(760 278)">
+    <circle cx="100" cy="100" r="100" fill="#0071C2" opacity=".12"/>
+    <circle cx="100" cy="100" r="74" fill="#fff"/>
+    <path d="M60 110l8-24c3-9 10-14 20-14h28c10 0 17 5 20 14l8 24" fill="none" stroke="#0071C2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><rect x="56" y="104" width="88" height="30" rx="10" fill="none" stroke="#0071C2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="78" cy="136" r="8" fill="none" stroke="#0071C2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="122" cy="136" r="8" fill="none" stroke="#0071C2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M84 86h36" fill="none" stroke="#0071C2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="112" y="330" font-family="Arial, sans-serif" font-size="26" font-weight="800" fill="#0071C2" letter-spacing="2">VOITURES</text>
+  <text x="112" y="420" font-family="Arial, sans-serif" font-size="58" font-weight="800" fill="#172033">Gestion complète de la</text>
+  <text x="112" y="488.44" font-family="Arial, sans-serif" font-size="58" font-weight="800" fill="#172033">flotte</text>
+  <text x="112" y="585" font-family="Arial, sans-serif" font-size="33" font-weight="400" fill="#5F6B7A">Chaque véhicule garde ses documents,</text>
+  <text x="112" y="623.94" font-family="Arial, sans-serif" font-size="33" font-weight="400" fill="#5F6B7A">photos, kilométrage, prix, statut,</text>
+  <text x="112" y="662.88" font-family="Arial, sans-serif" font-size="33" font-weight="400" fill="#5F6B7A">dépenses et historique de location.</text>
+  
+    <circle cx="128" cy="690" r="11" fill="#0071C2"/>
+    <text x="160" y="701" font-family="Arial, sans-serif" font-size="31" font-weight="700" fill="#172033">Fiche véhicule détaillée</text>
+    <circle cx="128" cy="754" r="11" fill="#0071C2"/>
+    <text x="160" y="765" font-family="Arial, sans-serif" font-size="31" font-weight="700" fill="#172033">Photos et documents</text>
+    <circle cx="128" cy="818" r="11" fill="#0071C2"/>
+    <text x="160" y="829" font-family="Arial, sans-serif" font-size="31" font-weight="700" fill="#172033">Disponibilité claire</text>
+  <rect x="112" y="932" width="856" height="2" fill="#D3DAE3"/>
+  <text x="112" y="975" font-family="Arial, sans-serif" font-size="25" font-weight="700" fill="#5F6B7A">Mobile Android · Web App · Bot WhatsApp · PDF · Google</text>
+</svg>

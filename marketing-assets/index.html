@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rentiq - Application de gestion pour agence de location de voitures</title>
+  <meta name="description" content="Rentiq est une solution mobile et web pour gérer une agence de location de voitures: flotte, réservations, contrats PDF, signature client, WhatsApp, suivi maintenance et synchronisation Google." />
+  <meta name="keywords" content="logiciel location voiture, application agence location voiture, gestion flotte automobile, contrat location voiture PDF, réservation voiture, suivi maintenance voiture, WhatsApp agence location" />
+  <meta property="og:title" content="Rentiq - Gérez votre agence de location de voitures" />
+  <meta property="og:description" content="Mobile app, web app, contrats PDF, signatures, WhatsApp et suivi flotte dans une seule solution." />
+  <meta property="og:image" content="./generated/01-suite-complete-apple.png" />
+  <link rel="icon" href="./rentiq-logo.png" />
+  <style>
+    :root {
+      --navy: #003B95;
+      --blue: #0071C2;
+      --ink: #071B3D;
+      --muted: #5F6B7A;
+      --line: #D6DEE8;
+      --white: #FFFFFF;
+      --green: #008A45;
+      --shadow: none;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--white);
+      font-family: Arial, Helvetica, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid rgba(214, 222, 232, .75);
+      background: rgba(255, 255, 255, .86);
+      backdrop-filter: blur(18px);
+    }
+    .nav-inner {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 900;
+      color: var(--navy);
+      letter-spacing: -.02em;
+    }
+    .brand img { width: 38px; height: 38px; border-radius: 12px; }
+    .nav-actions { display: flex; gap: 8px; align-items: center; }
+    .nav-link {
+      display: none;
+      color: #334155;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border-radius: 999px;
+      padding: 0 18px;
+      border: 1px solid rgba(0, 59, 149, .14);
+      background: var(--navy);
+      color: white;
+      font-size: 14px;
+      font-weight: 900;
+      box-shadow: 0 14px 32px rgba(0, 59, 149, .18);
+    }
+    .btn.light {
+      background: white;
+      color: var(--navy);
+      box-shadow: none;
+    }
+
+    .band {
+      position: relative;
+      overflow: hidden;
+      padding: 56px 0 84px;
+      background: var(--bg);
+    }
+    .band:first-of-type { padding-top: 42px; }
+    .wrap {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+    .curve {
+      position: absolute;
+      left: -5%;
+      right: -5%;
+      bottom: -1px;
+      height: 42px;
+      background: var(--next);
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    }
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .8);
+      color: var(--navy);
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      box-shadow: 0 10px 30px rgba(7, 27, 61, .06);
+    }
+    .kicker svg { width: 17px; height: 17px; }
+    h1, h2 {
+      margin: 0;
+      letter-spacing: -.055em;
+      line-height: .98;
+      text-wrap: balance;
+    }
+    h1 { font-size: clamp(42px, 13vw, 88px); max-width: 870px; }
+    h2 { font-size: clamp(34px, 9vw, 66px); max-width: 720px; }
+    p {
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.65;
+      max-width: 570px;
+    }
+    .hero-grid, .feature-grid, .final-grid {
+      display: grid;
+      gap: 28px;
+      align-items: center;
+    }
+    .hero-copy { padding-top: 6px; }
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 26px;
+      max-width: 360px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 24px;
+      max-width: 420px;
+    }
+    .stat {
+      border: 1px solid rgba(214, 222, 232, .8);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, .82);
+      padding: 13px 10px;
+      text-align: center;
+      box-shadow: 0 12px 30px rgba(7, 27, 61, .06);
+    }
+    .stat strong {
+      display: block;
+      color: var(--navy);
+      font-size: 21px;
+      line-height: 1;
+    }
+    .stat span {
+      display: block;
+      margin-top: 7px;
+      color: #64748B;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .product {
+      width: 100%;
+      border-radius: 28px;
+      background: white;
+      box-shadow: var(--shadow);
+    }
+    .hero .product { margin-top: 4px; }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 22px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border-radius: 999px;
+      background: white;
+      padding: 9px 12px;
+      color: #172033;
+      font-size: 12px;
+      font-weight: 900;
+      box-shadow: 0 10px 28px rgba(7, 27, 61, .07);
+    }
+    .chip::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+    .intro { text-align: center; }
+    .intro h2 { margin: 0 auto; }
+    .intro p { margin-left: auto; margin-right: auto; }
+    .image-tight { max-width: 620px; margin: 0 auto; }
+    .story-image {
+      max-height: 780px;
+      width: auto;
+      margin: 0 auto;
+      border-radius: 28px;
+    }
+    .footer {
+      padding: 46px 0 30px;
+      background: #071B3D;
+      color: white;
+    }
+    .footer p {
+      margin: 0;
+      color: rgba(255, 255, 255, .72);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    .footer-grid {
+      display: grid;
+      gap: 26px;
+    }
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .footer-brand img {
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      background: white;
+      padding: 7px;
+    }
+    .footer-brand strong {
+      display: block;
+      font-size: 28px;
+      letter-spacing: -.04em;
+      line-height: 1;
+    }
+    .footer-brand span {
+      display: block;
+      margin-top: 5px;
+      color: rgba(255, 255, 255, .68);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+    }
+    .footer h3 {
+      margin: 0 0 12px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      color: rgba(255, 255, 255, .82);
+    }
+    .footer-links {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .footer-links a {
+      color: rgba(255, 255, 255, .72);
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .footer-bottom {
+      margin-top: 30px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(255, 255, 255, .14);
+      color: rgba(255, 255, 255, .55);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    @media (min-width: 720px) {
+      .nav-link { display: inline-flex; }
+      .actions { flex-direction: row; max-width: none; }
+      .feature-grid, .hero-grid, .final-grid { grid-template-columns: 1fr 1fr; gap: 48px; }
+      .flip .feature-copy { order: 2; }
+      .flip .feature-media { order: 1; }
+      .band { padding: 78px 0 104px; }
+      .band:first-of-type { padding-top: 72px; }
+      .curve { height: 58px; }
+      .footer-grid { grid-template-columns: 1.45fr .75fr .8fr; align-items: start; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" aria-label="Navigation principale">
+    <div class="nav-inner">
+      <a class="brand" href="#top">
+        <img src="./rentiq-logo.png" alt="Logo Rentiq" />
+        <span>Rentiq</span>
+      </a>
+      <div class="nav-actions">
+        <a class="nav-link" href="#features">Fonctionnalités</a>
+        <a class="nav-link" href="#workflow">Workflow</a>
+        <a class="btn" href="#contact">Voir la démo</a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="top">
+    <section class="band hero" style="--bg:#E4EBF4;--next:#FFFFFF">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <div class="kicker">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4 4L19 6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Logiciel location voiture
+          </div>
+          <h1>Gérez votre agence sans chaos.</h1>
+          <p>Rentiq réunit mobile, web, contrats PDF, signatures, WhatsApp et suivi flotte dans une seule solution.</p>
+          <div class="actions">
+            <a class="btn" href="#features">Découvrir les fonctionnalités</a>
+            <a class="btn light" href="#contact">Demander une démo</a>
+          </div>
+          <div class="stats" aria-label="Résumé Rentiq">
+            <div class="stat"><strong>8+</strong><span>modules</span></div>
+            <div class="stat"><strong>2</strong><span>mobile + web</span></div>
+            <div class="stat"><strong>1</strong><span>flux complet</span></div>
+          </div>
+        </div>
+        <div>
+          <img class="product" src="./generated/01-suite-complete-apple.png" alt="Rentiq mobile et web pour gérer une agence de location de voitures" />
+        </div>
+      </div>
+      <div class="curve" aria-hidden="true"></div>
+    </section>
+
+    <section class="band intro" id="features" style="--bg:#FFFFFF;--next:#DCEBFF">
+      <div class="wrap">
+        <div class="kicker">Fonctionnalités</div>
+        <h2>Chaque écran sert une action claire.</h2>
+        <p>Des sections courtes, visuelles et faciles à comprendre pour présenter le produit rapidement.</p>
+      </div>
+      <div class="curve" aria-hidden="true"></div>
+    </section>
+
+    <section class="band" style="--bg:#DCEBFF;--next:#D8F0E1">
+      <div class="wrap feature-grid">
+        <div class="feature-copy">
+          <div class="kicker">Application mobile</div>
+          <h2>Tout piloter depuis le terrain.</h2>
+          <p>Réservations, voitures, suivi et actions rapides depuis Android.</p>
+          <div class="chips"><span class="chip">Planning</span><span class="chip">Voitures</span><span class="chip">Suivi</span></div>
+        </div>
+        <div class="feature-media image-tight">
+          <img class="product" src="./generated/02-mobile-app-apple.png" alt="Application mobile Rentiq Android" loading="lazy" />
+        </div>
+      </div>
+      <div class="curve" aria-hidden="true"></div>
+    </section>
+
+    <section class="band flip" style="--bg:#D8F0E1;--next:#FFE7B8">
+      <div class="wrap feature-grid">
+        <div class="feature-copy">
+          <div class="kicker">Flotte</div>
+          <h2>Vos voitures restent claires.</h2>
+          <p>Photos, statuts, prix, documents et disponibilité dans une seule vue.</p>
+          <div class="chips"><span class="chip">Disponibilité</span><span class="chip">Documents</span><span class="chip">Entretien</span></div>
+        </div>
+        <div class="feature-media image-tight">
+          <img class="product" src="./generated/03-flotte-web-apple.png" alt="Gestion de flotte automobile Rentiq" loading="lazy" />
+        </div>
+      </div>
+      <div class="curve" aria-hidden="true"></div>
+    </section>
+
+    <section class="band" style="--bg:#FFE7B8;--next:#E5DBFF">
+      <div class="wrap feature-grid">
+        <div class="feature-copy">
+          <div class="kicker">Réservations + contrats</div>
+          <h2>Un flux simple pour chaque location.</h2>
+          <p>Planifiez, créez le contrat, signez et archivez sans double travail.</p>
+          <div class="chips"><span class="chip">Planning</span><span class="chip">PDF</span><span class="chip">Signature</span></div>
+        </div>
+        <div class="feature-media image-tight">
+          <img class="product" src="./generated/04-reservations-contrats-apple.png" alt="Réservations et contrats de location Rentiq" loading="lazy" />
+        </div>
+      </div>
+      <div class="curve" aria-hidden="true"></div>
+    </section>
+
+    <section class="band flip" style="--bg:#E5DBFF;--next:#D7F2DE">
+      <div class="wrap feature-grid">
+        <div class="feature-copy">
+          <div class="kicker">Suivi véhicule</div>
+          <h2>Moins d’oublis, plus de contrôle.</h2>
+          <p>Assurance, vignette, vidange, pneus et freins toujours visibles.</p>
+          <div class="chips"><span class="chip">Alertes</span><span class="chip">Historique</span><span class="chip">Maintenance</span></div>
+        </div>
+        <div class="feature-media image-tight">
+          <img class="product" src="./generated/06-suivi-maintenance-apple.png" alt="Suivi maintenance et documents véhicule" loading="lazy" />
+        </div>
+      </div>
+      <div class="curve" aria-hidden="true"></div>
+    </section>
+
+    <section class="band" style="--bg:#D7F2DE;--next:#E1E7EF">
+      <div class="wrap feature-grid">
+        <div class="feature-copy">
+          <div class="kicker">Notifications WhatsApp</div>
+          <h2>Le propriétaire est informé.</h2>
+          <p>Alertes pour réservations, annulations, contrats signés et rapports.</p>
+          <div class="chips"><span class="chip">WhatsApp</span><span class="chip">PDF</span><span class="chip">Rapports</span></div>
+        </div>
+        <div class="feature-media image-tight">
+          <img class="product" src="./generated/08-whatsapp-notifications-apple.png" alt="Notifications propriétaire Rentiq" loading="lazy" />
+        </div>
+      </div>
+      <div class="curve" aria-hidden="true"></div>
+    </section>
+
+    <section class="band flip" style="--bg:#E1E7EF;--next:#CFE2FF">
+      <div class="wrap feature-grid">
+        <div class="feature-copy">
+          <div class="kicker">Google Sync</div>
+          <h2>Sheets et Drive connectés.</h2>
+          <p>Vos données restent exploitables et vos contrats PDF bien sauvegardés.</p>
+          <div class="chips"><span class="chip">Sheets</span><span class="chip">Drive</span><span class="chip">Export</span></div>
+        </div>
+        <div class="feature-media image-tight">
+          <img class="product" src="./generated/09-google-sync-drive-apple.png" alt="Synchronisation Google Sheets et Drive Rentiq" loading="lazy" />
+        </div>
+      </div>
+      <div class="curve" aria-hidden="true"></div>
+    </section>
+
+    <section class="band" id="workflow" style="--bg:#CFE2FF;--next:#071B3D">
+      <div class="wrap final-grid">
+        <div>
+          <div class="kicker">Workflow complet</div>
+          <h2>De la réservation au suivi, tout reste connecté.</h2>
+          <p>Un cycle clair pour créer, contracter, signer, notifier et suivre chaque location.</p>
+          <div class="actions">
+            <a class="btn" href="#contact">Préparer une démo</a>
+          </div>
+        </div>
+        <div>
+          <img class="product story-image" src="./generated/14-story-workflow-apple.png" alt="Cycle complet d'une location avec Rentiq" loading="lazy" />
+        </div>
+      </div>
+      <div class="curve" aria-hidden="true"></div>
+    </section>
+
+    <section class="footer" id="contact">
+      <div class="wrap footer-grid">
+        <div>
+          <div class="footer-brand">
+            <img src="./rentiq-logo.png" alt="Logo Rentiq" />
+            <div>
+              <strong>Rentiq</strong>
+              <span>Location de voitures</span>
+            </div>
+          </div>
+          <p>Rentiq aide les agences de location à centraliser leur travail quotidien: flotte, réservations, contrats PDF, signature client, suivi véhicule, notifications WhatsApp et synchronisation Google.</p>
+        </div>
+        <div>
+          <h3>Produit</h3>
+          <ul class="footer-links">
+            <li><a href="#features">Fonctionnalités</a></li>
+            <li><a href="#workflow">Workflow</a></li>
+            <li><a href="#top">Application mobile</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Pour agences</h3>
+          <ul class="footer-links">
+            <li><a href="#contact">Demander une démo</a></li>
+            <li><a href="#features">Gestion flotte</a></li>
+            <li><a href="#features">Contrats & signatures</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="wrap">
+        <div class="footer-bottom">© 2026 Rentiq. Solution mobile et web pour organiser les agences de location de voitures.</div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

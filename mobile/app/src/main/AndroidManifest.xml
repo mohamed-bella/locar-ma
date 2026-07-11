@@ -54,6 +54,10 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".ui.main.SuspendedActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.fleet.VehicleDetailActivity"
             android:windowSoftInputMode="adjustResize" />
 

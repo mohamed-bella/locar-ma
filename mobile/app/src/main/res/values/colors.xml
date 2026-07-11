@@ -9,10 +9,10 @@
     <color name="booking_yellow">#FFB700</color>
     <color name="ink">#172033</color>
     <color name="muted">#5F6B7A</color>
-    <color name="divider">#DCE3EC</color>
-    <color name="bg">#F4F6F9</color>
+    <color name="divider">#D3DAE3</color>
+    <color name="bg">#E9EDF2</color>
     <color name="card_bg">#FFFFFF</color>
-    <color name="surface_soft">#F8FAFC</color>
+    <color name="surface_soft">#F2F5F8</color>
     <color name="white">#FFFFFF</color>
     <color name="red">#D4112F</color>
     <color name="green">#008A45</color>

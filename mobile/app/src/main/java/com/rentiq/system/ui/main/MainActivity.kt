@@ -151,6 +151,10 @@ class MainActivity : AppCompatActivity() {
                 val res = SupabaseClient.rest.getAgency("eq.$agencyId")
                 if (res.isSuccessful && res.body() != null) {
                     val agency = res.body()!!
+                    if (agency.suspended) {
+                        SuspendedActivity.start(this@MainActivity)
+                        return@launch
+                    }
                     binding.agencyName.text = agency.name ?: getString(R.string.app_name)
                     if (!agency.logoUrl.isNullOrBlank()) {
                         binding.agencyLogo.imageTintList = null

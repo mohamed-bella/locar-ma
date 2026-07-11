@@ -110,7 +110,12 @@ data class AgencyProfile(
     val patente: String?,
     val rib: String?,
     @SerializedName("company_phone") val companyPhone: String?,
-)
+    @SerializedName("is_active") val isActive: Boolean? = null,
+    @SerializedName("subscription_status") val subscriptionStatus: String? = null,
+) {
+    // Mirrors is_agency_active() in the DB: deactivated or suspended = read-only.
+    val suspended: Boolean get() = isActive == false || subscriptionStatus == "suspended"
+}
 
 // Suivi / entretien (service_records)
 data class ServiceRecord(

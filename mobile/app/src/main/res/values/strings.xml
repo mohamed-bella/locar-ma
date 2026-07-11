@@ -14,9 +14,17 @@
     <string name="login_password">Mot de passe</string>
     <string name="login_button">Se connecter</string>
     <string name="login_error">Email ou mot de passe incorrect</string>
+    <string name="login_missing_fields">Saisissez votre adresse email et votre mot de passe.</string>
+    <string name="login_network_error">Connexion impossible. Vérifiez Internet puis réessayez.</string>
+    <string name="login_server_error">Le service est temporairement indisponible. Réessayez dans un instant.</string>
+    <string name="login_too_many_attempts">Trop de tentatives. Patientez un moment avant de réessayer.</string>
+    <string name="login_generic_error">Impossible de vous connecter pour le moment. Réessayez.</string>
     <string name="agency_not_found">Compte connecte, mais aucune agence active n\'a ete trouvee.</string>
     <string name="logout">Déconnexion</string>
     <string name="loading">Chargement...</string>
+    <string name="suspended_title">Compte suspendu</string>
+    <string name="suspended_message">Votre agence est suspendue. L\'accès est en lecture seule. Contactez l\'administrateur pour réactiver votre compte.</string>
+    <string name="suspended_retry">Réessayer</string>
     <string name="retry">Réessayer</string>
     <string name="empty_fleet">Aucun véhicule</string>
     <string name="empty_reservations">Aucune réservation</string>

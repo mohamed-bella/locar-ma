@@ -14,36 +14,53 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="220dp"
+            android:layout_height="252dp"
             android:background="@color/navy"
-            android:gravity="bottom"
+            android:gravity="bottom|center_horizontal"
             android:orientation="vertical"
             android:paddingHorizontal="28dp"
-            android:paddingBottom="32dp">
+            android:paddingBottom="48dp">
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/app_name"
+                    android:padding="8dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/rentiq_logo" />
+            </com.google.android.material.card.MaterialCardView>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:letterSpacing="0.14"
+                android:layout_marginTop="14dp"
+                android:letterSpacing="0.08"
                 android:text="RENTIQ"
                 android:textColor="@color/white"
-                android:textSize="31sp"
+                android:textSize="25sp"
                 android:textStyle="bold" />
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Gerez vos reservations, contrats et suivi de flotte."
+                android:layout_marginTop="5dp"
+                android:text="Votre agence, toujours sous contrôle."
                 android:textColor="@color/navy_light"
-                android:textSize="15sp" />
+                android:textSize="14sp" />
         </LinearLayout>
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
-            android:layout_marginTop="-34dp"
+            android:layout_marginTop="-30dp"
             android:layout_marginBottom="24dp"
             app:cardBackgroundColor="@color/card_bg"
             app:cardCornerRadius="18dp"
@@ -69,65 +86,80 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Connectez-vous pour piloter l'agence."
+                    android:text="Connectez-vous pour piloter votre agence."
                     android:textColor="@color/muted"
                     android:textSize="13sp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="22dp"
-                    android:text="@string/login_email"
-                    android:textColor="@color/ink"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:hint="@string/login_email"
+                    app:boxBackgroundColor="@color/surface_soft"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/blue_action"
+                    app:boxStrokeWidth="1dp"
+                    app:boxStrokeWidthFocused="2dp">
 
-                <EditText
-                    android:id="@+id/emailInput"
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/emailInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="54dp"
+                        android:autofillHints="username"
+                        android:inputType="textEmailAddress"
+                        android:paddingHorizontal="14dp"
+                        android:textColor="@color/ink"
+                        android:textSize="15sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="6dp"
-                    android:background="@drawable/input_bg"
-                    android:inputType="textEmailAddress"
-                    android:paddingHorizontal="12dp"
-                    android:textColor="@color/ink"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="@string/login_password"
-                    android:textColor="@color/ink"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:layout_marginTop="14dp"
+                    android:hint="@string/login_password"
+                    app:boxBackgroundColor="@color/surface_soft"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/blue_action"
+                    app:boxStrokeWidth="1dp"
+                    app:boxStrokeWidthFocused="2dp"
+                    app:endIconMode="password_toggle">
 
-                <EditText
-                    android:id="@+id/passwordInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="6dp"
-                    android:background="@drawable/input_bg"
-                    android:inputType="textPassword"
-                    android:paddingHorizontal="12dp"
-                    android:textColor="@color/ink"
-                    android:textSize="14sp" />
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/passwordInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="54dp"
+                        android:autofillHints="password"
+                        android:imeOptions="actionDone"
+                        android:inputType="textPassword"
+                        android:paddingHorizontal="14dp"
+                        android:textColor="@color/ink"
+                        android:textSize="15sp" />
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <TextView
                     android:id="@+id/errorText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_danger_soft"
+                    android:padding="10dp"
                     android:textColor="@color/red"
                     android:textSize="12sp"
                     android:visibility="gone" />
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/loginButton"
                     android:layout_width="match_parent"
                     android:layout_height="50dp"
                     android:layout_marginTop="20dp"
-                    android:backgroundTint="@color/blue_action"
+                    app:backgroundTint="@color/blue_action"
+                    app:cornerRadius="12dp"
                     android:text="@string/login_button"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
@@ -144,5 +176,15 @@
                     android:visibility="gone" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="36dp"
+            android:layout_marginBottom="24dp"
+            android:gravity="center"
+            android:text="Une difficulté ? Vérifiez votre connexion puis réessayez."
+            android:textColor="@color/muted"
+            android:textSize="12sp" />
     </LinearLayout>
 </ScrollView>
