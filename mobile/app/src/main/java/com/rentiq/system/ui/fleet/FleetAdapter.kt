@@ -1,6 +1,7 @@
 package com.rentiq.system.ui.fleet
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
@@ -9,59 +10,78 @@ import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.rentiq.system.BuildConfig
 import com.rentiq.system.R
-import com.rentiq.system.data.model.Vehicle
 import com.rentiq.system.databinding.ItemVehicleBinding
+import com.rentiq.system.ui.common.VehicleCardItem
 
 class FleetAdapter(
-    private val onClick: (Vehicle) -> Unit
-) : ListAdapter<Vehicle, FleetAdapter.VH>(DIFF) {
+    private val onClick: (VehicleCardItem) -> Unit,
+) : ListAdapter<VehicleCardItem, FleetAdapter.VH>(DIFF) {
 
-    class VH(val b: ItemVehicleBinding) : RecyclerView.ViewHolder(b.root)
+    class VH(val binding: ItemVehicleBinding) : RecyclerView.ViewHolder(binding.root)
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH =
         VH(ItemVehicleBinding.inflate(LayoutInflater.from(parent.context), parent, false))
 
     override fun onBindViewHolder(holder: VH, position: Int) {
-        val v = getItem(position)
-        val ctx = holder.itemView.context
-        holder.b.plate.text = v.plate ?: "—"
-        holder.b.name.text = v.displayName
-        holder.b.meta.text = listOfNotNull(
-            v.year?.toString(),
-            v.category,
-            v.mileage?.let { "${it} km" },
-        ).joinToString(" · ")
+        val item = getItem(position)
+        val vehicle = item.vehicle
+        val context = holder.itemView.context
 
-        val firstKey = v.imageKeys?.firstOrNull()
-        if (firstKey != null) {
-            holder.b.vehicleImage.load("${BuildConfig.R2_PUBLIC_URL}/$firstKey") {
+        holder.binding.name.text = vehicle.displayName
+        holder.binding.plate.text = vehicle.plate ?: "—"
+        holder.binding.meta.text = listOfNotNull(
+            vehicle.year?.toString(),
+            vehicle.category?.replaceFirstChar { it.uppercase() },
+            vehicle.mileage?.let { "${it} km" },
+        ).joinToString(" · ")
+        holder.binding.rate.text = vehicle.dailyRate?.let { "${it.toInt()} DH / jour" } ?: "Tarif à renseigner"
+
+        val imageKey = vehicle.imageKeys?.firstOrNull()
+        if (imageKey != null) {
+            holder.binding.vehicleImage.setPadding(0, 0, 0, 0)
+            holder.binding.vehicleImage.clearColorFilter()
+            holder.binding.vehicleImage.setBackgroundColor(ContextCompat.getColor(context, R.color.surface_soft))
+            holder.binding.vehicleImage.load("${BuildConfig.R2_PUBLIC_URL.trimEnd('/')}/$imageKey") {
                 crossfade(true)
-                error(R.color.navy_light)
+                placeholder(R.drawable.image_placeholder)
+                error(R.drawable.image_placeholder)
             }
         } else {
-            holder.b.vehicleImage.setImageResource(0)
-            holder.b.vehicleImage.setBackgroundColor(ContextCompat.getColor(ctx, R.color.navy_light))
+            val padding = (24 * context.resources.displayMetrics.density).toInt()
+            holder.binding.vehicleImage.setPadding(padding, padding, padding, padding)
+            holder.binding.vehicleImage.setImageResource(R.drawable.ic_car)
+            holder.binding.vehicleImage.setColorFilter(ContextCompat.getColor(context, R.color.navy))
+            holder.binding.vehicleImage.setBackgroundColor(ContextCompat.getColor(context, R.color.navy_light))
         }
 
-        val (label, color) = when (v.status) {
-            "available" -> ctx.getString(R.string.status_available) to R.color.green
-            "rented" -> ctx.getString(R.string.status_rented) to R.color.red
-            "maintenance" -> ctx.getString(R.string.status_maintenance) to R.color.amber
-            "reserved" -> ctx.getString(R.string.status_reserved) to R.color.navy
-            else -> (v.status ?: "—") to R.color.muted
+        val (statusLabel, statusColor) = when (vehicle.status) {
+            "available" -> context.getString(R.string.status_available) to R.color.green
+            "rented", "active" -> context.getString(R.string.status_rented) to R.color.red
+            "maintenance" -> context.getString(R.string.status_maintenance) to R.color.amber
+            "reserved" -> context.getString(R.string.status_reserved) to R.color.navy
+            else -> (vehicle.status ?: "—") to R.color.muted
         }
-        holder.b.status.text = label
-        holder.b.status.setTextColor(ContextCompat.getColor(ctx, color))
+        holder.binding.status.text = statusLabel
+        holder.binding.status.setTextColor(ContextCompat.getColor(context, statusColor))
 
-        holder.b.rate.text = v.dailyRate?.let { "${it.toInt()} DH" } ?: ""
+        val reasons = item.attentionReasons
+        holder.binding.attention.visibility = if (reasons.isEmpty()) View.GONE else View.VISIBLE
+        holder.binding.attention.text = when {
+            reasons.isEmpty() -> ""
+            reasons.size == 1 -> reasons.first()
+            else -> "${reasons.first()} · +${reasons.size - 1}"
+        }
 
-        holder.itemView.setOnClickListener { onClick(v) }
+        holder.binding.root.setOnClickListener { onClick(item) }
     }
 
     companion object {
-        val DIFF = object : DiffUtil.ItemCallback<Vehicle>() {
-            override fun areItemsTheSame(a: Vehicle, b: Vehicle) = a.id == b.id
-            override fun areContentsTheSame(a: Vehicle, b: Vehicle) = a == b
+        val DIFF = object : DiffUtil.ItemCallback<VehicleCardItem>() {
+            override fun areItemsTheSame(oldItem: VehicleCardItem, newItem: VehicleCardItem) =
+                oldItem.id == newItem.id
+
+            override fun areContentsTheSame(oldItem: VehicleCardItem, newItem: VehicleCardItem) =
+                oldItem == newItem
         }
     }
 }

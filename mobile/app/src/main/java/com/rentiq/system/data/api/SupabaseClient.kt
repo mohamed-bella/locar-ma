@@ -10,6 +10,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import kotlinx.coroutines.runBlocking
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 object SupabaseClient {
     private const val BASE_URL = BuildConfig.SUPABASE_URL
@@ -54,6 +55,13 @@ object SupabaseClient {
 
     private fun httpClient(includeUserToken: Boolean): OkHttpClient {
         val builder = OkHttpClient.Builder()
+            // Retry transient DNS/connect blips ("unable to resolve host") before
+            // they ever reach the UI — first in the chain so it wraps everything.
+            .addInterceptor(RetryInterceptor())
+            .retryOnConnectionFailure(true)
+            .connectTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .addInterceptor(baseHeaders(includeUserToken))
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY

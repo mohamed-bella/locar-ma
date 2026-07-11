@@ -118,6 +118,19 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
+                    <TextView
+                        android:id="@+id/vehicleAttention"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_warning_soft"
+                        android:drawableStart="@drawable/ic_alert"
+                        android:drawablePadding="7dp"
+                        android:padding="10dp"
+                        android:textColor="@color/amber"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -185,6 +198,19 @@
                                 app:iconPadding="6dp"
                                 app:iconTint="@color/white" />
                         </LinearLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/releaseMaintenanceButton"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="46dp"
+                            android:layout_marginTop="10dp"
+                            android:text="Remettre en service"
+                            android:textColor="@color/green"
+                            android:visibility="gone"
+                            app:icon="@drawable/ic_car"
+                            app:iconTint="@color/green"
+                            app:strokeColor="@color/green" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -342,74 +368,14 @@
                             android:textSize="11sp"
                             android:textStyle="bold" />
 
+                        <!-- Icon-tile grid (rows of 3) — populated in code to mirror
+                             the webapp SuiviBoard: kilométrage, legal papers, services. -->
                         <LinearLayout
+                            android:id="@+id/suiviGrid"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="Assurance"
-                                android:textColor="@color/muted"
-                                android:textSize="12sp" />
-
-                            <TextView
-                                android:id="@+id/insurance"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="Vignette"
-                                android:textColor="@color/muted"
-                                android:textSize="12sp" />
-
-                            <TextView
-                                android:id="@+id/vignette"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="Visite technique"
-                                android:textColor="@color/muted"
-                                android:textSize="12sp" />
-
-                            <TextView
-                                android:id="@+id/visiteTech"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
+                            android:layout_marginTop="6dp"
+                            android:orientation="vertical" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 

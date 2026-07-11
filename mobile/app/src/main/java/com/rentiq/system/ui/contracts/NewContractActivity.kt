@@ -5,6 +5,7 @@ import android.app.TimePickerDialog
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -13,8 +14,10 @@ import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.data.model.Reservation
 import com.rentiq.system.databinding.ActivityNewContractBinding
 import com.rentiq.system.util.AuthSession
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import java.util.Locale
 
 class NewContractActivity : AppCompatActivity() {
     private lateinit var b: ActivityNewContractBinding
@@ -44,6 +47,19 @@ class NewContractActivity : AppCompatActivity() {
         b.heureDepart.setOnClickListener { pickTime(b.heureDepart) }
         b.heureRetour.setOnClickListener { pickTime(b.heureRetour) }
         b.saveButton.setOnClickListener { save() }
+        b.advancedToggle.setOnClickListener {
+            val show = b.advancedSection.visibility != View.VISIBLE
+            b.advancedSection.visibility = if (show) View.VISIBLE else View.GONE
+            b.advancedToggle.text = if (show) "Masquer les informations complémentaires" else "Ajouter permis ou 2e conducteur"
+            b.advancedToggle.setIconResource(if (show) com.rentiq.system.R.drawable.ic_close else com.rentiq.system.R.drawable.ic_plus)
+        }
+        b.reservationSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                reservations.getOrNull(position)?.let { bindReservation(it) }
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+        }
 
         loadReservations()
     }
@@ -52,8 +68,10 @@ class NewContractActivity : AppCompatActivity() {
         b.progress.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
-                val res = SupabaseClient.rest.getReservations()
-                val contractRes = SupabaseClient.rest.getContracts()
+                val reservationsCall = async { SupabaseClient.rest.getReservations() }
+                val contractsCall = async { SupabaseClient.rest.getContracts() }
+                val res = reservationsCall.await()
+                val contractRes = contractsCall.await()
                 b.progress.visibility = View.GONE
                 if (AuthSession.isAuthError(res.code()) || AuthSession.isAuthError(contractRes.code())) {
                     AuthSession.returnToLogin(this@NewContractActivity)
@@ -66,7 +84,7 @@ class NewContractActivity : AppCompatActivity() {
                     reservations = (res.body() ?: emptyList()).filter {
                         (it.status == "pending" || it.status == "confirmed" || it.status == "active") &&
                             it.id !in reservedWithContract
-                    }
+                    }.sortedBy { it.dateStart }
                     b.reservationSpinner.adapter = ArrayAdapter(
                         this@NewContractActivity,
                         android.R.layout.simple_spinner_item,
@@ -86,6 +104,12 @@ class NewContractActivity : AppCompatActivity() {
                             ).show()
                         }
                     }
+                    if (reservations.isEmpty()) {
+                        b.reservationSummary.text = "Toutes les réservations actives ont déjà un contrat."
+                        b.saveButton.isEnabled = false
+                    } else {
+                        bindReservation(reservations[b.reservationSpinner.selectedItemPosition.coerceAtLeast(0)])
+                    }
                 } else {
                     val code = if (!res.isSuccessful) res.code() else contractRes.code()
                     Toast.makeText(this@NewContractActivity, AuthSession.messageFor(code), Toast.LENGTH_SHORT).show()
@@ -97,17 +121,36 @@ class NewContractActivity : AppCompatActivity() {
         }
     }
 
+    private fun bindReservation(reservation: Reservation) {
+        val client = reservation.clients
+        val vehicle = reservation.vehicles
+        b.reservationSummary.text = buildString {
+            append(client?.fullName ?: "Client")
+            append(" · ")
+            append(listOfNotNull(vehicle?.brand, vehicle?.model, vehicle?.plate).joinToString(" ").ifBlank { "Voiture" })
+            append("\n${reservation.dateStart?.take(10) ?: "?"} → ${reservation.dateEnd?.take(10) ?: "?"}")
+            reservation.totalAmount?.let { append(" · ${it.toInt()} DH") }
+        }
+
+        if (b.clientNom.text.isNullOrBlank() && b.clientPrenom.text.isNullOrBlank()) {
+            val parts = client?.fullName.orEmpty().trim().split(Regex("\\s+"), limit = 2)
+            b.clientNom.setText(parts.firstOrNull().orEmpty())
+            b.clientPrenom.setText(parts.getOrNull(1).orEmpty())
+        }
+        if (b.clientPhone2.text.isNullOrBlank()) b.clientPhone2.setText(client?.phone.orEmpty())
+    }
+
     private fun pickDate(target: android.widget.EditText) {
         val cal = Calendar.getInstance()
         DatePickerDialog(this, { _, y, m, d ->
-            target.setText(String.format("%04d-%02d-%02d", y, m + 1, d))
+            target.setText(String.format(Locale.getDefault(), "%04d-%02d-%02d", y, m + 1, d))
         }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
     }
 
     private fun pickTime(target: android.widget.EditText) {
         val cal = Calendar.getInstance()
         TimePickerDialog(this, { _, h, m ->
-            target.setText(String.format("%02d:%02d", h, m))
+            target.setText(String.format(Locale.getDefault(), "%02d:%02d", h, m))
         }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), true).show()
     }
 
@@ -159,6 +202,10 @@ class NewContractActivity : AppCompatActivity() {
                 val createRes = SupabaseClient.api.createContract(
                     mapOf("reservation_id" to reservation.id),
                 )
+                if (AuthSession.isAuthError(createRes.code())) {
+                    AuthSession.returnToLogin(this@NewContractActivity)
+                    return@launch
+                }
                 if (!createRes.isSuccessful) {
                     b.progress.visibility = View.GONE
                     b.saveButton.isEnabled = true
@@ -185,7 +232,23 @@ class NewContractActivity : AppCompatActivity() {
                 if (checkBank.isNotBlank()) updateBody["check_bank"] = checkBank
                 if (checkAmt != null) updateBody["check_amount"] = checkAmt
 
-                SupabaseClient.api.updateContract(updateBody)
+                val updateRes = SupabaseClient.api.updateContract(updateBody)
+                if (AuthSession.isAuthError(updateRes.code())) {
+                    AuthSession.returnToLogin(this@NewContractActivity)
+                    return@launch
+                }
+                if (!updateRes.isSuccessful) {
+                    b.progress.visibility = View.GONE
+                    b.saveButton.isEnabled = true
+                    Toast.makeText(
+                        this@NewContractActivity,
+                        "Le contrat existe, mais les détails n’ont pas été enregistrés (erreur ${updateRes.code()}).",
+                        Toast.LENGTH_LONG,
+                    ).show()
+                    startActivity(Intent(this@NewContractActivity, ContractDetailActivity::class.java).putExtra("contract_id", contractId))
+                    finish()
+                    return@launch
+                }
 
                 b.progress.visibility = View.GONE
                 Toast.makeText(this@NewContractActivity, "Contrat créé", Toast.LENGTH_SHORT).show()

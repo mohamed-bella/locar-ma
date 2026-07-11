@@ -378,7 +378,7 @@
                         android:textSize="13sp" />
 
                     <!-- Primary action (context-dependent) -->
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/primaryAction"
                         android:layout_width="match_parent"
                         android:layout_height="52dp"
@@ -399,7 +399,7 @@
                         android:layout_marginTop="8dp"
                         android:orientation="horizontal">
 
-                        <Button
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/secondaryA"
                             android:layout_width="0dp"
                             android:layout_height="46dp"
@@ -412,7 +412,7 @@
                             android:textColor="@color/white"
                             android:textSize="13sp" />
 
-                        <Button
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/secondaryB"
                             android:layout_width="0dp"
                             android:layout_height="46dp"
@@ -455,7 +455,7 @@
                             android:layout_marginTop="8dp"
                             android:orientation="horizontal">
 
-                            <Button
+                            <com.google.android.material.button.MaterialButton
                                 android:id="@+id/clearSignature"
                                 android:layout_width="0dp"
                                 android:layout_height="44dp"
@@ -469,7 +469,7 @@
                                 android:textAllCaps="false"
                                 android:textColor="@color/white" />
 
-                            <Button
+                            <com.google.android.material.button.MaterialButton
                                 android:id="@+id/signButton"
                                 android:layout_width="0dp"
                                 android:layout_height="44dp"
@@ -527,7 +527,7 @@
                             android:textColor="@color/navy"
                             android:textSize="11sp" />
 
-                        <Button
+                        <com.google.android.material.button.MaterialButton
                             android:id="@+id/copyLink"
                             android:layout_width="wrap_content"
                             android:layout_height="40dp"
@@ -544,7 +544,7 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Always available: view / download the contract PDF -->
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/viewPdfButton"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"

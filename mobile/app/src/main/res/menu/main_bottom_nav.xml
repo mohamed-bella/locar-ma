@@ -13,7 +13,7 @@
         android:icon="@drawable/ic_calendar"
         android:title="@string/tab_reservations" />
     <item
-        android:id="@+id/nav_suivi"
-        android:icon="@drawable/ic_suivi"
-        android:title="@string/tab_suivi" />
+        android:id="@+id/nav_more"
+        android:icon="@drawable/ic_settings"
+        android:title="@string/tab_more" />
 </menu>

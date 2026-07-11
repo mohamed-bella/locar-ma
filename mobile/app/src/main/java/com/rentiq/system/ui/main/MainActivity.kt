@@ -5,8 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -24,7 +22,6 @@ import com.rentiq.system.ui.dashboard.DashboardFragment
 import com.rentiq.system.ui.fleet.FleetFragment
 import com.rentiq.system.ui.reservations.ReservationsFragment
 import com.rentiq.system.ui.settings.SettingsFragment
-import com.rentiq.system.ui.suivi.SuiviFragment
 import com.rentiq.system.util.AuthSession
 import com.rentiq.system.util.NotificationHelper
 import com.rentiq.system.util.SessionManager
@@ -37,7 +34,7 @@ class MainActivity : AppCompatActivity() {
 
     private val requestNotifPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted ->
+    ) { _ ->
         // Regardless of outcome — start service if prefs say enabled (silent if denied)
         startRealtimeServiceIfEnabled()
     }
@@ -46,7 +43,7 @@ class MainActivity : AppCompatActivity() {
         Destination(R.id.nav_dashboard) { DashboardFragment() },
         Destination(R.id.nav_fleet) { FleetFragment() },
         Destination(R.id.nav_reservations) { ReservationsFragment() },
-        Destination(R.id.nav_suivi) { SuiviFragment() },
+        Destination(R.id.nav_more) { MoreFragment() },
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -101,6 +98,12 @@ class MainActivity : AppCompatActivity() {
             showDestination(destination)
             true
         }
+        binding.bottomNavigation.setOnItemReselectedListener { item ->
+            destinations.firstOrNull { it.menuId == item.itemId }?.let {
+                currentMenuId = null
+                showDestination(it)
+            }
+        }
         binding.bottomNavigation.selectedItemId = R.id.nav_dashboard
 
         ensureAgencyId()
@@ -116,6 +119,10 @@ class MainActivity : AppCompatActivity() {
     private fun showDestination(destination: Destination) {
         if (currentMenuId == destination.menuId) return
         currentMenuId = destination.menuId
+        supportFragmentManager.popBackStackImmediate(
+            null,
+            androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE,
+        )
         supportFragmentManager.commit {
             replace(R.id.fragmentContainer, destination.factory())
         }
@@ -156,27 +163,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menu.add(0, 2, 0, R.string.settings_title)
-        menu.add(0, 1, 1, R.string.logout)
-        return true
+    fun openSettings() {
+        currentMenuId = null
+        supportFragmentManager.commit {
+            replace(R.id.fragmentContainer, SettingsFragment())
+            addToBackStack("settings")
+        }
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == 1) {
-            session.clear()
-            SupabaseClient.accessToken = null
-            goToLogin()
-            return true
-        }
-        if (item.itemId == 2) {
-            currentMenuId = null
-            supportFragmentManager.commit {
-                replace(R.id.fragmentContainer, SettingsFragment())
-            }
-            return true
-        }
-        return super.onOptionsItemSelected(item)
+    fun logout() {
+        session.clear()
+        SupabaseClient.accessToken = null
+        goToLogin()
     }
 
     private fun maybeStartRealtimeService() {

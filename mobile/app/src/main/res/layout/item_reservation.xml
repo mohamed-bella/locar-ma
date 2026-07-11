@@ -1,37 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/AppCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    app:cardBackgroundColor="@color/card_bg"
-    app:cardCornerRadius="18dp"
-    app:cardElevation="1dp"
-    app:rippleColor="@color/navy_light"
-    app:strokeColor="@color/divider"
-    app:strokeWidth="1dp">
+    android:layout_marginBottom="10dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:rippleColor="@color/navy_light">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
-
-        <!-- State badge: À venir / En location / Terminée + remaining days -->
-        <TextView
-            android:id="@+id/stateBadge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:background="@drawable/pill_bg"
-            android:drawableStart="@drawable/ic_calendar"
-            android:drawablePadding="6dp"
-            android:drawableTint="@color/white"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="4dp"
-            android:textColor="@color/white"
-            android:textSize="11sp"
-            android:textStyle="bold" />
+        android:padding="15dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -39,96 +21,73 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <LinearLayout
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/stateBadge"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/clientName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:ellipsize="end"
-                    android:singleLine="true"
-                    android:textColor="@color/ink"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/vehicleInfo"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
-                    android:textColor="@color/muted"
-                    android:textSize="12sp" />
-            </LinearLayout>
+                android:background="@drawable/bg_success_soft"
+                android:fontFamily="sans-serif-medium"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="5dp"
+                android:textColor="@color/green"
+                android:textSize="11sp" />
 
             <TextView
                 android:id="@+id/status"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:background="@drawable/chip_blue"
-                android:textAllCaps="true"
-                android:textColor="@color/navy"
-                android:textSize="10sp"
-                android:textStyle="bold" />
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:textColor="@color/muted"
+                android:textSize="11sp" />
+
+            <ImageButton
+                android:id="@+id/menuButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="2dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/manage"
+                android:padding="8dp"
+                android:src="@drawable/ic_more_vert" />
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/clientName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="1"
+            android:textColor="@color/ink"
+            android:textSize="17sp" />
+
+        <TextView
+            android:id="@+id/vehicleInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:drawablePadding="7dp"
+            android:textColor="@color/muted"
+            android:textSize="12sp"
+            app:drawableStartCompat="@drawable/ic_car"
+            app:drawableTint="@color/muted" />
 
         <TextView
             android:id="@+id/dates"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="11dp"
+            android:background="@color/surface_soft"
+            android:drawablePadding="8dp"
+            android:fontFamily="sans-serif-medium"
+            android:padding="10dp"
             android:textColor="@color/ink"
-            android:textSize="13sp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/amount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/navy"
-                    android:textSize="17sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/perDay"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/muted"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/cancelButton"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:layout_marginStart="10dp"
-                android:backgroundTint="@color/red"
-                android:minHeight="40dp"
-                android:minWidth="0dp"
-                android:paddingHorizontal="14dp"
-                android:text="@string/quick_cancel_reservation"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:textSize="12sp"
-                app:cornerRadius="14dp"
-                android:elevation="0dp" />
-        </LinearLayout>
+            android:textSize="13sp"
+            app:drawableStartCompat="@drawable/ic_calendar"
+            app:drawableTint="@color/navy" />
 
         <View
             android:layout_width="match_parent"
@@ -136,18 +95,58 @@
             android:layout_marginTop="12dp"
             android:background="@color/divider" />
 
-        <TextView
-            android:id="@+id/detailsHint"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:drawableEnd="@drawable/ic_eye"
-            android:drawablePadding="6dp"
-            android:drawableTint="@color/blue_action"
+            android:layout_marginTop="11dp"
             android:gravity="center_vertical"
-            android:text="Voir tous les détails"
-            android:textColor="@color/blue_action"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@string/tab_contracts"
+                android:src="@drawable/ic_contract"
+                app:tint="@color/navy" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/contractState"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/navy"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/perDay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="1dp"
+                    android:textColor="@color/muted"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/amount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/ink"
+                android:textSize="17sp" />
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="5dp"
+                android:contentDescription="@string/open"
+                android:src="@drawable/ic_chevron_right" />
+        </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

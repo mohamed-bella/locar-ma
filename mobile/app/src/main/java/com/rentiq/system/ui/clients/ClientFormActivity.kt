@@ -131,6 +131,7 @@ class ClientFormActivity : AppCompatActivity() {
                 }
                 if (res.isSuccessful) {
                     Toast.makeText(this@ClientFormActivity, "Client enregistré", Toast.LENGTH_SHORT).show()
+                    setResult(RESULT_OK)
                     finish()
                 } else {
                     Toast.makeText(this@ClientFormActivity, "Erreur ${res.code()}", Toast.LENGTH_SHORT).show()

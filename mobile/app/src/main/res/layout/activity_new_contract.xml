@@ -18,386 +18,215 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="18dp">
 
             <TextView
-                style="@style/ContractFormSection"
-                android:text="RESERVATION" />
-
-            <Spinner
-                android:id="@+id/reservationSpinner"
+                style="@style/ScreenTitle"
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="6dp"
-                android:background="@drawable/input_bg" />
-
-            <View style="@style/ContractFormDivider" />
+                android:layout_height="wrap_content"
+                android:text="Préparer le contrat" />
 
             <TextView
-                style="@style/ContractFormSection"
-                android:text="VEHICULE DEPART" />
-
-            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:orientation="horizontal">
+                android:layout_marginTop="4dp"
+                android:text="Les informations de la réservation sont reprises automatiquement. Ajoutez uniquement les éléments utiles au départ."
+                android:textColor="@color/muted"
+                android:textSize="13sp" />
 
-                <EditText
-                    android:id="@+id/mileageOut"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_weight="1"
-                    android:hint="Km depart"
-                    android:inputType="number" />
-
-                <Spinner
-                    android:id="@+id/fuelOut"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_marginStart="4dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/input_bg" />
-            </LinearLayout>
-
-            <View style="@style/ContractFormDivider" />
-
-            <TextView
-                style="@style/ContractFormSection"
-                android:text="IDENTITE CLIENT" />
-
-            <LinearLayout
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AppCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:orientation="horizontal">
+                android:layout_marginTop="18dp">
 
-                <EditText
-                    android:id="@+id/clientNom"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_weight="1"
-                    android:hint="Nom" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <EditText
-                    android:id="@+id/clientPrenom"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginStart="4dp"
-                    android:layout_weight="1"
-                    android:hint="Prenom" />
-            </LinearLayout>
+                    <TextView style="@style/SectionLabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Dossier" />
 
-            <LinearLayout
+                    <Spinner
+                        android:id="@+id/reservationSpinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/input_bg"
+                        android:paddingHorizontal="10dp" />
+
+                    <TextView
+                        android:id="@+id/reservationSummary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textColor="@color/muted"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AppCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:orientation="horizontal">
+                android:layout_marginTop="12dp">
 
-                <EditText
-                    android:id="@+id/clientCinExpiry"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_weight="1"
-                    android:clickable="true"
-                    android:focusable="false"
-                    android:hint="Expiration CIN" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <EditText
-                    android:id="@+id/clientBirthdate"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginStart="4dp"
-                    android:layout_weight="1"
-                    android:clickable="true"
-                    android:focusable="false"
-                    android:hint="Naissance" />
-            </LinearLayout>
+                    <TextView style="@style/SectionLabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="État au départ" />
 
-            <EditText
-                android:id="@+id/clientVille"
-                style="@style/ContractFormInput"
-                android:layout_marginTop="6dp"
-                android:hint="Ville" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+                        <EditText
+                            android:id="@+id/mileageOut"
+                            style="@style/ContractFormInput"
+                            android:layout_width="0dp"
+                            android:layout_height="52dp"
+                            android:layout_marginEnd="5dp"
+                            android:layout_weight="1"
+                            android:hint="Kilométrage"
+                            android:inputType="number" />
+                        <Spinner
+                            android:id="@+id/fuelOut"
+                            android:layout_width="0dp"
+                            android:layout_height="52dp"
+                            android:layout_marginStart="5dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/input_bg"
+                            android:paddingHorizontal="10dp" />
+                    </LinearLayout>
 
-            <EditText
-                android:id="@+id/clientPhone2"
-                style="@style/ContractFormInput"
-                android:layout_marginTop="6dp"
-                android:hint="Telephone 2"
-                android:inputType="phone" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+                        <EditText android:id="@+id/heureDepart" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginEnd="5dp" android:layout_weight="1" android:clickable="true" android:focusable="false" android:hint="Heure départ" />
+                        <EditText android:id="@+id/heureRetour" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginStart="5dp" android:layout_weight="1" android:clickable="true" android:focusable="false" android:hint="Heure retour" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-            <EditText
-                android:id="@+id/clientProfession"
-                style="@style/ContractFormInput"
-                android:layout_marginTop="6dp"
-                android:hint="Profession" />
-
-            <View style="@style/ContractFormDivider" />
-
-            <TextView
-                style="@style/ContractFormSection"
-                android:text="PERMIS CLIENT" />
-
-            <EditText
-                android:id="@+id/permitNumber"
-                style="@style/ContractFormInput"
-                android:layout_marginTop="6dp"
-                android:hint="Numero permis" />
-
-            <LinearLayout
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AppCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:orientation="horizontal">
-
-                <EditText
-                    android:id="@+id/permitDate"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_weight="1"
-                    android:clickable="true"
-                    android:focusable="false"
-                    android:hint="Date permis" />
-
-                <EditText
-                    android:id="@+id/permitPlace"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginStart="4dp"
-                    android:layout_weight="1"
-                    android:hint="Lieu" />
-            </LinearLayout>
-
-            <View style="@style/ContractFormDivider" />
-
-            <TextView
-                style="@style/ContractFormSection"
-                android:text="2EME CONDUCTEUR OPTIONNEL" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:orientation="horizontal">
-
-                <EditText
-                    android:id="@+id/d2Name"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_weight="1"
-                    android:hint="Nom" />
-
-                <EditText
-                    android:id="@+id/d2Prenom"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginStart="4dp"
-                    android:layout_weight="1"
-                    android:hint="Prenom" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:orientation="horizontal">
-
-                <EditText
-                    android:id="@+id/d2Cin"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_weight="1"
-                    android:hint="CIN" />
-
-                <EditText
-                    android:id="@+id/d2CinExpiry"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginStart="4dp"
-                    android:layout_weight="1"
-                    android:clickable="true"
-                    android:focusable="false"
-                    android:hint="Expiration CIN" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:orientation="horizontal">
-
-                <EditText
-                    android:id="@+id/d2Birthdate"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_weight="1"
-                    android:clickable="true"
-                    android:focusable="false"
-                    android:hint="Naissance" />
-
-                <EditText
-                    android:id="@+id/d2Profession"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginStart="4dp"
-                    android:layout_weight="1"
-                    android:hint="Profession" />
-            </LinearLayout>
-
-            <EditText
-                android:id="@+id/d2Permit"
-                style="@style/ContractFormInput"
-                android:layout_marginTop="6dp"
-                android:hint="Numero permis" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:orientation="horizontal">
-
-                <EditText
-                    android:id="@+id/d2PermitDate"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_weight="1"
-                    android:clickable="true"
-                    android:focusable="false"
-                    android:hint="Date permis" />
-
-                <EditText
-                    android:id="@+id/d2PermitPlace"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginStart="4dp"
-                    android:layout_weight="1"
-                    android:hint="Lieu permis" />
-            </LinearLayout>
-
-            <EditText
-                android:id="@+id/d2Phone"
-                style="@style/ContractFormInput"
-                android:layout_marginTop="6dp"
-                android:hint="Telephone"
-                android:inputType="phone" />
-
-            <EditText
-                android:id="@+id/d2Address"
-                style="@style/ContractFormInput"
-                android:layout_marginTop="6dp"
-                android:hint="Adresse" />
-
-            <EditText
-                android:id="@+id/d2Ville"
-                style="@style/ContractFormInput"
-                android:layout_marginTop="6dp"
-                android:hint="Ville" />
-
-            <View style="@style/ContractFormDivider" />
-
-            <TextView
-                style="@style/ContractFormSection"
-                android:text="CAUTION / CHEQUE" />
-
-            <EditText
-                android:id="@+id/checkNumber"
-                style="@style/ContractFormInput"
-                android:layout_marginTop="6dp"
-                android:hint="Numero cheque" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:orientation="horizontal">
-
-                <EditText
-                    android:id="@+id/checkBank"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_weight="1"
-                    android:hint="Banque" />
-
-                <EditText
-                    android:id="@+id/checkAmount"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginStart="4dp"
-                    android:layout_weight="1"
-                    android:hint="Montant"
-                    android:inputType="numberDecimal" />
-            </LinearLayout>
-
-            <View style="@style/ContractFormDivider" />
-
-            <TextView
-                style="@style/ContractFormSection"
-                android:text="HORAIRES" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:orientation="horizontal">
-
-                <EditText
-                    android:id="@+id/heureDepart"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginEnd="4dp"
-                    android:layout_weight="1"
-                    android:clickable="true"
-                    android:focusable="false"
-                    android:hint="Heure depart" />
-
-                <EditText
-                    android:id="@+id/heureRetour"
-                    style="@style/ContractFormInput"
-                    android:layout_width="0dp"
-                    android:layout_marginStart="4dp"
-                    android:layout_weight="1"
-                    android:clickable="true"
-                    android:focusable="false"
-                    android:hint="Heure retour" />
-            </LinearLayout>
+                android:layout_marginTop="12dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+                    <TextView style="@style/SectionLabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Caution / chèque" />
+                    <EditText android:id="@+id/checkNumber" style="@style/ContractFormInput" android:layout_height="52dp" android:layout_marginTop="10dp" android:hint="Numéro de chèque (optionnel)" />
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+                        <EditText android:id="@+id/checkBank" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginEnd="5dp" android:layout_weight="1" android:hint="Banque" />
+                        <EditText android:id="@+id/checkAmount" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginStart="5dp" android:layout_weight="1" android:hint="Montant DH" android:inputType="numberDecimal" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/saveButton"
+                android:id="@+id/advancedToggle"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginTop="24dp"
-                android:backgroundTint="@color/navy"
-                android:text="Creer le contrat"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                app:icon="@drawable/ic_contract"
-                app:iconGravity="textStart"
-                app:iconTint="@color/white" />
+                android:layout_height="48dp"
+                android:layout_marginTop="12dp"
+                android:text="Ajouter permis ou 2e conducteur"
+                android:textColor="@color/navy"
+                app:icon="@drawable/ic_plus"
+                app:iconTint="@color/navy"
+                app:strokeColor="@color/divider" />
 
-            <ProgressBar
-                android:id="@+id/progress"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="center"
-                android:layout_marginTop="8dp"
-                android:indeterminateTint="@color/navy"
-                android:visibility="gone" />
+            <LinearLayout
+                android:id="@+id/advancedSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/AppCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+                        <TextView style="@style/SectionLabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Client et permis" />
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+                            <EditText android:id="@+id/clientNom" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginEnd="5dp" android:layout_weight="1" android:hint="Nom" />
+                            <EditText android:id="@+id/clientPrenom" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginStart="5dp" android:layout_weight="1" android:hint="Prénom" />
+                        </LinearLayout>
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+                            <EditText android:id="@+id/clientCinExpiry" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginEnd="5dp" android:layout_weight="1" android:clickable="true" android:focusable="false" android:hint="Expiration CIN" />
+                            <EditText android:id="@+id/clientBirthdate" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginStart="5dp" android:layout_weight="1" android:clickable="true" android:focusable="false" android:hint="Naissance" />
+                        </LinearLayout>
+                        <EditText android:id="@+id/clientVille" style="@style/ContractFormInput" android:layout_height="52dp" android:layout_marginTop="10dp" android:hint="Ville" />
+                        <EditText android:id="@+id/clientPhone2" style="@style/ContractFormInput" android:layout_height="52dp" android:layout_marginTop="10dp" android:hint="Téléphone secondaire" android:inputType="phone" />
+                        <EditText android:id="@+id/clientProfession" style="@style/ContractFormInput" android:layout_height="52dp" android:layout_marginTop="10dp" android:hint="Profession" />
+                        <EditText android:id="@+id/permitNumber" style="@style/ContractFormInput" android:layout_height="52dp" android:layout_marginTop="10dp" android:hint="Numéro de permis" />
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+                            <EditText android:id="@+id/permitDate" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginEnd="5dp" android:layout_weight="1" android:clickable="true" android:focusable="false" android:hint="Date du permis" />
+                            <EditText android:id="@+id/permitPlace" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginStart="5dp" android:layout_weight="1" android:hint="Lieu" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/AppCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+                        <TextView style="@style/SectionLabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="2e conducteur (optionnel)" />
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+                            <EditText android:id="@+id/d2Name" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginEnd="5dp" android:layout_weight="1" android:hint="Nom" />
+                            <EditText android:id="@+id/d2Prenom" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginStart="5dp" android:layout_weight="1" android:hint="Prénom" />
+                        </LinearLayout>
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+                            <EditText android:id="@+id/d2Cin" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginEnd="5dp" android:layout_weight="1" android:hint="CIN" />
+                            <EditText android:id="@+id/d2CinExpiry" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginStart="5dp" android:layout_weight="1" android:clickable="true" android:focusable="false" android:hint="Expiration CIN" />
+                        </LinearLayout>
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+                            <EditText android:id="@+id/d2Birthdate" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginEnd="5dp" android:layout_weight="1" android:clickable="true" android:focusable="false" android:hint="Naissance" />
+                            <EditText android:id="@+id/d2Profession" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginStart="5dp" android:layout_weight="1" android:hint="Profession" />
+                        </LinearLayout>
+                        <EditText android:id="@+id/d2Permit" style="@style/ContractFormInput" android:layout_height="52dp" android:layout_marginTop="10dp" android:hint="Numéro de permis" />
+                        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+                            <EditText android:id="@+id/d2PermitDate" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginEnd="5dp" android:layout_weight="1" android:clickable="true" android:focusable="false" android:hint="Date permis" />
+                            <EditText android:id="@+id/d2PermitPlace" style="@style/ContractFormInput" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginStart="5dp" android:layout_weight="1" android:hint="Lieu permis" />
+                        </LinearLayout>
+                        <EditText android:id="@+id/d2Phone" style="@style/ContractFormInput" android:layout_height="52dp" android:layout_marginTop="10dp" android:hint="Téléphone" android:inputType="phone" />
+                        <EditText android:id="@+id/d2Address" style="@style/ContractFormInput" android:layout_height="52dp" android:layout_marginTop="10dp" android:hint="Adresse" />
+                        <EditText android:id="@+id/d2Ville" style="@style/ContractFormInput" android:layout_height="52dp" android:layout_marginTop="10dp" android:hint="Ville" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <Space android:layout_width="1dp" android:layout_height="18dp" />
         </LinearLayout>
     </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/card_bg"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="18dp"
+        android:paddingVertical="12dp">
+        <ProgressBar android:id="@+id/progress" android:layout_width="28dp" android:layout_height="28dp" android:layout_marginEnd="12dp" android:indeterminateTint="@color/navy" android:visibility="gone" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/saveButton"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_weight="1"
+            android:backgroundTint="@color/blue_action"
+            android:text="Créer et ouvrir"
+            android:textColor="@color/white"
+            app:icon="@drawable/ic_contract"
+            app:iconTint="@color/white" />
+    </LinearLayout>
 </LinearLayout>

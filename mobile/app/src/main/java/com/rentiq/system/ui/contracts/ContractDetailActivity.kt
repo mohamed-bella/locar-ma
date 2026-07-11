@@ -1,6 +1,7 @@
 package com.rentiq.system.ui.contracts
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -16,6 +17,7 @@ import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.data.model.Contract
 import com.rentiq.system.databinding.ActivityContractDetailBinding
 import com.rentiq.system.util.QrGen
+import com.rentiq.system.util.AuthSession
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
 
@@ -53,6 +55,10 @@ class ContractDetailActivity : AppCompatActivity() {
             try {
                 val res = SupabaseClient.rest.getContract("eq.$contractId")
                 b.progress.visibility = View.GONE
+                if (AuthSession.isAuthError(res.code())) {
+                    AuthSession.returnToLogin(this@ContractDetailActivity)
+                    return@launch
+                }
                 if (res.isSuccessful) {
                     contract = res.body()
                     contract?.let { bind(it) }
@@ -176,7 +182,7 @@ class ContractDetailActivity : AppCompatActivity() {
                     "Signé le ${c.signedAt?.take(10) ?: ""}. Vous pouvez télécharger le contrat."
                 }
                 b.primaryAction.text = "Télécharger le contrat (PDF)"
-                b.primaryAction.setBackgroundColor(ContextCompat.getColor(this, R.color.navy))
+                b.primaryAction.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.navy))
                 b.primaryAction.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_download, 0, 0, 0)
                 b.primaryAction.setOnClickListener { previewContract() }
                 b.secondaryActions.visibility = View.GONE
@@ -188,7 +194,7 @@ class ContractDetailActivity : AppCompatActivity() {
                 b.signStepTitle.text = "En attente de signature"
                 b.signStepDesc.text = "Le lien a été envoyé. Le client peut signer via le lien ou le QR ci-dessous."
                 b.primaryAction.text = "Renvoyer via WhatsApp"
-                b.primaryAction.setBackgroundColor(ContextCompat.getColor(this, R.color.green))
+                b.primaryAction.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.green))
                 b.primaryAction.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_whatsapp, 0, 0, 0)
                 b.primaryAction.setOnClickListener { sendViaWhatsapp() }
 
@@ -198,7 +204,7 @@ class ContractDetailActivity : AppCompatActivity() {
                 b.secondaryA.setOnClickListener { sendToClient() }
                 b.secondaryB.text = "Signer sur place"
                 b.secondaryB.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_sign, 0, 0, 0)
-                b.secondaryB.setBackgroundColor(ContextCompat.getColor(this, R.color.muted))
+                b.secondaryB.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.muted))
                 b.secondaryB.setOnClickListener { toggleSignPad() }
 
                 b.viewPdfButton.visibility = View.VISIBLE
@@ -210,7 +216,7 @@ class ContractDetailActivity : AppCompatActivity() {
                 b.signStepTitle.text = "Pas encore signé"
                 b.signStepDesc.text = "Envoyez le contrat au client pour signature à distance, ou faites-le signer ici."
                 b.primaryAction.text = "Envoyer au client (WhatsApp)"
-                b.primaryAction.setBackgroundColor(ContextCompat.getColor(this, R.color.green))
+                b.primaryAction.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.green))
                 b.primaryAction.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_whatsapp, 0, 0, 0)
                 b.primaryAction.setOnClickListener { sendViaWhatsapp() }
 
@@ -290,6 +296,10 @@ class ContractDetailActivity : AppCompatActivity() {
                         "fuel_in" to fuelIn,
                     ),
                 )
+                if (AuthSession.isAuthError(res.code())) {
+                    AuthSession.returnToLogin(this@ContractDetailActivity)
+                    return@launch
+                }
                 if (!res.isSuccessful) {
                     Toast.makeText(this@ContractDetailActivity, "Erreur ${res.code()}", Toast.LENGTH_SHORT).show()
                     return@launch
@@ -331,6 +341,10 @@ class ContractDetailActivity : AppCompatActivity() {
                     ),
                 )
                 b.progress.visibility = View.GONE
+                if (AuthSession.isAuthError(res.code())) {
+                    AuthSession.returnToLogin(this@ContractDetailActivity)
+                    return@launch
+                }
                 if (!res.isSuccessful) {
                     b.signButton.isEnabled = true
                     Toast.makeText(this@ContractDetailActivity, "Erreur ${res.code()}", Toast.LENGTH_SHORT).show()
@@ -378,6 +392,10 @@ class ContractDetailActivity : AppCompatActivity() {
                     mapOf("contract_id" to c.id),
                 )
                 b.progress.visibility = View.GONE
+                if (AuthSession.isAuthError(res.code())) {
+                    AuthSession.returnToLogin(this@ContractDetailActivity)
+                    return@launch
+                }
                 if (res.isSuccessful) {
                     val token = res.body()?.get("token")?.toString()
                     if (token != null) {

@@ -4,7 +4,7 @@ import { syncVehicleStatus } from '~/server/vehicleStatus'
 import { advanceVehicleMileage } from '~/server/mileage'
 import { presignUpload, presignDownload, putObject, publicUrl, docsBucket } from '~/lib/r2.server'
 import { enqueueReservationNotification, enqueueContractNotification, enqueueNotification, enqueueVehicleNotification } from '~/server/notifications'
-import { notifyNewReservation, notifyNewContract, notifyVehicle, scheduleNotify } from '~/lib/email.server'
+import { emailConfigured, notifyNewReservation, notifyNewContract, notifyVehicle, scheduleNotify } from '~/lib/email.server'
 import { agencyToday } from '~/lib/tz'
 import { resolvePlan, type PlanRow } from '~/lib/maintenance'
 import { randomBytes } from 'node:crypto'
@@ -32,31 +32,51 @@ post('create-reservation', async (ctx, request) => {
   const { admin, agencyId, memberId } = ctx
 
   const vehicleId = body.vehicle_id
+  const clientId = body.client_id
   const dateStart = body.date_start
   const dateEnd = body.date_end
-  if (!vehicleId || !dateStart || !dateEnd) return json({ error: 'vehicle_id, date_start, date_end required' }, 400)
+  if (!vehicleId || !clientId || !dateStart || !dateEnd) {
+    return json({ error: 'vehicle_id, client_id, date_start, date_end required' }, 400)
+  }
+
+  const startMs = new Date(`${dateStart}T00:00:00Z`).getTime()
+  const endMs = new Date(`${dateEnd}T00:00:00Z`).getTime()
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs < startMs) {
+    return json({ error: 'invalid reservation dates' }, 400)
+  }
+
+  const [{ data: vehicle }, { data: client }] = await Promise.all([
+    admin.from('vehicles').select('id, daily_rate').eq('id', vehicleId).eq('agency_id', agencyId).maybeSingle(),
+    admin.from('clients').select('id, status').eq('id', clientId).eq('agency_id', agencyId).maybeSingle(),
+  ])
+  if (!vehicle || !client) return json({ error: 'Vehicle or client not found in this agency' }, 404)
+  if (['blacklisted', 'blocked'].includes((client as any).status)) {
+    return json({ error: 'This client is blocked' }, 409)
+  }
 
   let rate = body.daily_rate_snap
   if (rate == null) {
-    const { data: v } = await admin.from('vehicles').select('daily_rate').eq('id', vehicleId).maybeSingle()
-    rate = (v as any)?.daily_rate ?? 0
+    rate = (vehicle as any).daily_rate ?? 0
   }
+  rate = Number(rate)
+  if (!Number.isFinite(rate) || rate < 0) return json({ error: 'invalid daily rate' }, 400)
   const days = Math.max(1, Math.round(
-    (new Date(`${dateEnd}T00:00:00`).getTime() - new Date(`${dateStart}T00:00:00`).getTime()) / 86_400_000
+    (endMs - startMs) / 86_400_000
   ))
-  const total = body.total_amount ?? Number(rate) * days
+  const total = body.total_amount == null ? Number(rate) * days : Number(body.total_amount)
+  if (!Number.isFinite(total) || total < 0) return json({ error: 'invalid total amount' }, 400)
 
   const { data: row, error } = await admin
     .from('reservations')
     .insert({
       agency_id: agencyId,
       vehicle_id: vehicleId,
-      client_id: body.client_id ?? null,
+      client_id: clientId,
       date_start: dateStart,
       date_end: dateEnd,
       pickup_location: body.pickup_location ?? null,
       dropoff_location: body.dropoff_location ?? null,
-      status: body.status ?? 'confirmed',
+      status: 'confirmed',
       daily_rate_snap: rate,
       total_amount: total,
       notes: body.notes ?? null,
@@ -72,13 +92,22 @@ post('create-reservation', async (ctx, request) => {
   await syncVehicleStatus(admin, vehicleId)
   const newId = (row as any).id as string
   scheduleNotify(() => notifyNewReservation(agencyId, newId))
-  scheduleNotify(() => enqueueReservationNotification(agencyId, newId))
-  return json({ id: newId })
+  // Persist the bot event before reporting success. Email can remain backgrounded,
+  // but the WhatsApp queue must not depend on a serverless function staying alive.
+  const whatsappQueued = await enqueueReservationNotification(agencyId, newId)
+  return json({
+    id: newId,
+    notifications: {
+      whatsapp: whatsappQueued ? 'queued' : 'disabled_or_unavailable',
+      email: emailConfigured() ? 'scheduled' : 'not_configured',
+    },
+  })
 })
 
 post('set-reservation-status', async (ctx, request) => {
   const body = await parseJsonBody(request)
   if (!body?.id || !body?.status) return json({ error: 'id, status required' }, 400)
+  if (body.status !== 'cancelled') return json({ error: 'Only reservation cancellation is supported here' }, 400)
   const { admin, agencyId } = ctx
 
   const { data: row, error } = await admin
@@ -154,7 +183,7 @@ post('create-contract', async (ctx, request) => {
   if ((res as any).vehicle_id) await syncVehicleStatus(admin, (res as any).vehicle_id)
 
   scheduleNotify(() => notifyNewContract(agencyId, (row as any).id))
-  scheduleNotify(() => enqueueContractNotification(agencyId, (row as any).id))
+  await enqueueContractNotification(agencyId, (row as any).id)
   return json({ id: (row as any).id })
 })
 
@@ -334,19 +363,37 @@ post('create-vehicle', async (ctx, request) => {
   const body = await parseJsonBody(request)
   if (!body?.plate) return json({ error: 'plate required' }, 400)
   const { admin, agencyId } = ctx
+  const dailyRate = Number(body.daily_rate)
+  const mileage = Number(body.mileage_current ?? 0)
+  if (!Number.isFinite(dailyRate) || dailyRate <= 0) return json({ error: 'daily_rate must be positive' }, 400)
+  if (!Number.isFinite(mileage) || mileage < 0) return json({ error: 'mileage_current must be non-negative' }, 400)
 
-  const {
-    status: _s, mileage_current: _m,
-    oil_change_last_km: _ok, oil_change_last_date: _od, oil_change_interval_km: _oi,
-    ...safe
-  } = body
-  const payload = { ...safe, agency_id: agencyId, document_expiries: body.document_expiries ?? {} }
+  const payload = {
+    agency_id: agencyId,
+    plate: String(body.plate).trim().toUpperCase(),
+    brand: body.brand ?? null,
+    model: body.model ?? null,
+    year: body.year ?? null,
+    category: body.category ?? null,
+    daily_rate: dailyRate,
+    mileage_current: mileage,
+    insurance_expiry: body.insurance_expiry ?? null,
+    vignette_expiry: body.vignette_expiry ?? null,
+    visite_tech_expiry: body.visite_tech_expiry ?? null,
+    oil_change_last_km: body.oil_change_last_km ?? null,
+    oil_change_last_date: body.oil_change_last_date ?? null,
+    oil_change_interval_km: body.oil_change_interval_km ?? 10_000,
+    next_service_note: body.next_service_note ?? null,
+    notes: body.notes ?? null,
+    image_keys: Array.isArray(body.image_keys) ? body.image_keys : [],
+    document_expiries: body.document_expiries ?? {},
+  }
 
   const { data: row, error } = await admin.from('vehicles').insert(payload).select('id').single()
   if (error) return json({ error: error.message }, 500)
 
   scheduleNotify(() => notifyVehicle(agencyId, (row as any).id, true))
-  scheduleNotify(() => enqueueVehicleNotification(agencyId, (row as any).id))
+  await enqueueVehicleNotification(agencyId, (row as any).id)
   return json({ id: (row as any).id })
 })
 
@@ -354,34 +401,100 @@ post('update-vehicle', async (ctx, request) => {
   const body = await parseJsonBody(request)
   if (!body?.id) return json({ error: 'id required' }, 400)
   const { admin, agencyId } = ctx
+  const dailyRate = Number(body.daily_rate)
+  const mileage = body.mileage_current == null ? null : Number(body.mileage_current)
+  if (!body.plate || !Number.isFinite(dailyRate) || dailyRate <= 0) {
+    return json({ error: 'plate and positive daily_rate required' }, 400)
+  }
+  if (mileage != null && (!Number.isFinite(mileage) || mileage < 0)) {
+    return json({ error: 'mileage_current must be non-negative' }, 400)
+  }
 
-  // Strip fields owned by maintenance/status-machine
-  const {
-    id, agency_id: _a,
-    status: _s, mileage_current: _m,
-    oil_change_last_km: _ok, oil_change_last_date: _od, oil_change_interval_km: _oi,
-    created_at: _ca, image_urls: _iu, brand_logo_url: _bl,
-    ...safe
-  } = body
-  const payload = { ...safe, document_expiries: body.document_expiries ?? {} }
+  // Status remains database-derived. Mileage is applied separately through the
+  // forward-only helper so an old reading can never roll the odometer back.
+  const payload = {
+    plate: body.plate != null ? String(body.plate).trim().toUpperCase() : undefined,
+    brand: body.brand ?? null,
+    model: body.model ?? null,
+    year: body.year ?? null,
+    category: body.category ?? null,
+    daily_rate: dailyRate,
+    insurance_expiry: body.insurance_expiry ?? null,
+    vignette_expiry: body.vignette_expiry ?? null,
+    visite_tech_expiry: body.visite_tech_expiry ?? null,
+    oil_change_last_km: body.oil_change_last_km ?? null,
+    oil_change_last_date: body.oil_change_last_date ?? null,
+    oil_change_interval_km: body.oil_change_interval_km ?? 10_000,
+    next_service_note: body.next_service_note ?? null,
+    notes: body.notes ?? null,
+    image_keys: Array.isArray(body.image_keys) ? body.image_keys : [],
+    document_expiries: body.document_expiries ?? {},
+  }
 
-  const { error } = await admin.from('vehicles').update(payload).eq('id', id).eq('agency_id', agencyId)
+  const { error } = await admin.from('vehicles').update(payload).eq('id', body.id).eq('agency_id', agencyId)
   if (error) return json({ error: error.message }, 500)
+  await advanceVehicleMileage(admin, body.id, mileage)
+  return json({ ok: true })
+})
+
+post('release-vehicle', async (ctx, request) => {
+  const body = await parseJsonBody(request)
+  if (!body?.id) return json({ error: 'id required' }, 400)
+  const { admin, agencyId } = ctx
+
+  const [{ data: vehicle }, { data: issues, error: issuesError }] = await Promise.all([
+    admin.from('vehicles').select('id, status').eq('id', body.id).eq('agency_id', agencyId).maybeSingle(),
+    admin.from('vehicle_issues').select('blocks_rental, severity, kind, status').eq('vehicle_id', body.id),
+  ])
+  if (!vehicle) return json({ error: 'Vehicle not found in this agency' }, 404)
+  if (issuesError) return json({ error: issuesError.message }, 500)
+  const blockers = (issues ?? []).filter((issue: any) =>
+    issue.status !== 'resolved' &&
+    (issue.blocks_rental || issue.severity === 'critical' || ['accident', 'garage'].includes(issue.kind)),
+  )
+  if (blockers.length > 0) return json({ error: 'Resolve blocking vehicle issues first' }, 409)
+
+  const { error } = await admin.from('vehicles').update({ status: 'available' }).eq('id', body.id).eq('agency_id', agencyId)
+  if (error) return json({ error: error.message }, 500)
+  await syncVehicleStatus(admin, body.id)
   return json({ ok: true })
 })
 
 post('presign-vehicle-uploads', async (ctx, request) => {
   const body = await parseJsonBody(request)
   if (!body?.files?.length) return json({ error: 'files array required' }, 400)
+  if (!Array.isArray(body.files) || body.files.length > 8) return json({ error: 'maximum 8 files per request' }, 400)
   const { agencyId } = ctx
 
   const out: { key: string; url: string }[] = []
   for (const f of body.files) {
+    const type = typeof f?.type === 'string' && f.type.startsWith('image/') ? f.type : null
+    const size = Number(f?.size)
+    if (!type || !Number.isFinite(size) || size <= 0 || size > 10_000_000) {
+      return json({ error: 'every file must be an image no larger than 10 MB' }, 400)
+    }
     const safe = (f.name || 'photo.jpg').replace(/[^a-zA-Z0-9._-]/g, '_').slice(-60)
     const key = `agencies/${agencyId}/vehicles/photos/${crypto.randomUUID()}-${safe}`
-    out.push({ key, url: await presignUpload(key, f.type || 'image/jpeg', 300, f.size) })
+    out.push({ key, url: await presignUpload(key, type, 300, size) })
   }
   return json(out)
+})
+
+post('presign-brand-upload', async (ctx, request) => {
+  const body = await parseJsonBody(request)
+  const asset = body?.asset === 'stamp' ? 'stamp' : body?.asset === 'logo' ? 'logo' : null
+  const size = Number(body?.size)
+  const type = typeof body?.type === 'string' && body.type.startsWith('image/') ? body.type : null
+  if (!asset || !type || !Number.isFinite(size) || size <= 0 || size > 10_000_000) {
+    return json({ error: 'asset, image type and size (max 10 MB) required' }, 400)
+  }
+  const safe = String(body?.name || `${asset}.jpg`).replace(/[^a-zA-Z0-9._-]/g, '_').slice(-60)
+  const key = `agencies/${ctx.agencyId}/brand/${asset}-${crypto.randomUUID()}-${safe}`
+  return json({
+    key,
+    url: await presignUpload(key, type, 300, size),
+    public_url: publicUrl(key),
+  })
 })
 
 post('presign-signature-upload', async (ctx) => {
@@ -399,6 +512,14 @@ post('log-service', async (ctx, request) => {
     return json({ error: 'vehicle_id, type, performed_at required' }, 400)
   }
   const { admin, agencyId, memberId } = ctx
+
+  const { data: vehicle } = await admin
+    .from('vehicles')
+    .select('id')
+    .eq('id', body.vehicle_id)
+    .eq('agency_id', agencyId)
+    .maybeSingle()
+  if (!vehicle) return json({ error: 'Vehicle not found in this agency' }, 404)
 
   const { data: plans } = await admin.from('service_plans').select('*').eq('agency_id', agencyId)
   const plan = resolvePlan(body.type, body.vehicle_id, (plans ?? []) as unknown as PlanRow[])

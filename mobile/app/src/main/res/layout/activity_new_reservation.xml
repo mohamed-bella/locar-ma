@@ -25,33 +25,27 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="18dp">
 
             <TextView
+                style="@style/ScreenTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Reservation rapide"
-                android:textColor="@color/ink"
-                android:textSize="23sp"
-                android:textStyle="bold" />
+                android:text="Créer une réservation" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Choisissez le client, les dates et laissez l'app verifier les conflits avant validation."
+                android:text="Le calendrier, le client et la conformité du véhicule seront vérifiés avant validation."
                 android:textColor="@color/muted"
                 android:textSize="13sp" />
 
             <com.google.android.material.card.MaterialCardView
+                style="@style/AppCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                app:cardBackgroundColor="@color/card_bg"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="2dp"
-                app:strokeColor="@color/divider"
-                app:strokeWidth="1dp">
+                android:layout_marginTop="18dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -60,125 +54,159 @@
                     android:padding="16dp">
 
                     <TextView
+                        style="@style/SectionLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:drawableStart="@drawable/ic_calendar"
-                        android:drawablePadding="8dp"
-                        android:drawableTint="@color/navy"
-                        android:gravity="center_vertical"
-                        android:letterSpacing="0.08"
-                        android:text="MISSION"
+                        android:text="1 · Dossier" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Voiture"
+                        app:boxBackgroundColor="@color/card_bg"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:startIconDrawable="@drawable/ic_car">
+
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                            android:id="@+id/vehicleSpinner"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:maxLines="1" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:hint="Client"
+                        app:boxBackgroundColor="@color/card_bg"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:startIconDrawable="@drawable/ic_person">
+
+                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                            android:id="@+id/clientSpinner"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="none"
+                            android:maxLines="1" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/addClientButton"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="42dp"
+                        android:layout_gravity="end"
+                        android:layout_marginTop="8dp"
+                        android:text="Nouveau client"
                         android:textColor="@color/navy"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
+                        app:icon="@drawable/ic_plus"
+                        app:iconTint="@color/navy"
+                        app:strokeColor="@color/divider" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="6dp"
-                        android:background="@color/divider" />
+            <com.google.android.material.card.MaterialCardView
+                style="@style/AppCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:drawableStart="@drawable/ic_car"
-                        android:drawablePadding="6dp"
-                        android:drawableTint="@color/muted"
-                        android:gravity="center_vertical"
-                        android:text="@string/vehicle"
-                        android:textColor="@color/ink"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-
-                    <Spinner
-                        android:id="@+id/vehicleSpinner"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="5dp"
-                        android:background="@drawable/input_bg"
-                        android:paddingHorizontal="8dp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
                     <TextView
+                        style="@style/SectionLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:drawableStart="@drawable/ic_person"
-                        android:drawablePadding="6dp"
-                        android:drawableTint="@color/muted"
-                        android:gravity="center_vertical"
-                        android:text="@string/client"
-                        android:textColor="@color/ink"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-
-                    <Spinner
-                        android:id="@+id/clientSpinner"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="5dp"
-                        android:background="@drawable/input_bg"
-                        android:paddingHorizontal="8dp" />
+                        android:text="2 · Période" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
+                        android:baselineAligned="false"
                         android:orientation="horizontal">
 
-                        <EditText
-                            android:id="@+id/dateStart"
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                             android:layout_width="0dp"
-                            android:layout_height="50dp"
+                            android:layout_height="wrap_content"
                             android:layout_marginEnd="5dp"
                             android:layout_weight="1"
-                            android:background="@drawable/input_bg"
-                            android:clickable="true"
-                            android:drawableStart="@drawable/ic_calendar"
-                            android:drawablePadding="8dp"
-                            android:focusable="false"
-                            android:hint="Date depart"
-                            android:paddingHorizontal="12dp"
-                            android:textSize="14sp" />
+                            android:hint="Départ"
+                            app:boxBackgroundColor="@color/card_bg"
+                            app:startIconDrawable="@drawable/ic_calendar">
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/dateStart"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:clickable="true"
+                                android:focusable="false"
+                                android:inputType="none" />
+                        </com.google.android.material.textfield.TextInputLayout>
 
-                        <EditText
-                            android:id="@+id/dateEnd"
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                             android:layout_width="0dp"
-                            android:layout_height="50dp"
+                            android:layout_height="wrap_content"
                             android:layout_marginStart="5dp"
                             android:layout_weight="1"
-                            android:background="@drawable/input_bg"
-                            android:clickable="true"
-                            android:drawableStart="@drawable/ic_calendar"
-                            android:drawablePadding="8dp"
-                            android:focusable="false"
-                            android:hint="Date retour"
-                            android:paddingHorizontal="12dp"
-                            android:textSize="14sp" />
+                            android:hint="Retour"
+                            app:boxBackgroundColor="@color/card_bg"
+                            app:startIconDrawable="@drawable/ic_calendar">
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/dateEnd"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:clickable="true"
+                                android:focusable="false"
+                                android:inputType="none" />
+                        </com.google.android.material.textfield.TextInputLayout>
                     </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/dateSummary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textColor="@color/navy"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
 
                     <TextView
                         android:id="@+id/warningText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/chip_blue"
-                        android:padding="10dp"
-                        android:textColor="@color/navy"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/bg_warning_soft"
+                        android:drawablePadding="8dp"
+                        android:padding="11dp"
+                        android:textColor="@color/amber"
                         android:textSize="12sp"
-                        android:visibility="gone" />
+                        android:visibility="gone"
+                        app:drawableStartCompat="@drawable/ic_alert" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
+                style="@style/AppCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                app:cardBackgroundColor="@color/card_bg"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="2dp"
-                app:strokeColor="@color/divider"
-                app:strokeWidth="1dp">
+                android:layout_marginTop="12dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -187,102 +215,129 @@
                     android:padding="16dp">
 
                     <TextView
+                        style="@style/SectionLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:drawableStart="@drawable/ic_suivi"
-                        android:drawablePadding="8dp"
-                        android:drawableTint="@color/navy"
-                        android:gravity="center_vertical"
-                        android:letterSpacing="0.08"
-                        android:text="PRIX ET LIEUX"
-                        android:textColor="@color/navy"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="6dp"
-                        android:background="@color/divider" />
-
-                    <EditText
-                        android:id="@+id/totalAmount"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/input_bg"
-                        android:hint="Total DH"
-                        android:inputType="numberDecimal"
-                        android:paddingHorizontal="12dp"
-                        android:textSize="14sp" />
+                        android:text="3 · Prix et remise" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
+                        android:layout_marginTop="12dp"
+                        android:baselineAligned="false"
                         android:orientation="horizontal">
 
-                        <EditText
-                            android:id="@+id/pickupLocation"
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                             android:layout_width="0dp"
-                            android:layout_height="50dp"
+                            android:layout_height="wrap_content"
                             android:layout_marginEnd="5dp"
                             android:layout_weight="1"
-                            android:background="@drawable/input_bg"
-                            android:drawableStart="@drawable/ic_home"
-                            android:drawablePadding="8dp"
-                            android:hint="Depart"
-                            android:inputType="textCapWords"
-                            android:paddingHorizontal="12dp"
-                            android:textSize="14sp" />
+                            android:hint="Prix / jour"
+                            app:boxBackgroundColor="@color/card_bg"
+                            app:suffixText="DH">
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/dailyRate"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="numberDecimal" />
+                        </com.google.android.material.textfield.TextInputLayout>
 
-                        <EditText
-                            android:id="@+id/dropoffLocation"
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                             android:layout_width="0dp"
-                            android:layout_height="50dp"
+                            android:layout_height="wrap_content"
                             android:layout_marginStart="5dp"
                             android:layout_weight="1"
-                            android:background="@drawable/input_bg"
-                            android:drawableStart="@drawable/ic_home"
-                            android:drawablePadding="8dp"
-                            android:hint="Retour"
-                            android:inputType="textCapWords"
-                            android:paddingHorizontal="12dp"
-                            android:textSize="14sp" />
+                            android:hint="Total"
+                            app:boxBackgroundColor="@color/card_bg"
+                            app:suffixText="DH">
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/totalAmount"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="numberDecimal" />
+                        </com.google.android.material.textfield.TextInputLayout>
                     </LinearLayout>
 
-                    <EditText
-                        android:id="@+id/notes"
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
-                        android:layout_height="86dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:background="@drawable/input_bg"
-                        android:gravity="top"
+                        android:hint="Lieu de départ"
+                        app:boxBackgroundColor="@color/card_bg">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/pickupLocation"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textCapWords" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:hint="Lieu de retour"
+                        app:boxBackgroundColor="@color/card_bg">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/dropoffLocation"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textCapWords" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
                         android:hint="Notes internes"
-                        android:padding="12dp"
-                        android:textSize="14sp" />
+                        app:boxBackgroundColor="@color/card_bg">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/notes"
+                            android:layout_width="match_parent"
+                            android:layout_height="80dp"
+                            android:gravity="top"
+                            android:inputType="textCapSentences|textMultiLine" />
+                    </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/saveButton"
-                android:layout_width="match_parent"
-                android:layout_height="54dp"
-                android:layout_marginTop="16dp"
-                android:backgroundTint="@color/blue_action"
-                android:text="@string/save"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:textStyle="bold" />
-
-            <ProgressBar
-                android:id="@+id/progress"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:layout_gravity="center"
-                android:layout_marginTop="12dp"
-                android:indeterminateTint="@color/navy"
-                android:visibility="gone" />
+            <Space
+                android:layout_width="1dp"
+                android:layout_height="18dp" />
         </LinearLayout>
     </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/card_bg"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="18dp"
+        android:paddingVertical="12dp">
+
+        <ProgressBar
+            android:id="@+id/progress"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginEnd="12dp"
+            android:indeterminateTint="@color/navy"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/saveButton"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_weight="1"
+            android:backgroundTint="@color/blue_action"
+            android:text="Vérifier et créer"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            app:icon="@drawable/ic_save"
+            app:iconTint="@color/white" />
+    </LinearLayout>
 </LinearLayout>

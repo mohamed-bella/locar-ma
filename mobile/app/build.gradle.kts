@@ -18,11 +18,6 @@ android {
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjZ2V3cWp5bXh5bGtsYXZrdHBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNTkyMzIsImV4cCI6MjA5ODczNTIzMn0.mSTHPNeGv_crmD2ky0cjjBbrpE7vqJvxHU9272SDCco\"")
         buildConfigField("String", "R2_PUBLIC_URL", "\"https://pub-c5eff1eef0cf4dd8a671d0798d430d67.r2.dev\"")
         buildConfigField("String", "WEBAPP_BASE_URL", "\"https://app.rentiq-system.com\"")
-        buildConfigField("String", "R2_ACCOUNT_ID", "\"912e2c5173432f05bb3c5682f6bbb8ee\"")
-        buildConfigField("String", "R2_ACCESS_KEY_ID", "\"4e0ef37771ce6e7fc653fb7f52b9017b\"")
-        buildConfigField("String", "R2_SECRET_ACCESS_KEY", "\"ad59ea7ea47da8ab709f7d38ff34a88fb222b53cba003e52e5ff535a67180e55\"")
-        buildConfigField("String", "R2_BUCKET", "\"locar\"")
-        buildConfigField("String", "R2_DOCS_BUCKET", "\"locar-docs\"")
     }
 
     buildTypes {
@@ -43,6 +38,8 @@ android {
 }
 
 dependencies {
+    testImplementation("junit:junit:4.13.2")
+
     // AndroidX
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")

@@ -17,7 +17,7 @@ export async function enqueueNotification(
   agencyId: string,
   type: NotificationType,
   payload: Record<string, unknown>,
-): Promise<void> {
+): Promise<boolean> {
   try {
     const admin = getSupabaseAdminClient()
 
@@ -29,7 +29,7 @@ export async function enqueueNotification(
       .maybeSingle()
     if (agency && (agency as any).whatsapp_enabled === false) {
       console.log(`[notify] skipped type=${type} agency=${agencyId} — WhatsApp disabled`)
-      return
+      return false
     }
 
     // NOTE: .insert() RESOLVES with { error } on failure — it does NOT throw.
@@ -41,11 +41,13 @@ export async function enqueueNotification(
       .single()
     if (error) {
       console.error(`[notify] enqueue FAILED type=${type} agency=${agencyId}:`, error.message)
-      return
+      return false
     }
     console.log(`[notify] enqueued type=${type} agency=${agencyId} id=${(data as any)?.id}`)
+    return true
   } catch (e) {
     console.error(`[notify] enqueue threw type=${type} agency=${agencyId}:`, e)
+    return false
   }
 }
 
@@ -53,7 +55,7 @@ export async function enqueueNotification(
 export async function enqueueReservationNotification(
   agencyId: string,
   reservationId: string,
-): Promise<void> {
+): Promise<boolean> {
   const admin = getSupabaseAdminClient()
   const { data: r, error } = await admin
     .from('reservations')
@@ -64,15 +66,15 @@ export async function enqueueReservationNotification(
     .maybeSingle()
   if (error) {
     console.error(`[notify] reservation lookup failed id=${reservationId}:`, error.message)
-    return
+    return false
   }
   if (!r) {
     console.warn(`[notify] reservation not found id=${reservationId} — skipping`)
-    return
+    return false
   }
 
   const res = r as any
-  await enqueueNotification(agencyId, 'reservation_created', {
+  return enqueueNotification(agencyId, 'reservation_created', {
     reservation_id: res.id,
     vehicle: [res.vehicles?.brand, res.vehicles?.model].filter(Boolean).join(' ') || res.vehicles?.plate,
     plate: res.vehicles?.plate,
@@ -88,7 +90,7 @@ export async function enqueueReservationNotification(
 export async function enqueueContractNotification(
   agencyId: string,
   contractId: string,
-): Promise<void> {
+): Promise<boolean> {
   const admin = getSupabaseAdminClient()
   const { data: c } = await admin
     .from('contracts')
@@ -97,11 +99,11 @@ export async function enqueueContractNotification(
     )
     .eq('id', contractId)
     .maybeSingle()
-  if (!c) return
+  if (!c) return false
 
   const con = c as any
   const res = con.reservations
-  await enqueueNotification(agencyId, 'contract_created', {
+  return enqueueNotification(agencyId, 'contract_created', {
     contract_id: con.id,
     vehicle: [res?.vehicles?.brand, res?.vehicles?.model].filter(Boolean).join(' ') || res?.vehicles?.plate,
     plate: res?.vehicles?.plate,

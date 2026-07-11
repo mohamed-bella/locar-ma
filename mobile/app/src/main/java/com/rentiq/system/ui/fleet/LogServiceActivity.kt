@@ -33,6 +33,11 @@ class LogServiceActivity : AppCompatActivity() {
         b.toolbar.setNavigationOnClickListener { finish() }
         b.typeSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, typeLabels)
             .also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+        // Preselect the type when opened from a specific suivi service tile.
+        intent.getStringExtra("service_type")?.let { st ->
+            val idx = typeKeys.indexOf(st)
+            if (idx >= 0) b.typeSpinner.setSelection(idx)
+        }
 
         b.performedAt.setOnClickListener { pickDate(b.performedAt) }
         b.nextDueDate.setOnClickListener { pickDate(b.nextDueDate) }

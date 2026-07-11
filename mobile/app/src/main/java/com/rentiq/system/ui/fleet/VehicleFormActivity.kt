@@ -23,9 +23,8 @@ import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.data.model.Vehicle
 import com.rentiq.system.databinding.ActivityVehicleFormBinding
 import com.rentiq.system.util.R2Uploader
+import com.rentiq.system.util.AuthSession
 import com.rentiq.system.util.SessionManager
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.Calendar
@@ -37,7 +36,9 @@ class VehicleFormActivity : AppCompatActivity() {
     private val imageKeys = mutableListOf<String>()
 
     private val categories = listOf("economy", "compact", "suv", "luxury", "utility")
+    private val categoryLabels = listOf("Économique", "Compacte", "SUV", "Luxe", "Utilitaire")
     private val statuses   = listOf("available", "reserved", "rented", "maintenance")
+    private val statusLabels = listOf("Disponible", "Réservée", "En location", "Maintenance")
 
     private val pickImages = registerForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia()
@@ -52,9 +53,11 @@ class VehicleFormActivity : AppCompatActivity() {
         b.toolbar.title = if (vehicleId == null) "Nouvelle voiture" else "Modifier voiture"
         b.toolbar.setNavigationOnClickListener { finish() }
 
-        b.category.adapter = spinnerAdapter(categories)
-        b.status.adapter   = spinnerAdapter(statuses)
+        b.category.adapter = spinnerAdapter(categoryLabels)
+        b.status.adapter   = spinnerAdapter(statusLabels)
         b.status.setSelection(statuses.indexOf("available"))
+        b.status.isEnabled = false
+        b.status.alpha = 0.7f
 
         listOf(b.insuranceExpiry, b.vignetteExpiry, b.visiteTechExpiry, b.oilLastDate).forEach { field ->
             field.setOnClickListener { pickDate(field) }
@@ -74,8 +77,10 @@ class VehicleFormActivity : AppCompatActivity() {
         b.addImageButton.isEnabled = false
         lifecycleScope.launch {
             try {
-                val jobs = uris.map { uri -> async { R2Uploader.uploadImage(this@VehicleFormActivity, uri) } }
-                val keys = jobs.awaitAll().filterNotNull()
+                if (uris.size > 8) toast("Les 8 premières photos seront ajoutées")
+                val keys = uris.take(8).mapNotNull { uri ->
+                    R2Uploader.uploadImage(this@VehicleFormActivity, uri)
+                }
                 if (keys.isEmpty()) {
                     toast("Échec upload images")
                 } else {
@@ -131,6 +136,10 @@ class VehicleFormActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val res = SupabaseClient.rest.getVehicle("eq.$id")
+                if (AuthSession.isAuthError(res.code())) {
+                    AuthSession.returnToLogin(this@VehicleFormActivity)
+                    return@launch
+                }
                 if (res.isSuccessful && res.body() != null) {
                     currentVehicle = res.body()!!
                     render(currentVehicle!!)
@@ -164,6 +173,7 @@ class VehicleFormActivity : AppCompatActivity() {
         setSpinnerSelection(b.status,   statuses,   v.status)
 
         // Load existing images
+        b.imageContainer.removeAllViews()
         imageKeys.clear()
         v.imageKeys?.forEach { key ->
             imageKeys.add(key)
@@ -176,8 +186,14 @@ class VehicleFormActivity : AppCompatActivity() {
     private fun save() {
         val plate = b.plate.text.toString().trim().uppercase()
         val rate  = b.dailyRate.text.toString().toDoubleOrNull()
+        val mileage = b.mileage.text.toString().toIntOrNull() ?: 0
         if (plate.isBlank()) { toast("Immatriculation obligatoire"); return }
         if (rate == null || rate <= 0.0) { toast("Tarif journalier obligatoire"); return }
+        if (mileage < 0) { toast("Kilométrage invalide"); return }
+        if (currentVehicle?.mileage != null && mileage < currentVehicle!!.mileage!!) {
+            toast("Le kilométrage ne peut pas diminuer (${currentVehicle!!.mileage} km actuellement)")
+            return
+        }
 
         val agencyId = SessionManager(this).agencyId
         if (vehicleId == null && agencyId.isNullOrBlank()) { toast("Agence non trouvée"); return }
@@ -191,6 +207,11 @@ class VehicleFormActivity : AppCompatActivity() {
                     SupabaseClient.api.createVehicle(payload)
                 } else {
                     SupabaseClient.api.updateVehicle(payload + ("id" to id))
+                }
+
+                if (AuthSession.isAuthError(res.code())) {
+                    AuthSession.returnToLogin(this@VehicleFormActivity)
+                    return@launch
                 }
 
                 if (res.isSuccessful) {
@@ -215,9 +236,13 @@ class VehicleFormActivity : AppCompatActivity() {
         "year"               to intOrNull(b.year),
         "category"           to selectedCategory(),
         "daily_rate"         to rate,
+        "mileage_current"    to (intOrNull(b.mileage) ?: 0),
         "insurance_expiry"   to dateOrNull(b.insuranceExpiry),
         "vignette_expiry"    to dateOrNull(b.vignetteExpiry),
         "visite_tech_expiry" to dateOrNull(b.visiteTechExpiry),
+        "oil_change_last_km" to intOrNull(b.oilLastKm),
+        "oil_change_interval_km" to (intOrNull(b.oilIntervalKm) ?: 10000),
+        "oil_change_last_date" to dateOrNull(b.oilLastDate),
         "next_service_note"  to nullable(b.nextServiceNote.text.toString()),
         "notes"              to nullable(b.notes.text.toString()),
         "image_keys"         to imageKeys.toList(),
@@ -251,7 +276,6 @@ class VehicleFormActivity : AppCompatActivity() {
     }
 
     private fun selectedCategory() = categories.getOrNull(b.category.selectedItemPosition)
-    private fun selectedStatus()   = statuses.getOrNull(b.status.selectedItemPosition) ?: "available"
     private fun nullable(v: String): String? = v.trim().ifBlank { null }
     private fun intOrNull(f: EditText): Int? = f.text.toString().trim().toIntOrNull()
     private fun dateOrNull(f: EditText): String? = f.text.toString().trim().takeIf { it.isNotBlank() }

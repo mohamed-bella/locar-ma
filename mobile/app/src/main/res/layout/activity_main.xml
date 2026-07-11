@@ -1,146 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_app_gradient">
+    android:background="@color/navy"
+    android:orientation="vertical">
 
-    <LinearLayout
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:layout_height="88dp"
+        android:background="@drawable/bg_app_gradient"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        app:contentInsetEnd="0dp"
+        app:contentInsetStart="0dp">
 
-        <com.google.android.material.appbar.AppBarLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="132dp"
-            android:background="@android:color/transparent"
-            app:elevation="0dp">
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-            <androidx.appcompat.widget.Toolbar
-                android:id="@+id/toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@android:color/transparent"
-                android:paddingStart="18dp"
-                android:paddingTop="18dp"
-                android:paddingEnd="18dp"
-                android:paddingBottom="16dp"
-                app:contentInsetEnd="0dp"
-                app:contentInsetStart="0dp"
-                app:titleTextColor="@color/white">
+            <ImageView
+                android:id="@+id/agencyLogo"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:background="@drawable/agency_logo_shell"
+                android:contentDescription="@string/app_name"
+                android:padding="8dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_car"
+                app:tint="@color/white" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:id="@+id/agencyLogo"
-                        android:layout_width="52dp"
-                        android:layout_height="52dp"
-                        android:background="@drawable/agency_logo_shell"
-                        android:contentDescription="logo"
-                        android:padding="8dp"
-                        android:scaleType="centerInside"
-                        android:src="@drawable/ic_car"
-                        app:tint="@color/white" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/header_chip"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="4dp"
-                            android:text="Operations location"
-                            android:textColor="@color/navy_light"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/agencyName"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="7dp"
-                            android:ellipsize="end"
-                            android:singleLine="true"
-                            android:text="Agence"
-                            android:textColor="@color/white"
-                            android:textSize="22sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:ellipsize="end"
-                            android:singleLine="true"
-                            android:text="Reservations, contrats et flotte en direct"
-                            android:textColor="@color/navy_light"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-                </LinearLayout>
-            </androidx.appcompat.widget.Toolbar>
-        </com.google.android.material.appbar.AppBarLayout>
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:background="@drawable/main_content_surface"
-            android:paddingTop="8dp">
-
-            <androidx.fragment.app.FragmentContainerView
-                android:id="@+id/fragmentContainer"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-        </FrameLayout>
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="76dp">
-
-            <com.google.android.material.bottomnavigation.BottomNavigationView
-                android:id="@+id/bottomNavigation"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@drawable/bottom_nav_bg"
-                android:paddingTop="6dp"
-                android:paddingBottom="8dp"
-                app:elevation="16dp"
-                app:itemIconSize="24dp"
-                app:itemIconTint="@color/nav_item_color"
-                app:itemRippleColor="@color/navy_light"
-                app:itemTextColor="@color/nav_item_color"
-                app:labelVisibilityMode="labeled"
-                app:menu="@menu/main_bottom_nav" />
-
-            <!-- Separators between the 5 tabs. Non-clickable → taps pass to the nav. -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:clickable="false"
-                android:focusable="false"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="13dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-                <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
-                <View android:layout_width="1dp" android:layout_height="34dp" android:background="@color/divider" />
-                <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
-                <View android:layout_width="1dp" android:layout_height="34dp" android:background="@color/divider" />
-                <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
-                <View android:layout_width="1dp" android:layout_height="34dp" android:background="@color/divider" />
-                <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
-                <View android:layout_width="1dp" android:layout_height="34dp" android:background="@color/divider" />
-                <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+                <TextView
+                    android:id="@+id/agencyName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:fontFamily="sans-serif-medium"
+                    android:singleLine="true"
+                    android:text="@string/app_name"
+                    android:textColor="@color/white"
+                    android:textSize="19sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Pilotage de l’agence"
+                    android:textColor="@color/navy_light"
+                    android:textSize="12sp" />
             </LinearLayout>
-        </FrameLayout>
-    </LinearLayout>
-</FrameLayout>
+        </LinearLayout>
+    </androidx.appcompat.widget.Toolbar>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@drawable/main_content_surface"
+        android:paddingTop="2dp">
+
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/fragmentContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </FrameLayout>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigation"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:background="@drawable/bottom_nav_bg"
+        android:paddingTop="5dp"
+        android:paddingBottom="6dp"
+        app:elevation="12dp"
+        app:itemHorizontalTranslationEnabled="false"
+        app:itemIconSize="23dp"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemRippleColor="@color/navy_light"
+        app:itemTextColor="@color/nav_item_color"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/main_bottom_nav" />
+</LinearLayout>

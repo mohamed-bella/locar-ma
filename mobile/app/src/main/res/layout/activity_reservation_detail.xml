@@ -116,7 +116,7 @@
                         android:textColor="@color/ink"
                         android:textSize="14sp" />
 
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/callClient"
                         android:layout_width="wrap_content"
                         android:layout_height="42dp"
@@ -271,7 +271,7 @@
                         android:textColor="@color/ink"
                         android:textSize="14sp" />
 
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/openContract"
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
@@ -285,7 +285,7 @@
                         android:textColor="@color/white"
                         android:visibility="gone" />
 
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/createContract"
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
@@ -300,6 +300,19 @@
                         android:visibility="gone" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/archiveReservation"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="14dp"
+                android:text="@string/archive_reservation"
+                android:textColor="@color/red"
+                android:visibility="gone"
+                app:icon="@drawable/ic_close"
+                app:iconTint="@color/red"
+                app:strokeColor="@color/red" />
 
             <ProgressBar
                 android:id="@+id/progress"

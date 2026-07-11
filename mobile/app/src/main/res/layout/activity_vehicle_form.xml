@@ -71,7 +71,7 @@
                             android:gravity="center_vertical" />
                     </HorizontalScrollView>
 
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/addImageButton"
                         android:layout_width="match_parent"
                         android:layout_height="44dp"
@@ -80,7 +80,9 @@
                         android:text="+ Ajouter photos"
                         android:textAllCaps="false"
                         android:textColor="@color/white"
-                        android:textSize="13sp" />
+                        android:textSize="13sp"
+                        app:icon="@drawable/ic_plus"
+                        app:iconTint="@color/white" />
 
                     <ProgressBar
                         android:id="@+id/imageProgress"
@@ -204,6 +206,14 @@
                         android:layout_marginTop="10dp"
                         android:background="@drawable/input_bg"
                         android:paddingHorizontal="8dp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Le statut est calculé automatiquement depuis les réservations et les problèmes bloquants."
+                        android:textColor="@color/muted"
+                        android:textSize="11sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -307,6 +317,14 @@
                             android:inputType="number"
                             android:paddingHorizontal="12dp" />
                     </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Les prochains entretiens sont ensuite gérés depuis Suivi afin de conserver un historique."
+                        android:textColor="@color/muted"
+                        android:textSize="11sp" />
 
                     <EditText
                         android:id="@+id/oilLastDate"

@@ -6,6 +6,7 @@ export type MobileContext = {
   agencyId: string
   memberId: string
   role: string
+  active: boolean // agency not suspended / past-due-suspended
 }
 
 const json = (body: unknown, status = 200) =>
@@ -35,12 +36,29 @@ export async function requireMobileAuth(request: Request): Promise<MobileContext
 
   const member = (members as any[])[0]
 
+  // Mobile writes go through the service-role admin client, which BYPASSES RLS —
+  // so the suspended-agency read-only guard (migration 0009) does not apply here.
+  // Enforce it explicitly: a suspended / deactivated agency is read-only. GET
+  // (reads) stay allowed; any write (POST) is refused with 402 (not 401/403, so
+  // the app shows a message instead of logging the user out).
+  const { data: agency } = await admin
+    .from('agencies')
+    .select('is_active, subscription_status')
+    .eq('id', member.agency_id)
+    .maybeSingle()
+  const active = (agency as any)?.is_active !== false && (agency as any)?.subscription_status !== 'suspended'
+
+  if (!active && request.method === 'POST') {
+    return json({ error: 'Compte suspendu — accès en lecture seule. Contactez l’administrateur.' }, 402)
+  }
+
   return {
     admin,
     userId: user.id,
     agencyId: member.agency_id,
     memberId: member.id,
     role: member.role,
+    active,
   }
 }
 

@@ -12,6 +12,7 @@ interface RestApi {
     suspend fun getVehicles(
         @Query("select") select: String = "*",
         @Query("order") order: String = "plate.asc",
+        @Query("limit") limit: Int = 500,
     ): Response<List<Vehicle>>
 
     @GET("rest/v1/vehicles")
@@ -20,15 +21,6 @@ interface RestApi {
         @Query("select") select: String = "*",
         @Header("Accept") accept: String = "application/vnd.pgrst.object+json",
     ): Response<Vehicle>
-
-    @POST("rest/v1/vehicles")
-    suspend fun createVehicle(@Body body: VehicleInsert): Response<List<Vehicle>>
-
-    @PATCH("rest/v1/vehicles")
-    suspend fun updateVehicle(
-        @Query("id") id: String,
-        @Body body: @JvmSuppressWildcards Map<String, Any?>,
-    ): Response<List<Vehicle>>
 
     // ── Service records (suivi / entretien: vidange, freins, pneus…) ──────────
     @GET("rest/v1/service_records")
@@ -67,6 +59,7 @@ interface RestApi {
     suspend fun getAllVehicleIssues(
         @Query("select") select: String = "*",
         @Query("order") order: String = "opened_at.desc",
+        @Query("limit") limit: Int = 1000,
     ): Response<List<VehicleIssue>>
 
     @GET("rest/v1/vehicle_expenses")
@@ -92,12 +85,6 @@ interface RestApi {
     ): Response<Unit>
 
     // ── WhatsApp notification queue (bot polls / subscribes) ──────────────────
-    @POST("rest/v1/notification_queue")
-    suspend fun createNotification(
-        @Body body: NotificationInsert,
-        @Header("Prefer") prefer: String = "return=minimal",
-    ): Response<Unit>
-
     @POST("rest/v1/rpc/enqueue_mobile_notification")
     suspend fun enqueueMobileNotification(
         @Body body: @JvmSuppressWildcards Map<String, Any?>,
@@ -141,6 +128,7 @@ interface RestApi {
         @Query("date_start") dateStart: String? = null,
         @Query("date_end") dateEnd: String? = null,
         @Query("order") order: String = "date_start.desc",
+        @Query("limit") limit: Int = 500,
     ): Response<List<Reservation>>
 
     @GET("rest/v1/reservations")
@@ -167,23 +155,12 @@ interface RestApi {
         @Query("order") order: String = "created_at.desc",
     ): Response<List<Contract>>
 
-    @POST("rest/v1/reservations")
-    suspend fun createReservation(@Body body: ReservationInsert): Response<List<Reservation>>
-
-    @PATCH("rest/v1/reservations")
-    suspend fun updateReservationStatus(
-        @Query("id") id: String,
-        @Body body: Map<String, String>,
-    ): Response<List<Reservation>>
-
-    @DELETE("rest/v1/reservations")
-    suspend fun deleteReservation(@Query("id") id: String): Response<Unit>
-
     // ── Contracts ─────────────────────────────────────────────────────────────
     @GET("rest/v1/contracts")
     suspend fun getContracts(
         @Query("select") select: String = "*,reservations(id,date_start,date_end,total_amount,status,vehicles(id,plate,brand,model),clients(id,full_name,cin_passport,phone))",
         @Query("order") order: String = "created_at.desc",
+        @Query("limit") limit: Int = 500,
     ): Response<List<Contract>>
 
     @GET("rest/v1/contracts")
@@ -192,15 +169,6 @@ interface RestApi {
         @Query("select") select: String = "*,reservations(id,date_start,date_end,total_amount,status,vehicles(id,plate,brand,model,year,daily_rate),clients(id,full_name,cin_passport,phone,address))",
         @Header("Accept") accept: String = "application/vnd.pgrst.object+json",
     ): Response<Contract>
-
-    @POST("rest/v1/contracts")
-    suspend fun createContract(@Body body: ContractInsert): Response<List<Contract>>
-
-    @PATCH("rest/v1/contracts")
-    suspend fun updateContract(
-        @Query("id") id: String,
-        @Body body: @JvmSuppressWildcards Map<String, Any?>,
-    ): Response<List<Contract>>
 
     // ── Members (to find the user's agency) ───────────────────────────────────
     @GET("rest/v1/agency_members")
