@@ -1,6 +1,7 @@
 package com.rentiq.system.ui.reservations
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -17,13 +18,13 @@ import com.rentiq.system.data.model.Reservation
 import com.rentiq.system.databinding.ActivityReservationDetailBinding
 import com.rentiq.system.ui.contracts.ContractDetailActivity
 import com.rentiq.system.ui.contracts.NewContractActivity
+import com.rentiq.system.util.AuthSession
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
-// Full read-only view of one reservation: client, vehicle, period, pricing and
-// the linked contract (open it, or create one if none exists yet).
+// Reservation hub detail: booking context plus the linked contract action.
 class ReservationDetailActivity : AppCompatActivity() {
     private lateinit var b: ActivityReservationDetailBinding
     private var reservationId: String? = null
@@ -39,7 +40,6 @@ class ReservationDetailActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Contract may have been created/updated on the contract screen.
         if (reservationId != null) load()
     }
 
@@ -48,12 +48,32 @@ class ReservationDetailActivity : AppCompatActivity() {
         b.progress.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
-                val resCall = async { SupabaseClient.rest.getReservation("eq.$id") }
-                val conCall = async { SupabaseClient.rest.getContractsByReservation("eq.$id") }
-                val reservation = resCall.await().body()
-                val contract = conCall.await().body()?.firstOrNull()
+                val reservationCall = async { SupabaseClient.rest.getReservation("eq.$id") }
+                val contractCall = async { SupabaseClient.rest.getContractsByReservation("eq.$id") }
+                val reservationResponse = reservationCall.await()
+                val contractResponse = contractCall.await()
                 b.progress.visibility = View.GONE
-                if (reservation == null) { toast("Réservation introuvable"); finish(); return@launch }
+
+                if (AuthSession.isAuthError(reservationResponse.code()) || AuthSession.isAuthError(contractResponse.code())) {
+                    AuthSession.returnToLogin(this@ReservationDetailActivity)
+                    return@launch
+                }
+                if (!reservationResponse.isSuccessful) {
+                    toast(AuthSession.messageFor(reservationResponse.code()))
+                    finish()
+                    return@launch
+                }
+                if (!contractResponse.isSuccessful) {
+                    toast(AuthSession.messageFor(contractResponse.code()))
+                }
+
+                val reservation = reservationResponse.body()
+                val contract = contractResponse.body()?.firstOrNull()
+                if (reservation == null) {
+                    toast("Reservation introuvable")
+                    finish()
+                    return@launch
+                }
                 bind(reservation, contract)
             } catch (e: Exception) {
                 b.progress.visibility = View.GONE
@@ -63,62 +83,61 @@ class ReservationDetailActivity : AppCompatActivity() {
     }
 
     private fun bind(r: Reservation, contract: Contract?) {
-        // Hero
         val (label, color) = when (r.status) {
-            "confirmed" -> "Confirmée" to R.color.green
+            "confirmed" -> "Confirmee" to R.color.green
             "active" -> "Active" to R.color.navy
             "pending" -> "En attente" to R.color.amber
-            "closed" -> "Terminée" to R.color.muted
-            "cancelled" -> "Annulée" to R.color.red
-            else -> (r.status ?: "—") to R.color.muted
+            "closed" -> "Terminee" to R.color.muted
+            "cancelled" -> "Annulee" to R.color.red
+            else -> (r.status ?: "-") to R.color.muted
         }
         b.statusChip.text = label
         b.statusChip.setTextColor(ContextCompat.getColor(this, R.color.white))
+        b.statusChip.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, color))
 
         val days = days(r.dateStart, r.dateEnd)
-        b.totalAmount.text = r.totalAmount?.let { "${it.toInt()} DH" } ?: "—"
-        b.priceBreakdown.text = r.dailyRate?.let { "${it.toInt()} DH/jour · $days jour${if (days > 1) "s" else ""}" } ?: ""
+        b.totalAmount.text = r.totalAmount?.let { "${it.toInt()} DH" } ?: "-"
+        b.priceBreakdown.text = r.dailyRate?.let { "${it.toInt()} DH/jour - $days jour${if (days > 1) "s" else ""}" } ?: ""
 
-        // Client
-        val cl = r.clients
-        b.clientName.text = cl?.fullName ?: "Client"
+        val client = r.clients
+        b.clientName.text = client?.fullName ?: "Client"
         b.clientDetails.text = listOfNotNull(
-            cl?.cin?.let { "CIN / Passeport : $it" },
-            cl?.phone?.let { "Téléphone : $it" },
-            cl?.email?.let { "Email : $it" },
-            cl?.address?.let { "Adresse : $it" },
-            cl?.nationality?.let { "Nationalité : $it" },
-        ).joinToString("\n").ifBlank { "Aucune information supplémentaire" }
+            client?.cin?.let { "CIN / Passeport : $it" },
+            client?.phone?.let { "Telephone : $it" },
+            client?.email?.let { "Email : $it" },
+            client?.address?.let { "Adresse : $it" },
+            client?.nationality?.let { "Nationalite : $it" },
+        ).joinToString("\n").ifBlank { "Aucune information supplementaire" }
 
-        val phone = cl?.phone?.replace(Regex("\\D"), "").orEmpty()
+        val phone = client?.phone?.replace(Regex("\\D"), "").orEmpty()
         b.callClient.visibility = if (phone.isBlank()) View.GONE else View.VISIBLE
         b.callClient.setOnClickListener {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$phone")))
         }
 
-        // Vehicle
-        val v = r.vehicles
-        b.vehicleName.text = listOfNotNull(v?.brand, v?.model, v?.year?.toString()).joinToString(" ").ifBlank { "Véhicule" }
-        b.vehiclePlate.text = v?.plate ?: "—"
-        val key = v?.imageKeys?.firstOrNull()
-        if (key != null) b.vehicleImage.load("${BuildConfig.R2_PUBLIC_URL}/$key") { crossfade(true) }
+        val vehicle = r.vehicles
+        b.vehicleName.text = listOfNotNull(vehicle?.brand, vehicle?.model, vehicle?.year?.toString())
+            .joinToString(" ")
+            .ifBlank { "Vehicule" }
+        b.vehiclePlate.text = vehicle?.plate ?: "-"
+        vehicle?.imageKeys?.firstOrNull()?.let { key ->
+            b.vehicleImage.load("${BuildConfig.R2_PUBLIC_URL}/$key") { crossfade(true) }
+        }
 
-        // Period
         b.period.text = buildString {
             append("Du ${r.dateStart?.take(10) ?: "?"}\n")
             append("Au ${r.dateEnd?.take(10) ?: "?"}")
-            r.pickupLocation?.let { append("\nDépart : $it") }
+            r.pickupLocation?.let { append("\nDepart : $it") }
             r.dropoffLocation?.let { append("\nRetour : $it") }
         }
 
-        // Contract
         if (contract != null) {
-            val cState = when {
-                contract.closedAt != null -> "Clôturé"
-                contract.signedAt != null -> "Signé ✓"
-                else -> "En cours — pas encore signé"
+            val contractState = when {
+                contract.closedAt != null -> "Cloture"
+                contract.signedAt != null -> "Signe"
+                else -> "En cours - pas encore signe"
             }
-            b.contractStatus.text = "Contrat #${contract.shortId ?: contract.id.take(8)} · $cState"
+            b.contractStatus.text = "Contrat #${contract.shortId ?: contract.id.take(8)} - $contractState"
             b.openContract.visibility = View.VISIBLE
             b.createContract.visibility = View.GONE
             b.openContract.setOnClickListener {
@@ -128,7 +147,7 @@ class ReservationDetailActivity : AppCompatActivity() {
                 )
             }
         } else {
-            b.contractStatus.text = "Aucun contrat pour cette réservation."
+            b.contractStatus.text = "Aucun contrat pour cette reservation."
             b.openContract.visibility = View.GONE
             b.createContract.visibility = View.VISIBLE
             b.createContract.setOnClickListener {
@@ -146,5 +165,5 @@ class ReservationDetailActivity : AppCompatActivity() {
         return ChronoUnit.DAYS.between(s, e).coerceAtLeast(1)
     }
 
-    private fun toast(m: String) = Toast.makeText(this, m, Toast.LENGTH_SHORT).show()
+    private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
 }

@@ -117,4 +117,16 @@ object SupabaseClient {
     // Auth endpoints must not receive an expired user JWT while refreshing.
     val auth: AuthApi = retrofit(includeUserToken = false).create(AuthApi::class.java)
     val rest: RestApi = retrofit(includeUserToken = true).create(RestApi::class.java)
+
+    // Server-side API on the webapp — wraps server functions with proper state
+    // machine logic (vehicle sync, forward-only mileage, compliance, etc.).
+    val api: MobileApi by lazy {
+        val webappUrl = BuildConfig.WEBAPP_BASE_URL.trimEnd('/')
+        Retrofit.Builder()
+            .baseUrl("$webappUrl/")
+            .client(httpClient(includeUserToken = true))
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(MobileApi::class.java)
+    }
 }

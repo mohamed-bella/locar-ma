@@ -20,7 +20,6 @@ import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.databinding.ActivityMainBinding
 import com.rentiq.system.service.RealtimeService
 import com.rentiq.system.ui.auth.LoginActivity
-import com.rentiq.system.ui.contracts.ContractsFragment
 import com.rentiq.system.ui.dashboard.DashboardFragment
 import com.rentiq.system.ui.fleet.FleetFragment
 import com.rentiq.system.ui.reservations.ReservationsFragment
@@ -47,7 +46,6 @@ class MainActivity : AppCompatActivity() {
         Destination(R.id.nav_dashboard) { DashboardFragment() },
         Destination(R.id.nav_fleet) { FleetFragment() },
         Destination(R.id.nav_reservations) { ReservationsFragment() },
-        Destination(R.id.nav_contracts) { ContractsFragment() },
         Destination(R.id.nav_suivi) { SuiviFragment() },
     )
 

@@ -74,6 +74,51 @@ export const listReservations = createServerFn({ method: 'GET' })
     return (rows ?? []).map(mapRow)
   })
 
+export type ReservationDetail = Reservation & {
+  client: { id: string; full_name: string; cin_passport: string | null; phone: string | null } | null
+  vehicle: { id: string; plate: string; brand: string | null; model: string | null; year: number | null; image_url: string | null } | null
+}
+
+// One reservation with its client + vehicle, for the detail page. The linked
+// contract is loaded separately via getContractByReservation.
+export const getReservationDetail = createServerFn({ method: 'GET' })
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }): Promise<ReservationDetail | null> => {
+    const { supabase } = await requireAgencyContext()
+    const { data: row, error } = await supabase
+      .from('reservations')
+      .select(
+        '*, clients(id, full_name, cin_passport, phone), vehicles(id, plate, brand, model, year, image_keys)',
+      )
+      .eq('id', data.id)
+      .maybeSingle()
+    if (error) throw new Error(error.message)
+    if (!row) return null
+    const r = row as any
+    const keys: string[] = r.vehicles?.image_keys ?? []
+    return {
+      ...mapRow(r),
+      client: r.clients
+        ? {
+            id: r.clients.id,
+            full_name: r.clients.full_name,
+            cin_passport: r.clients.cin_passport ?? null,
+            phone: r.clients.phone ?? null,
+          }
+        : null,
+      vehicle: r.vehicles
+        ? {
+            id: r.vehicles.id,
+            plate: r.vehicles.plate,
+            brand: r.vehicles.brand ?? null,
+            model: r.vehicles.model ?? null,
+            year: r.vehicles.year ?? null,
+            image_url: keys[0] ? publicUrl(keys[0]) : null,
+          }
+        : null,
+    }
+  })
+
 export type AvailabilityRow = {
   vehicle: {
     id: string
@@ -442,6 +487,32 @@ export const deleteReservation = createServerFn({ method: 'POST' })
       date_end: res?.date_end,
     })
     return { ok: true }
+  })
+
+export const bulkDeleteReservations = createServerFn({ method: 'POST' })
+  .validator((d: unknown) => z.object({ ids: z.array(z.string().uuid()).min(1).max(100) }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabase } = await requireAgencyContext()
+    const { data: linked } = await supabase
+      .from('contracts')
+      .select('reservation_id')
+      .in('reservation_id', data.ids)
+    const linkedIds = new Set((linked ?? []).map((c: any) => c.reservation_id))
+    const deletable = data.ids.filter((id) => !linkedIds.has(id))
+    if (deletable.length === 0) {
+      return { deleted: 0, skipped: data.ids.length }
+    }
+    const { data: rows } = await supabase
+      .from('reservations')
+      .select('vehicle_id')
+      .in('id', deletable)
+    const vehicleIds = [...new Set((rows ?? []).map((r: any) => r.vehicle_id).filter(Boolean))]
+    const { error } = await supabase.from('reservations').delete().in('id', deletable)
+    if (error) throw new Error(error.message)
+    for (const vid of vehicleIds) {
+      await syncVehicleStatus(supabase, vid)
+    }
+    return { deleted: deletable.length, skipped: data.ids.length - deletable.length }
   })
 
 // Manual block (maintenance / hold). Stored as a reservation with status 'blocked'.

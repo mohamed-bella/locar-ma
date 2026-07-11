@@ -246,6 +246,30 @@ export const getContract = createServerFn({ method: 'GET' })
     return detail
   })
 
+// The contract linked to a reservation, if any. Powers the inline contract
+// section on the reservation detail page. order+limit(1) so any legacy duplicate
+// (pre-0027) resolves to the most meaningful contract instead of erroring.
+export const getContractByReservation = createServerFn({ method: 'GET' })
+  .validator((d: unknown) => z.object({ reservation_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }): Promise<ContractDetail | null> => {
+    const { supabase } = await requireAgencyContext()
+    const { data: rows, error } = await supabase
+      .from('contracts')
+      .select(DETAIL_SELECT)
+      .eq('reservation_id', data.reservation_id)
+      .order('signed_at', { ascending: false, nullsFirst: false })
+      .order('pdf_key', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: true })
+      .limit(1)
+    if (error) throw new Error(error.message)
+    if (!rows || rows.length === 0) return null
+    const detail = mapDetail(rows[0])
+    if (detail.pdf_key) {
+      detail.pdf_url = await presignDownload(detail.pdf_key, 3600, docsBucket())
+    }
+    return detail
+  })
+
 // "Start rental" — create a contract from a reservation, mark it active.
 export const createContractFromReservation = createServerFn({ method: 'POST' })
   .validator((d: unknown) => z.object({ reservation_id: z.string().uuid() }).parse(d))
@@ -261,13 +285,19 @@ export const createContractFromReservation = createServerFn({ method: 'POST' })
     if (resErr) throw new Error(resErr.message)
     if (!res) throw new Error('Reservation not found')
 
-    // Reuse an existing contract for this reservation if present.
+    // One contract per reservation. Reuse the existing one if present — prefer
+    // the most "meaningful" (signed > has-pdf > closed > oldest) so we never
+    // point the agency at a throwaway dup. order+limit(1) instead of
+    // .maybeSingle() so pre-existing duplicates don't error into a new insert.
     const { data: existing } = await supabase
       .from('contracts')
       .select('id')
       .eq('reservation_id', data.reservation_id)
-      .maybeSingle()
-    if (existing) return { id: (existing as any).id as string }
+      .order('signed_at', { ascending: false, nullsFirst: false })
+      .order('pdf_key', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: true })
+      .limit(1)
+    if (existing && existing.length > 0) return { id: (existing[0] as any).id as string }
 
     const { data: row, error } = await supabase
       .from('contracts')
@@ -280,7 +310,20 @@ export const createContractFromReservation = createServerFn({ method: 'POST' })
       })
       .select('id')
       .single()
-    if (error) throw new Error(error.message)
+    if (error) {
+      // Unique index (contracts_one_per_reservation) raced us — a contract now
+      // exists. Fetch and return it instead of surfacing a 23505 error.
+      if ((error as any).code === '23505') {
+        const { data: raced } = await supabase
+          .from('contracts')
+          .select('id')
+          .eq('reservation_id', data.reservation_id)
+          .order('created_at', { ascending: true })
+          .limit(1)
+        if (raced && raced.length > 0) return { id: (raced[0] as any).id as string }
+      }
+      throw new Error(error.message)
+    }
 
     await supabase.from('reservations').update({ status: 'active' }).eq('id', data.reservation_id)
     // Derive the car's status from its bookings (may be reserved if the rental
@@ -448,4 +491,25 @@ export const getContractPdfUrl = createServerFn({ method: 'POST' })
     const key = (row as any)?.pdf_key as string | null
     if (!key) throw new Error('No PDF generated yet')
     return { url: await presignDownload(key, 3600, docsBucket()) }
+  })
+
+export const bulkDeleteContracts = createServerFn({ method: 'POST' })
+  .validator((d: unknown) => z.object({ ids: z.array(z.string().uuid()).min(1).max(100) }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabase } = await requireAgencyContext()
+    const { data: rows } = await supabase
+      .from('contracts')
+      .select('id, reservation_id, reservations(vehicle_id)')
+      .in('id', data.ids)
+    const reservationIds = (rows ?? []).map((r: any) => r.reservation_id).filter(Boolean)
+    const vehicleIds = [...new Set((rows ?? []).map((r: any) => r.reservations?.vehicle_id).filter(Boolean))]
+    const { error } = await supabase.from('contracts').delete().in('id', data.ids)
+    if (error) throw new Error(error.message)
+    if (reservationIds.length > 0) {
+      await supabase.from('reservations').update({ status: 'confirmed' }).in('id', reservationIds)
+    }
+    for (const vid of vehicleIds) {
+      await syncVehicleStatus(supabase, vid)
+    }
+    return { deleted: data.ids.length }
   })

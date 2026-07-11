@@ -6,6 +6,7 @@ export type NotificationType =
   | 'reservation_cancelled'
   | 'contract_created'
   | 'contract_signed'
+  | 'contract_closed'
   | 'vehicle_added'
   | 'service_record_created'
   | 'contract_pdf_ready'

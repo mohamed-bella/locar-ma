@@ -21,9 +21,7 @@ import com.rentiq.system.BuildConfig
 import com.rentiq.system.R
 import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.data.model.Vehicle
-import com.rentiq.system.data.model.VehicleInsert
 import com.rentiq.system.databinding.ActivityVehicleFormBinding
-import com.rentiq.system.util.Notify
 import com.rentiq.system.util.R2Uploader
 import com.rentiq.system.util.SessionManager
 import kotlinx.coroutines.async
@@ -187,27 +185,15 @@ class VehicleFormActivity : AppCompatActivity() {
         setLoading(true)
         lifecycleScope.launch {
             try {
-                val id  = vehicleId
+                val id = vehicleId
+                val payload = buildPayload(plate, rate)
                 val res = if (id == null) {
-                    SupabaseClient.rest.createVehicle(buildInsert(agencyId!!, plate, rate))
+                    SupabaseClient.api.createVehicle(payload)
                 } else {
-                    SupabaseClient.rest.updateVehicle("eq.$id", buildUpdate(plate, rate))
+                    SupabaseClient.api.updateVehicle(payload + ("id" to id))
                 }
 
                 if (res.isSuccessful) {
-                    if (id == null) {
-                        Notify.enqueue(
-                            agencyId,
-                            "vehicle_added",
-                            mapOf(
-                                "vehicle" to listOfNotNull(nullable(b.brand.text.toString()), nullable(b.model.text.toString())).joinToString(" ").ifBlank { plate },
-                                "plate"      to plate,
-                                "year"       to intOrNull(b.year),
-                                "category"   to selectedCategory(),
-                                "daily_rate" to rate,
-                            ),
-                        )
-                    }
                     toast("Voiture enregistrée")
                     setResult(RESULT_OK)
                     finish()
@@ -222,45 +208,19 @@ class VehicleFormActivity : AppCompatActivity() {
         }
     }
 
-    private fun buildInsert(agencyId: String, plate: String, rate: Double) = VehicleInsert(
-        agencyId          = agencyId,
-        plate             = plate,
-        brand             = nullable(b.brand.text.toString()),
-        model             = nullable(b.model.text.toString()),
-        year              = intOrNull(b.year),
-        category          = selectedCategory(),
-        dailyRate         = rate,
-        status            = selectedStatus(),
-        mileageCurrent    = intOrNull(b.mileage) ?: 0,
-        insuranceExpiry   = dateOrNull(b.insuranceExpiry),
-        vignetteExpiry    = dateOrNull(b.vignetteExpiry),
-        visiteTechExpiry  = dateOrNull(b.visiteTechExpiry),
-        oilChangeLastKm   = intOrNull(b.oilLastKm),
-        oilChangeIntervalKm = intOrNull(b.oilIntervalKm) ?: 10000,
-        oilChangeLastDate = dateOrNull(b.oilLastDate),
-        nextServiceNote   = nullable(b.nextServiceNote.text.toString()),
-        notes             = nullable(b.notes.text.toString()),
-        imageKeys         = imageKeys.toList().ifEmpty { null },
-    )
-
-    private fun buildUpdate(plate: String, rate: Double): Map<String, Any?> = mapOf(
-        "plate"                    to plate,
-        "brand"                    to nullable(b.brand.text.toString()),
-        "model"                    to nullable(b.model.text.toString()),
-        "year"                     to intOrNull(b.year),
-        "category"                 to selectedCategory(),
-        "daily_rate"               to rate,
-        "status"                   to selectedStatus(),
-        "mileage_current"          to (intOrNull(b.mileage) ?: 0),
-        "insurance_expiry"         to dateOrNull(b.insuranceExpiry),
-        "vignette_expiry"          to dateOrNull(b.vignetteExpiry),
-        "visite_tech_expiry"       to dateOrNull(b.visiteTechExpiry),
-        "oil_change_last_km"       to intOrNull(b.oilLastKm),
-        "oil_change_interval_km"   to (intOrNull(b.oilIntervalKm) ?: 10000),
-        "oil_change_last_date"     to dateOrNull(b.oilLastDate),
-        "next_service_note"        to nullable(b.nextServiceNote.text.toString()),
-        "notes"                    to nullable(b.notes.text.toString()),
-        "image_keys"               to imageKeys.toList(),
+    private fun buildPayload(plate: String, rate: Double): Map<String, Any?> = mapOf(
+        "plate"              to plate,
+        "brand"              to nullable(b.brand.text.toString()),
+        "model"              to nullable(b.model.text.toString()),
+        "year"               to intOrNull(b.year),
+        "category"           to selectedCategory(),
+        "daily_rate"         to rate,
+        "insurance_expiry"   to dateOrNull(b.insuranceExpiry),
+        "vignette_expiry"    to dateOrNull(b.vignetteExpiry),
+        "visite_tech_expiry" to dateOrNull(b.visiteTechExpiry),
+        "next_service_note"  to nullable(b.nextServiceNote.text.toString()),
+        "notes"              to nullable(b.notes.text.toString()),
+        "image_keys"         to imageKeys.toList(),
     )
 
     // ── Helpers ─────────────────────────────────────────────────────────────

@@ -71,7 +71,6 @@ class ReservationsAdapter(
         val stateColor = ContextCompat.getColor(ctx, stateColorRes)
         holder.b.stateBadge.text = badgeText
         holder.b.stateBadge.backgroundTintList = ColorStateList.valueOf(stateColor)
-        holder.b.accentStrip.setBackgroundColor(stateColor)
     }
 
     companion object {

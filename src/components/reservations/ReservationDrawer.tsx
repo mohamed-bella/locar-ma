@@ -69,7 +69,7 @@ export function ReservationDrawer({
       if (!result?.id) throw new Error(result?.error ?? 'Contract creation failed')
       onOpenChange(false)
       onSaved()
-      await navigate({ to: '/contracts/$contractId', params: { contractId: result.id } })
+      await navigate({ to: '/reservations/$reservationId', params: { reservationId: initial.id } })
     } catch (err: any) {
       toast.error(err?.message ?? t('res.couldNotStart'))
     } finally {

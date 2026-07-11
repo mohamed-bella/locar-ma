@@ -2,7 +2,6 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   Car,
   CalendarPlus,
-  FileText,
   Users,
   Droplet,
   ShieldCheck,
@@ -79,7 +78,6 @@ function Dashboard() {
   const tiles: TileDef[] = [
     { to: '/fleet', icon: Car, label: t('dash.tileCars'), c: 'blue' },
     { to: '/reservations', icon: CalendarPlus, label: t('dash.tileReservations'), c: 'brand' },
-    { to: '/contracts', icon: FileText, label: t('dash.tileContracts'), c: 'indigo' },
     { to: '/clients', icon: Users, label: t('dash.tileClients'), c: 'emerald' },
     { to: '/tracking/$type', params: { type: 'vidange' }, icon: Droplet, label: t('dash.tileVidange'), c: 'amber' },
     { to: '/tracking/$type', params: { type: 'insurance' }, icon: ShieldCheck, label: t('dash.tileAssurance'), c: 'sky' },

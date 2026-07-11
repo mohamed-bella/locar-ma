@@ -8,11 +8,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.rentiq.system.data.api.SupabaseClient
-import com.rentiq.system.data.model.ServiceRecordInsert
 import com.rentiq.system.data.model.Vehicle
 import com.rentiq.system.databinding.ActivityLogServiceBinding
-import com.rentiq.system.util.Notify
-import com.rentiq.system.util.SessionManager
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.Calendar
@@ -89,10 +86,6 @@ class LogServiceActivity : AppCompatActivity() {
             return
         }
         val vehicle = vehicles[vi]
-        val agencyId = SessionManager(this).agencyId ?: run {
-            Toast.makeText(this, "Agence non trouvée", Toast.LENGTH_SHORT).show()
-            return
-        }
         val type = typeKeys.getOrElse(b.typeSpinner.selectedItemPosition) { "autre" }
         val performedAt = b.performedAt.text.toString().ifBlank { LocalDate.now().toString() }
         val odometer = b.odometerKm.text.toString().toIntOrNull()
@@ -108,36 +101,19 @@ class LogServiceActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val res = SupabaseClient.rest.createServiceRecord(
-                    ServiceRecordInsert(
-                        agencyId = agencyId,
-                        vehicleId = vehicle.id,
-                        type = type,
-                        performedAt = performedAt,
-                        odometerKm = odometer,
-                        cost = cost,
-                        garage = garage,
-                        notes = notes,
-                        nextDueKm = nextDueKm,
-                        nextDueDate = nextDueDate,
-                    )
+                val res = SupabaseClient.api.logService(
+                    mapOf(
+                        "vehicle_id" to vehicle.id,
+                        "type" to type,
+                        "performed_at" to performedAt,
+                        "odometer_km" to odometer,
+                        "cost" to cost,
+                        "garage" to garage,
+                        "notes" to notes,
+                    ),
                 )
                 b.progress.visibility = View.GONE
                 if (res.isSuccessful) {
-                    Notify.enqueue(
-                        agencyId,
-                        "service_record_created",
-                        mapOf(
-                            "vehicle_id" to vehicle.id,
-                            "vehicle" to vehicle.displayName,
-                            "plate" to vehicle.plate,
-                            "type" to type,
-                            "performed_at" to performedAt,
-                            "odometer_km" to odometer,
-                            "cost" to cost,
-                            "garage" to garage,
-                        )
-                    )
                     Toast.makeText(this@LogServiceActivity, "Suivi enregistré", Toast.LENGTH_SHORT).show()
                     finish()
                 } else {

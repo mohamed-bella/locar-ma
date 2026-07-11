@@ -10,17 +10,16 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.rentiq.system.data.api.SupabaseClient
-import com.rentiq.system.data.model.ContractInsert
 import com.rentiq.system.data.model.Reservation
 import com.rentiq.system.databinding.ActivityNewContractBinding
-import com.rentiq.system.util.Notify
-import com.rentiq.system.util.SessionManager
+import com.rentiq.system.util.AuthSession
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
 class NewContractActivity : AppCompatActivity() {
     private lateinit var b: ActivityNewContractBinding
     private var reservations = listOf<Reservation>()
+    private var targetReservationId: String? = null
 
     private val fuelLevels = listOf("empty", "quarter", "half", "three_quarters", "full")
     private val fuelLabels = listOf("Vide", "1/4", "1/2", "3/4", "Plein")
@@ -29,6 +28,7 @@ class NewContractActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         b = ActivityNewContractBinding.inflate(layoutInflater)
         setContentView(b.root)
+        targetReservationId = intent.getStringExtra("reservation_id")
 
         b.toolbar.setNavigationOnClickListener { finish() }
         b.fuelOut.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, fuelLabels)
@@ -55,7 +55,11 @@ class NewContractActivity : AppCompatActivity() {
                 val res = SupabaseClient.rest.getReservations()
                 val contractRes = SupabaseClient.rest.getContracts()
                 b.progress.visibility = View.GONE
-                if (res.isSuccessful) {
+                if (AuthSession.isAuthError(res.code()) || AuthSession.isAuthError(contractRes.code())) {
+                    AuthSession.returnToLogin(this@NewContractActivity)
+                    return@launch
+                }
+                if (res.isSuccessful && contractRes.isSuccessful) {
                     val reservedWithContract = contractRes.body().orEmpty()
                         .mapNotNull { it.reservationId }
                         .toSet()
@@ -70,8 +74,21 @@ class NewContractActivity : AppCompatActivity() {
                             "${r.clients?.fullName ?: "?"} - ${r.vehicles?.plate ?: "?"} (${r.dateStart})"
                         }
                     ).also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+                    targetReservationId?.let { targetId ->
+                        val index = reservations.indexOfFirst { it.id == targetId }
+                        if (index >= 0) {
+                            b.reservationSpinner.setSelection(index)
+                        } else {
+                            Toast.makeText(
+                                this@NewContractActivity,
+                                "Reservation deja associee a un contrat ou indisponible",
+                                Toast.LENGTH_LONG,
+                            ).show()
+                        }
+                    }
                 } else {
-                    Toast.makeText(this@NewContractActivity, "Erreur ${res.code()}", Toast.LENGTH_SHORT).show()
+                    val code = if (!res.isSuccessful) res.code() else contractRes.code()
+                    Toast.makeText(this@NewContractActivity, AuthSession.messageFor(code), Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 b.progress.visibility = View.GONE
@@ -101,10 +118,6 @@ class NewContractActivity : AppCompatActivity() {
             return
         }
         val reservation = reservations[ri]
-        val agencyId = SessionManager(this).agencyId ?: run {
-            Toast.makeText(this, "Agence non trouvée", Toast.LENGTH_SHORT).show()
-            return
-        }
 
         val mileage = b.mileageOut.text.toString().toIntOrNull()
         val fuel = fuelLevels[b.fuelOut.selectedItemPosition]
@@ -142,42 +155,42 @@ class NewContractActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                val res = SupabaseClient.rest.createContract(
-                    ContractInsert(
-                        agencyId = agencyId,
-                        reservationId = reservation.id,
-                        mileageOut = mileage,
-                        fuelOut = fuel,
-                        form = form.ifEmpty { null },
-                    )
+                // 1) Create contract via server API (handles dedup + reservation→active + vehicle sync)
+                val createRes = SupabaseClient.api.createContract(
+                    mapOf("reservation_id" to reservation.id),
                 )
-                b.progress.visibility = View.GONE
-                if (res.isSuccessful) {
-                    val created = res.body()?.firstOrNull()
-                    val checkAmount = updateCheckFields(created?.id)
-                    if (created != null) {
-                        Notify.enqueue(
-                            agencyId,
-                            "contract_created",
-                            mapOf(
-                                "contract_id" to created.id,
-                                "vehicle" to reservation.vehicles?.displayName,
-                                "plate" to reservation.vehicles?.plate,
-                                "client" to reservation.clients?.fullName,
-                                "client_phone" to reservation.clients?.phone,
-                                "date_start" to reservation.dateStart,
-                                "date_end" to reservation.dateEnd,
-                                "check_amount" to checkAmount,
-                            )
-                        )
-                        Toast.makeText(this@NewContractActivity, "Contrat créé", Toast.LENGTH_SHORT).show()
-                        startActivity(Intent(this@NewContractActivity, ContractDetailActivity::class.java).putExtra("contract_id", created.id))
-                    }
-                    finish()
-                } else {
+                if (!createRes.isSuccessful) {
+                    b.progress.visibility = View.GONE
                     b.saveButton.isEnabled = true
-                    Toast.makeText(this@NewContractActivity, "Erreur ${res.code()}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@NewContractActivity, "Erreur ${createRes.code()}", Toast.LENGTH_SHORT).show()
+                    return@launch
                 }
+                val contractId = createRes.body()?.get("id")?.toString()
+                if (contractId == null) {
+                    b.progress.visibility = View.GONE
+                    b.saveButton.isEnabled = true
+                    Toast.makeText(this@NewContractActivity, "Erreur: id manquant", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+
+                // 2) Update contract fields (mileage, fuel, form, check) via server API
+                val updateBody = mutableMapOf<String, Any?>("id" to contractId)
+                if (mileage != null) updateBody["mileage_out"] = mileage
+                updateBody["fuel_out"] = fuel
+                if (form.isNotEmpty()) updateBody["form"] = form
+                val checkNum = b.checkNumber.text.toString()
+                val checkBank = b.checkBank.text.toString()
+                val checkAmt = b.checkAmount.text.toString().toDoubleOrNull()
+                if (checkNum.isNotBlank()) updateBody["check_number"] = checkNum
+                if (checkBank.isNotBlank()) updateBody["check_bank"] = checkBank
+                if (checkAmt != null) updateBody["check_amount"] = checkAmt
+
+                SupabaseClient.api.updateContract(updateBody)
+
+                b.progress.visibility = View.GONE
+                Toast.makeText(this@NewContractActivity, "Contrat créé", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(this@NewContractActivity, ContractDetailActivity::class.java).putExtra("contract_id", contractId))
+                finish()
             } catch (e: Exception) {
                 b.progress.visibility = View.GONE
                 b.saveButton.isEnabled = true
@@ -186,17 +199,4 @@ class NewContractActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun updateCheckFields(contractId: String?): Double? {
-        if (contractId == null) return null
-        val checkNum = b.checkNumber.text.toString()
-        val checkBank = b.checkBank.text.toString()
-        val checkAmt = b.checkAmount.text.toString().toDoubleOrNull()
-        if (checkNum.isBlank() && checkBank.isBlank() && checkAmt == null) return checkAmt
-        val update = mutableMapOf<String, Any?>()
-        if (checkNum.isNotBlank()) update["check_number"] = checkNum
-        if (checkBank.isNotBlank()) update["check_bank"] = checkBank
-        if (checkAmt != null) update["check_amount"] = checkAmt
-        SupabaseClient.rest.updateContract("eq.$contractId", update)
-        return checkAmt
-    }
 }

@@ -16,8 +16,6 @@ import com.rentiq.system.data.model.Reservation
 import com.rentiq.system.databinding.FragmentListBinding
 import com.rentiq.system.util.AuthSession
 import com.rentiq.system.util.FilterPills
-import com.rentiq.system.util.Notify
-import com.rentiq.system.util.SessionManager
 import kotlinx.coroutines.launch
 
 class ReservationsFragment : Fragment() {
@@ -81,7 +79,7 @@ class ReservationsFragment : Fragment() {
                 if (AuthSession.isAuthError(res.code())) {
                     AuthSession.returnToLogin(requireContext())
                 } else if (res.isSuccessful) {
-                    allReservations = res.body() ?: emptyList()
+                    allReservations = sortByPriority(res.body() ?: emptyList())
                     binding.filterBar.visibility = if (allReservations.isEmpty()) View.GONE else View.VISIBLE
                     applyFilter()
                 } else {
@@ -93,6 +91,36 @@ class ReservationsFragment : Fragment() {
                 showError(e.message ?: "Erreur de chargement")
             }
         }
+    }
+
+    // Most actionable first: en location (soonest return) → à venir (soonest
+    // pickup) → terminées (recent) → annulées.
+    private fun sortByPriority(list: List<com.rentiq.system.data.model.Reservation>): List<com.rentiq.system.data.model.Reservation> {
+        val today = java.time.LocalDate.now()
+        fun parse(d: String?) = d?.take(10)?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() }
+        fun rank(r: com.rentiq.system.data.model.Reservation): Int {
+            val start = parse(r.dateStart)
+            val end = parse(r.dateEnd)
+            return when {
+                r.status == "cancelled" -> 3
+                r.status == "closed" || (end != null && today.isAfter(end)) -> 2
+                start != null && today.isBefore(start) -> 1              // à venir
+                else -> 0                                               // en location / now
+            }
+        }
+        return list.sortedWith(
+            compareBy<com.rentiq.system.data.model.Reservation> { rank(it) }
+                .thenBy { r ->
+                    // Secondary key: within each group, most urgent first.
+                    val start = parse(r.dateStart)
+                    val end = parse(r.dateEnd)
+                    when (rank(r)) {
+                        0 -> end?.toEpochDay() ?: Long.MAX_VALUE          // soonest return
+                        1 -> start?.toEpochDay() ?: Long.MAX_VALUE        // soonest pickup
+                        else -> -(end?.toEpochDay() ?: 0L)               // most recent first
+                    }
+                }
+        )
     }
 
     private fun setupFilters() {
@@ -138,30 +166,15 @@ class ReservationsFragment : Fragment() {
     }
 
     private fun cancelReservation(reservation: Reservation) {
-        val agencyId = SessionManager(requireContext()).agencyId
         binding.progressBar.visibility = View.VISIBLE
         lifecycleScope.launch {
             try {
-                val res = SupabaseClient.rest.updateReservationStatus(
-                    "eq.${reservation.id}",
-                    mapOf("status" to "cancelled")
+                val res = SupabaseClient.api.setReservationStatus(
+                    mapOf("id" to reservation.id, "status" to "cancelled"),
                 )
                 binding.progressBar.visibility = View.GONE
                 if (res.isSuccessful) {
                     Toast.makeText(requireContext(), R.string.reservation_cancelled, Toast.LENGTH_SHORT).show()
-                    Notify.enqueue(
-                        agencyId,
-                        "reservation_cancelled",
-                        mapOf(
-                            "reservation_id" to reservation.id,
-                            "vehicle" to reservation.vehicles?.displayName,
-                            "plate" to reservation.vehicles?.plate,
-                            "client" to reservation.clients?.fullName,
-                            "client_phone" to reservation.clients?.phone,
-                            "date_start" to reservation.dateStart,
-                            "date_end" to reservation.dateEnd,
-                        ),
-                    )
                     load()
                 } else {
                     Toast.makeText(requireContext(), "Erreur ${res.code()}", Toast.LENGTH_SHORT).show()

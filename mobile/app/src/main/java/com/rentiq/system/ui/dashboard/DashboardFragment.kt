@@ -45,7 +45,8 @@ class DashboardFragment : Fragment() {
         }
         // CTA grid → switch bottom-nav tab (or open Finance reports).
         binding.ctaReservations.setOnClickListener { (activity as? MainActivity)?.navigateTo(R.id.nav_reservations) }
-        binding.ctaContracts.setOnClickListener { (activity as? MainActivity)?.navigateTo(R.id.nav_contracts) }
+        // Contracts merged into reservations — this CTA now opens the reservations hub.
+        binding.ctaContracts.setOnClickListener { (activity as? MainActivity)?.navigateTo(R.id.nav_reservations) }
         binding.ctaCars.setOnClickListener { (activity as? MainActivity)?.navigateTo(R.id.nav_fleet) }
         binding.ctaFinance.setOnClickListener { startActivity(Intent(requireContext(), ReportsActivity::class.java)) }
         binding.ctaClients.setOnClickListener { startActivity(Intent(requireContext(), ClientsActivity::class.java)) }

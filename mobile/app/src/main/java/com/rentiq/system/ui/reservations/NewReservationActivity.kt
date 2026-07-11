@@ -12,11 +12,9 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.rentiq.system.data.api.SupabaseClient
 import com.rentiq.system.data.model.Client
 import com.rentiq.system.data.model.Reservation
-import com.rentiq.system.data.model.ReservationInsert
 import com.rentiq.system.data.model.Vehicle
 import com.rentiq.system.data.model.VehicleIssue
 import com.rentiq.system.databinding.ActivityNewReservationBinding
-import com.rentiq.system.util.Notify
 import com.rentiq.system.util.SessionManager
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -241,42 +239,21 @@ class NewReservationActivity : AppCompatActivity() {
         setLoading(true)
         lifecycleScope.launch {
             try {
-                val body = ReservationInsert(
-                    agencyId = agencyId,
-                    vehicleId = vehicle.id,
-                    clientId = client.id,
-                    dateStart = start.toString(),
-                    dateEnd = end.toString(),
-                    totalAmount = total,
-                    dailyRate = vehicle.dailyRate ?: 0.0,
-                    pickupLocation = nullable(b.pickupLocation.text.toString()),
-                    dropoffLocation = nullable(b.dropoffLocation.text.toString()),
-                    notes = nullable(b.notes.text.toString()),
+                val body = mapOf(
+                    "vehicle_id" to vehicle.id,
+                    "client_id" to client.id,
+                    "date_start" to start.toString(),
+                    "date_end" to end.toString(),
+                    "total_amount" to total,
+                    "daily_rate_snap" to (vehicle.dailyRate ?: 0.0),
+                    "pickup_location" to nullable(b.pickupLocation.text.toString()),
+                    "dropoff_location" to nullable(b.dropoffLocation.text.toString()),
+                    "notes" to nullable(b.notes.text.toString()),
+                    "status" to "confirmed",
                 )
-                val res = SupabaseClient.rest.createReservation(body)
+                val res = SupabaseClient.api.createReservation(body)
                 if (res.isSuccessful) {
-                    val created = res.body()?.firstOrNull()
-                    val notificationQueued = Notify.enqueue(
-                        agencyId,
-                        "reservation_created",
-                        mapOf(
-                            "reservation_id" to created?.id,
-                            "vehicle" to vehicle.displayName,
-                            "plate" to vehicle.plate,
-                            "client" to (client.fullName ?: client.cin),
-                            "client_phone" to client.phone,
-                            "date_start" to start.toString(),
-                            "date_end" to end.toString(),
-                            "pickup_location" to nullable(b.pickupLocation.text.toString()),
-                            "dropoff_location" to nullable(b.dropoffLocation.text.toString()),
-                            "total_amount" to total,
-                            "status" to "confirmed",
-                        ),
-                    )
                     Toast.makeText(this@NewReservationActivity, "Reservation creee", Toast.LENGTH_SHORT).show()
-                    if (!notificationQueued) {
-                        Toast.makeText(this@NewReservationActivity, "Notification WhatsApp non envoyee", Toast.LENGTH_LONG).show()
-                    }
                     finish()
                 } else {
                     val message = if (res.code() == 409) {

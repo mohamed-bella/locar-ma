@@ -9,3 +9,8 @@ dist
 *.log
 .DS_Store
 src/routeTree.gen.ts
+
+# Local app/service workspaces
+/mobile/
+/bot/
+/supabase/migrations/
