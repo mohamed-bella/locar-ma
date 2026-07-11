@@ -72,7 +72,13 @@ class ReservationsFragment : Fragment() {
 
         lifecycleScope.launch {
             try {
-                val res = SupabaseClient.rest.getReservations()
+                val today = java.time.LocalDate.now()
+                val windowStart = today.minusDays(14)
+                val windowEnd = today.plusDays(120)
+                val res = SupabaseClient.rest.getReservations(
+                    dateStart = "lte.$windowEnd",
+                    dateEnd = "gte.$windowStart",
+                )
                 binding.swipeRefresh.isRefreshing = false
                 binding.progressBar.visibility = View.GONE
                 if (AuthSession.isAuthError(res.code())) {
@@ -102,7 +108,7 @@ class ReservationsFragment : Fragment() {
             val end = parse(r.dateEnd)
             return when {
                 r.status == "cancelled" -> 3
-                r.status == "closed" || (end != null && today.isAfter(end)) -> 2
+                r.status == "closed" -> 2
                 start != null && today.isBefore(start) -> 1              // à venir
                 else -> 0                                               // en location / now
             }
@@ -174,6 +180,8 @@ class ReservationsFragment : Fragment() {
                 binding.progressBar.visibility = View.GONE
                 if (res.isSuccessful) {
                     Toast.makeText(requireContext(), R.string.reservation_cancelled, Toast.LENGTH_SHORT).show()
+                    allReservations = allReservations.filterNot { it.id == reservation.id }
+                    applyFilter()
                     load()
                 } else {
                     Toast.makeText(requireContext(), "Erreur ${res.code()}", Toast.LENGTH_SHORT).show()

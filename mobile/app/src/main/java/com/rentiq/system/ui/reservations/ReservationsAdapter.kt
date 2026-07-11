@@ -30,7 +30,9 @@ class ReservationsAdapter(
         holder.b.vehicleInfo.text = listOfNotNull(
             r.vehicles?.brand, r.vehicles?.model, r.vehicles?.plate?.let { "($it)" }
         ).joinToString(" ")
-        holder.b.dates.text = "${r.dateStart ?: "?"} → ${r.dateEnd ?: "?"}"
+        val startText = r.dateStart?.take(10) ?: "?"
+        val endText = r.dateEnd?.take(10) ?: "?"
+        holder.b.dates.text = "$startText -> $endText"
         holder.b.amount.text = r.totalAmount?.let { "${it.toInt()} DH" } ?: "—"
         holder.b.perDay.text = r.dailyRate?.let { "${it.toInt()} DH/jour" } ?: ""
         holder.b.perDay.visibility = if (r.dailyRate != null) View.VISIBLE else View.GONE
@@ -56,10 +58,14 @@ class ReservationsAdapter(
 
         val (badgeText, stateColorRes) = when {
             r.status == "cancelled" -> "Annulée" to R.color.red
-            r.status == "closed" || (end != null && today.isAfter(end)) -> "Terminée" to R.color.muted
+            r.status == "active" && end != null && today.isAfter(end) -> {
+                val late = ChronoUnit.DAYS.between(end, today).coerceAtLeast(1)
+                "Retour en retard · ${late}j" to R.color.red
+            }
+            r.status == "closed" -> "Terminée" to R.color.muted
             start != null && today.isBefore(start) -> {
                 val d = ChronoUnit.DAYS.between(today, start)
-                "À venir · commence dans ${d}j" to R.color.blue_action
+                "À venir · dans ${d}j" to R.color.blue_action
             }
             start != null && end != null && !today.isBefore(start) && !today.isAfter(end) -> {
                 val left = ChronoUnit.DAYS.between(today, end)

@@ -138,6 +138,8 @@ interface RestApi {
     suspend fun getReservations(
         @Query("select") select: String = "*,vehicles(id,plate,brand,model),clients(id,full_name,phone)",
         @Query("status") status: String = "not.in.(cancelled,blocked)",
+        @Query("date_start") dateStart: String? = null,
+        @Query("date_end") dateEnd: String? = null,
         @Query("order") order: String = "date_start.desc",
     ): Response<List<Reservation>>
 
@@ -161,7 +163,7 @@ interface RestApi {
     @GET("rest/v1/contracts")
     suspend fun getContractsByReservation(
         @Query("reservation_id") reservationId: String,
-        @Query("select") select: String = "id,short_id,signed_at,closed_at,sign_token,created_at",
+        @Query("select") select: String = "id,signed_at,closed_at,sign_token,created_at",
         @Query("order") order: String = "created_at.desc",
     ): Response<List<Contract>>
 
