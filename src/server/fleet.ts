@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireAgencyContext } from './context'
 import { vehicleSchema, damageReportSchema, MAX_IMAGE_BYTES } from '~/lib/schemas'
-import { presignUpload, publicUrl, deleteObject } from '~/lib/r2.server'
+import { presignUpload, publicUrl, deleteObject, putObject } from '~/lib/r2.server'
 import { agencyToday } from '~/lib/tz'
 import { deriveVehicleStatus } from './vehicleStatus'
 import { notifyVehicle, scheduleNotify } from '~/lib/email.server'
@@ -70,6 +70,10 @@ const imageFileSchema = z.object({
   name: z.string(),
   type: z.string().startsWith('image/', 'Only image files are allowed'),
   size: z.number().int().positive().max(MAX_IMAGE_BYTES, 'Image is too large (max 8 MB)'),
+})
+
+const imageUploadBodySchema = imageFileSchema.extend({
+  base64: z.string().min(1),
 })
 
 // Normalize optional form values to null for the DB.
@@ -378,6 +382,30 @@ export const presignVehicleUploads = createServerFn({ method: 'POST' })
   })
 
 // ── Damage reports ─────────────────────────────────────
+// Fallback for browsers/environments where direct-to-R2 PUT is blocked by CORS
+// or network policy. It is slower than presigned upload but keeps uploads usable.
+export const uploadVehicleImages = createServerFn({ method: 'POST' })
+  .validator((d: unknown) =>
+    z
+      .object({
+        files: z.array(imageUploadBodySchema).min(1).max(12),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { agencyId } = await requireAgencyContext()
+    const out: { key: string }[] = []
+    for (const f of data.files) {
+      const bytes = Buffer.from(f.base64, 'base64')
+      if (bytes.byteLength !== f.size) throw new Error('Image upload payload is invalid')
+      const safe = f.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-60)
+      const key = `agencies/${agencyId}/vehicles/photos/${crypto.randomUUID()}-${safe}`
+      await putObject(key, bytes, f.type)
+      out.push({ key })
+    }
+    return out
+  })
+
 export type DamageReport = {
   id: string
   vehicle_id: string

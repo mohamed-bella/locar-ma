@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react'
 import { ImagePlus, Loader2, X, Star } from 'lucide-react'
 import { toast } from 'sonner'
-import { presignVehicleUploads } from '~/server/fleet'
+import { presignVehicleUploads, uploadVehicleImages } from '~/server/fleet'
 import { useI18n } from '~/lib/i18n'
 
 type Item = { key: string; url: string; uploading?: boolean }
+type UploadedImage = { key: string }
 
 // Uploads images straight to R2 (presigned PUT) and reports the object keys.
 export function ImageUploader({
@@ -24,6 +25,45 @@ export function ImageUploader({
     onChange(next.filter((i) => !i.uploading).map((i) => i.key))
   }
 
+  async function directUpload(list: File[]): Promise<UploadedImage[]> {
+    const signed = await presignVehicleUploads({
+      data: { files: list.map((f) => ({ name: f.name, type: f.type, size: f.size })) },
+    })
+    await Promise.all(
+      signed.map((s, i) =>
+        fetch(s.url, {
+          method: 'PUT',
+          body: list[i],
+          headers: { 'Content-Type': list[i].type },
+        }).then((r) => {
+          if (!r.ok) throw new Error(`Upload failed (${r.status})`)
+        }),
+      ),
+    )
+    return signed.map((s) => ({ key: s.key }))
+  }
+
+  async function serverUpload(list: File[]): Promise<UploadedImage[]> {
+    const files = await Promise.all(
+      list.map(async (file) => ({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        base64: await fileToBase64(file),
+      })),
+    )
+    return uploadVehicleImages({ data: { files } })
+  }
+
+  async function uploadFiles(list: File[]): Promise<UploadedImage[]> {
+    try {
+      return await directUpload(list)
+    } catch (error) {
+      if (!isLikelyCorsOrNetworkError(error)) throw error
+      return serverUpload(list)
+    }
+  }
+
   async function onFiles(files: FileList | null) {
     if (!files || files.length === 0) return
     const list = Array.from(files).filter((f) => f.type.startsWith('image/'))
@@ -40,28 +80,15 @@ export function ImageUploader({
     setItems(current)
 
     try {
-      const signed = await presignVehicleUploads({
-        data: { files: list.map((f) => ({ name: f.name, type: f.type, size: f.size })) },
-      })
-      await Promise.all(
-        signed.map((s, i) =>
-          fetch(s.url, {
-            method: 'PUT',
-            body: list[i],
-            headers: { 'Content-Type': list[i].type },
-          }).then((r) => {
-            if (!r.ok) throw new Error(`Upload failed (${r.status})`)
-          }),
-        ),
-      )
+      const uploaded = await uploadFiles(list)
       // swap pending → real keys (keep local preview URL, still valid)
       current = current.map((it) => {
         const idx = pending.indexOf(it)
-        return idx >= 0 ? { key: signed[idx].key, url: it.url } : it
+        return idx >= 0 ? { key: uploaded[idx].key, url: it.url } : it
       })
       emit(current)
     } catch (err: any) {
-      toast.error(err?.message ?? t('img.uploadFailed'))
+      toast.error(uploadErrorMessage(err, t('img.uploadFailed')))
       emit(items) // roll back to previous good set
     } finally {
       setBusy(false)
@@ -140,4 +167,29 @@ export function ImageUploader({
       />
     </div>
   )
+}
+
+function isLikelyCorsOrNetworkError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error)
+  return /failed to fetch|networkerror|load failed|cors/i.test(message)
+}
+
+function uploadErrorMessage(error: unknown, fallback: string) {
+  const message = error instanceof Error ? error.message : String(error || '')
+  if (isLikelyCorsOrNetworkError(error)) {
+    return "Impossible d'envoyer l'image. Vérifiez la connexion ou la configuration R2 CORS."
+  }
+  return message || fallback
+}
+
+function fileToBase64(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(reader.error ?? new Error('File read failed'))
+    reader.onload = () => {
+      const result = String(reader.result ?? '')
+      resolve(result.includes(',') ? result.split(',')[1] : result)
+    }
+    reader.readAsDataURL(file)
+  })
 }

@@ -7,10 +7,12 @@ import {
   Content as PopoverContent,
 } from '@radix-ui/react-popover'
 import { format, parse, isValid } from 'date-fns'
+import { arMA, enUS, fr } from 'date-fns/locale'
 import { CalendarDays, X } from 'lucide-react'
 import 'react-day-picker/style.css'
 import { fieldCls } from './Form'
 import { cn } from './cn'
+import { useI18n } from '~/lib/i18n'
 
 function toDate(s?: string | null): Date | undefined {
   if (!s) return undefined
@@ -34,6 +36,8 @@ export function DateField({
   placeholder?: string
   min?: string | null
 }) {
+  const { locale } = useI18n()
+  const dateLocale = locale === 'ar' ? arMA : locale === 'fr' ? fr : enUS
   const controlled = value !== undefined
   const [internal, setInternal] = useState<Date | undefined>(toDate(defaultValue))
   const date = controlled ? toDate(value) : internal
@@ -52,7 +56,7 @@ export function DateField({
         <PopoverTrigger asChild>
           <button type="button" className={cn(fieldCls, 'flex items-center justify-between text-left')}>
             <span className={date ? 'text-[var(--color-ink)]' : 'text-[var(--color-faint)]'}>
-              {date ? format(date, 'd MMM yyyy') : placeholder}
+              {date ? format(date, 'd MMM yyyy', { locale: dateLocale }) : placeholder}
             </span>
             <span className="flex items-center gap-1">
               {date && (
@@ -83,6 +87,7 @@ export function DateField({
               }}
               captionLayout="dropdown"
               defaultMonth={date ?? minDate}
+              locale={dateLocale}
               weekStartsOn={1}
               disabled={minDate ? { before: minDate } : undefined}
             />

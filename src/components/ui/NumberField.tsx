@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NumericFormat } from 'react-number-format'
 import { fieldCls } from './Form'
 import { cn } from './cn'
@@ -25,6 +25,11 @@ export function NumberField({
   onValueChange?: (value: string) => void
 }) {
   const [val, setVal] = useState(defaultValue != null ? String(defaultValue) : '')
+
+  useEffect(() => {
+    setVal(defaultValue != null ? String(defaultValue) : '')
+  }, [defaultValue])
+
   return (
     <>
       <NumericFormat

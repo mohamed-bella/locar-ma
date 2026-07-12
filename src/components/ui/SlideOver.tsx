@@ -9,6 +9,7 @@ export function SlideOver({
   description,
   children,
   footer,
+  size = 'md',
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -16,15 +17,18 @@ export function SlideOver({
   description?: string
   children: React.ReactNode
   footer?: React.ReactNode
+  size?: 'md' | 'lg'
 }) {
+  const width = size === 'lg' ? 'sm:w-[760px]' : 'sm:w-[540px]'
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="anim-overlay fixed inset-0 z-40 bg-black/35" />
         <Dialog.Content
-          className="anim-sheet fixed z-50 flex flex-col bg-[var(--color-canvas)] shadow-[var(--shadow-pop)]
+          className={`anim-sheet fixed z-50 flex flex-col bg-[var(--color-canvas)] shadow-[var(--shadow-pop)]
             inset-x-0 bottom-0 max-h-[92dvh] rounded-t-3xl
-            sm:inset-y-0 sm:end-0 sm:start-auto sm:h-dvh sm:max-h-none sm:w-[540px] sm:rounded-none sm:rounded-s-3xl"
+            sm:inset-y-0 sm:end-0 sm:start-auto sm:h-dvh sm:max-h-none ${width} sm:rounded-none sm:rounded-s-3xl`}
         >
           <div className="flex items-start justify-between gap-4 border-b border-[var(--color-line)] bg-white px-5 py-4 sm:rounded-ss-3xl">
             <div>

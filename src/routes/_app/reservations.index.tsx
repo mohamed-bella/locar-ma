@@ -80,7 +80,7 @@ function Reservations() {
   // Deep-link: /reservations?new=true opens the create drawer (dashboard CTA).
   useEffect(() => {
     if (wantNew && vehicles.length > 0) {
-      const preselect = wantVehicle && vehicles.some((v) => v.id === wantVehicle) ? wantVehicle : vehicles[0]?.id
+      const preselect = wantVehicle && vehicles.some((v) => v.id === wantVehicle) ? wantVehicle : undefined
       setDrawer({
         open: true,
         initial: {
@@ -152,7 +152,6 @@ function Reservations() {
                 setDrawer({
                   open: true,
                   initial: {
-                    vehicle_id: vehicles[0]?.id,
                     date_start: format(new Date(), 'yyyy-MM-dd'),
                     date_end: format(new Date(), 'yyyy-MM-dd'),
                   },

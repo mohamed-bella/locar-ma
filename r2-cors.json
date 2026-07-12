@@ -4,6 +4,8 @@
       "http://localhost:3000",
       "http://localhost:3001",
       "http://localhost:3002",
+      "https://rentiq-system.com",
+      "https://www.rentiq-system.com",
       "https://YOUR-APP.vercel.app"
     ],
     "AllowedMethods": ["GET", "PUT"],
